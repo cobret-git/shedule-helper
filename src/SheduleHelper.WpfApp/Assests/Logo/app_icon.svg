@@ -1,0 +1,21 @@
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gcb" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3F7057"/>
+      <stop offset="1" stop-color="#2F5A46"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Clipboard base (two-tab original shape) -->
+  <rect x="6" y="8" width="36" height="32" rx="2" fill="url(#gcb)"/>
+  <rect x="14" y="6" width="6" height="6" rx="1" fill="#4C8A6C"/>
+  <rect x="28" y="6" width="6" height="6" rx="1" fill="#4C8A6C"/>
+
+  <!-- Checkmark (muted aqua for better harmony) -->
+  <path d="M18 26l5 5 11-11"
+        stroke="#6EC2B2"
+        stroke-width="4"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"/>
+</svg>
