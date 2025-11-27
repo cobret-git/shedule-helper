@@ -106,7 +106,8 @@
 
         <!-- rest of UI -->
         <Border Grid.Row="1">
-            <!-- content -->
+            <Button x:Name="SwitchThemeButton" Content="Switch Theme" VerticalAlignment="Center" HorizontalAlignment="Center"
+                    Click="SwitchThemeButton_Click"/>
         </Border>
     </Grid>
 </Window>
