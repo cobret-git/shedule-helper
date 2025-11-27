@@ -7,13 +7,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>False</UseWindowsForms>
-    <ApplicationIcon>Assests\Logo\app_icon.ico</ApplicationIcon>
-    <AssemblyVersion>1.0.13.2511</AssemblyVersion>
-    <FileVersion>1.0.13.2511</FileVersion>
+    <ApplicationIcon>Assets\Logo\app_icon.ico</ApplicationIcon>
+    <AssemblyVersion>1.0.15.2511</AssemblyVersion>
+    <FileVersion>1.0.15.2511</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Assests\Logo\app_icon.ico" />
+    <Content Include="Assets\Logo\app_icon.ico" />
   </ItemGroup>
 
   <ItemGroup>

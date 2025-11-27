@@ -138,8 +138,8 @@ namespace SheduleHelper.WpfApp
             foreach (var item in themeResources)
                 App.Current.Resources.MergedDictionaries.Remove(item);
             var themeUri = isDarkTheme
-                ? new Uri("pack://application:,,,/SheduleHelper.WpfApp;component/Assests/Resources/DarkTheme.xaml", UriKind.Absolute)
-                : new Uri("pack://application:,,,/SheduleHelper.WpfApp;component/Assests/Resources/LightTheme.xaml", UriKind.Absolute);
+                ? new Uri("pack://application:,,,/SheduleHelper.WpfApp;component/Assets/Resources/DarkTheme.xaml", UriKind.Absolute)
+                : new Uri("pack://application:,,,/SheduleHelper.WpfApp;component/Assets/Resources/LightTheme.xaml", UriKind.Absolute);
             App.Current.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = themeUri });
 
             // Force layout update
