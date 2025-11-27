@@ -1,0 +1,136 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ========================= -->
+    <!--      LAYER BACKGROUNDS    -->
+    <!-- ========================= -->
+
+    <SolidColorBrush x:Key="LayerBackgroundBaseBrush" x:Shared="False"      Color="#FFF7F7F7"/>
+    <SolidColorBrush x:Key="LayerBackgroundSubtleBrush" x:Shared="False"    Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="LayerBackgroundFloatingBrush" x:Shared="False"  Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="LayerBackgroundElevatedBrush" x:Shared="False"  Color="#FFF2F2F2"/>
+
+    <SolidColorBrush x:Key="LayerBorderDefaultBrush" x:Shared="False"       Color="#FFCCCCCC"/>
+    <SolidColorBrush x:Key="LayerBorderSubtleBrush" x:Shared="False"        Color="#FFE6E6E6"/>
+    <SolidColorBrush x:Key="LayerDividerBrush" x:Shared="False"             Color="#22000000"/>
+
+    <!-- ========================= -->
+    <!--   DEFAULT CONTROL BRUSHES -->
+    <!-- ========================= -->
+
+    <!-- Foreground -->
+    <SolidColorBrush x:Key="DefaultControlForegroundDefaultBrush" x:Shared="False"  Color="#FF1A1A1A"/>
+    <SolidColorBrush x:Key="DefaultControlForegroundHoverBrush" x:Shared="False"    Color="#FF1A1A1A"/>
+    <SolidColorBrush x:Key="DefaultControlForegroundPressedBrush" x:Shared="False"  Color="#FF000000"/>
+    <SolidColorBrush x:Key="DefaultControlForegroundDisabledBrush" x:Shared="False" Color="#4D1A1A1A"/>
+
+    <!-- Background -->
+    <SolidColorBrush x:Key="DefaultControlBackgroundDefaultBrush" x:Shared="False"  Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="DefaultControlBackgroundHoverBrush" x:Shared="False"    Color="#FFF0F0F0"/>
+    <SolidColorBrush x:Key="DefaultControlBackgroundPressedBrush" x:Shared="False"  Color="#FFE8E8E8"/>
+    <SolidColorBrush x:Key="DefaultControlBackgroundDisabledBrush" x:Shared="False" Color="#FFEDEDED"/>
+
+    <!-- Border -->
+    <SolidColorBrush x:Key="DefaultControlBorderDefaultBrush" x:Shared="False"      Color="#FFCCCCCC"/>
+    <SolidColorBrush x:Key="DefaultControlBorderHoverBrush" x:Shared="False"        Color="#FFB5B5B5"/>
+    <SolidColorBrush x:Key="DefaultControlBorderPressedBrush" x:Shared="False"      Color="#FF999999"/>
+    <SolidColorBrush x:Key="DefaultControlBorderDisabledBrush" x:Shared="False"     Color="#66CCCCCC"/>
+
+    <!-- ========================= -->
+    <!--   PRIMARY CONTROL BRUSHES -->
+    <!-- ========================= -->
+
+    <!-- Foregrounds on Orange Buttons -->
+    <SolidColorBrush x:Key="PrimaryControlForegroundDefaultBrush" x:Shared="False"  Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="PrimaryControlForegroundHoverBrush" x:Shared="False"    Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="PrimaryControlForegroundPressedBrush" x:Shared="False"  Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="PrimaryControlForegroundDisabledBrush" x:Shared="False" Color="#AAFFFFFF"/>
+
+    <!-- Orange Backgrounds -->
+    <SolidColorBrush x:Key="PrimaryControlBackgroundDefaultBrush" x:Shared="False"  Color="#FFFF6A2C"/>
+    <SolidColorBrush x:Key="PrimaryControlBackgroundHoverBrush" x:Shared="False"    Color="#FFE55621"/>
+    <SolidColorBrush x:Key="PrimaryControlBackgroundPressedBrush" x:Shared="False"  Color="#FFC94818"/>
+    <SolidColorBrush x:Key="PrimaryControlBackgroundDisabledBrush" x:Shared="False" Color="#33FF6A2C"/>
+
+    <!-- Borders -->
+    <SolidColorBrush x:Key="PrimaryControlBorderDefaultBrush" x:Shared="False"      Color="#FFFF6A2C"/>
+    <SolidColorBrush x:Key="PrimaryControlBorderHoverBrush" x:Shared="False"        Color="#FFE55621"/>
+    <SolidColorBrush x:Key="PrimaryControlBorderPressedBrush" x:Shared="False"      Color="#FFC94818"/>
+    <SolidColorBrush x:Key="PrimaryControlBorderDisabledBrush" x:Shared="False"     Color="#33FF6A2C"/>
+
+    <!-- ========================= -->
+    <!--     ACCENT COLORS         -->
+    <!-- ========================= -->
+
+    <SolidColorBrush x:Key="AccentPrimaryBrush" x:Shared="False"            Color="#FFFF6A2C"/>
+    <SolidColorBrush x:Key="AccentPrimaryHoverBrush" x:Shared="False"       Color="#FFE55621"/>
+    <SolidColorBrush x:Key="AccentPrimaryPressedBrush" x:Shared="False"     Color="#FFC94818"/>
+    <SolidColorBrush x:Key="AccentPrimaryDisabledBrush" x:Shared="False"    Color="#33FF6A2C"/>
+
+    <SolidColorBrush x:Key="AccentSecondaryBrush" x:Shared="False"          Color="#FF666666"/>
+    <SolidColorBrush x:Key="AccentSecondaryHoverBrush" x:Shared="False"     Color="#FF7A7A7A"/>
+    <SolidColorBrush x:Key="AccentSecondaryPressedBrush" x:Shared="False"   Color="#FF505050"/>
+    <SolidColorBrush x:Key="AccentSecondaryDisabledBrush" x:Shared="False"  Color="#33666666"/>
+
+    <!-- ========================= -->
+    <!--   INPUT CONTROL BRUSHES   -->
+    <!-- ========================= -->
+
+    <!-- Foregrounds -->
+    <SolidColorBrush x:Key="InputControlForegroundDefaultBrush" x:Shared="False" Color="#FF1A1A1A"/>
+    <SolidColorBrush x:Key="InputControlForegroundFocusedBrush" x:Shared="False" Color="#FFFF6A2C"/>
+    <SolidColorBrush x:Key="InputControlForegroundDisabledBrush" x:Shared="False" Color="#4D1A1A1A"/>
+    <SolidColorBrush x:Key="InputControlForegroundErrorBrush" x:Shared="False" Color="#FFCC0000"/>
+    <SolidColorBrush x:Key="InputControlForegroundSuccessBrush" x:Shared="False" Color="#FF1E8A4C"/>
+
+    <!-- Backgrounds -->
+    <SolidColorBrush x:Key="InputControlBackgroundDefaultBrush" x:Shared="False" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="InputControlBackgroundHoverBrush" x:Shared="False"   Color="#FFF7F7F7"/>
+    <SolidColorBrush x:Key="InputControlBackgroundFocusedBrush" x:Shared="False" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="InputControlBackgroundDisabledBrush" x:Shared="False" Color="#FFEDEDED"/>
+    <SolidColorBrush x:Key="InputControlBackgroundErrorBrush" x:Shared="False"   Color="#FFFFEBEB"/>
+    <SolidColorBrush x:Key="InputControlBackgroundSuccessBrush" x:Shared="False" Color="#FFE6F7ED"/>
+
+    <!-- Borders -->
+    <SolidColorBrush x:Key="InputControlBorderDefaultBrush" x:Shared="False" Color="#FFCCCCCC"/>
+    <SolidColorBrush x:Key="InputControlBorderHoverBrush" x:Shared="False"   Color="#FFB5B5B5"/>
+    <SolidColorBrush x:Key="InputControlBorderFocusedBrush" x:Shared="False" Color="#FFFF6A2C"/>
+    <SolidColorBrush x:Key="InputControlBorderDisabledBrush" x:Shared="False" Color="#66CCCCCC"/>
+    <SolidColorBrush x:Key="InputControlBorderErrorBrush" x:Shared="False"   Color="#FFCC0000"/>
+    <SolidColorBrush x:Key="InputControlBorderSuccessBrush" x:Shared="False" Color="#FF1E8A4C"/>
+
+    <!-- Caret -->
+    <SolidColorBrush x:Key="InputControlCaretDefaultBrush" x:Shared="False"  Color="#FFFF6A2C"/>
+    <SolidColorBrush x:Key="InputControlCaretDisabledBrush" x:Shared="False" Color="#4D1A1A1A"/>
+    <SolidColorBrush x:Key="InputControlCaretErrorBrush" x:Shared="False"    Color="#FFCC0000"/>
+    <SolidColorBrush x:Key="InputControlCaretSuccessBrush" x:Shared="False"  Color="#FF1E8A4C"/>
+
+    <!-- ========================= -->
+    <!--    SEMANTIC COLORS        -->
+    <!-- ========================= -->
+
+    <!-- Success -->
+    <SolidColorBrush x:Key="SuccessForegroundBrush" x:Shared="False"  Color="#FF1E8A4C"/>
+    <SolidColorBrush x:Key="SuccessBackgroundBrush" x:Shared="False"  Color="#FFE6F7ED"/>
+    <SolidColorBrush x:Key="SuccessBorderBrush" x:Shared="False"      Color="#FF1E8A4C"/>
+    <SolidColorBrush x:Key="SuccessAccentBrush" x:Shared="False"      Color="#FF2EA85F"/>
+
+    <!-- Error -->
+    <SolidColorBrush x:Key="ErrorForegroundBrush" x:Shared="False"  Color="#FFCC0000"/>
+    <SolidColorBrush x:Key="ErrorBackgroundBrush" x:Shared="False"  Color="#FFFFEBEB"/>
+    <SolidColorBrush x:Key="ErrorBorderBrush" x:Shared="False"      Color="#FFCC0000"/>
+    <SolidColorBrush x:Key="ErrorAccentBrush" x:Shared="False"      Color="#FFFF4444"/>
+
+    <!-- Warning -->
+    <SolidColorBrush x:Key="WarningForegroundBrush" x:Shared="False" Color="#FFB57400"/>
+    <SolidColorBrush x:Key="WarningBackgroundBrush" x:Shared="False" Color="#FFFFF6E6"/>
+    <SolidColorBrush x:Key="WarningBorderBrush" x:Shared="False"     Color="#FFB57400"/>
+    <SolidColorBrush x:Key="WarningAccentBrush" x:Shared="False"     Color="#FFD68C00"/>
+
+    <!-- Info -->
+    <SolidColorBrush x:Key="InfoForegroundBrush" x:Shared="False" Color="#FF006FC9"/>
+    <SolidColorBrush x:Key="InfoBackgroundBrush" x:Shared="False" Color="#FFE6F3FF"/>
+    <SolidColorBrush x:Key="InfoBorderBrush" x:Shared="False"     Color="#FF006FC9"/>
+    <SolidColorBrush x:Key="InfoAccentBrush" x:Shared="False"     Color="#FF1A83E0"/>
+
+</ResourceDictionary>

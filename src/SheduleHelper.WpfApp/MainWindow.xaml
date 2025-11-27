@@ -5,9 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:local="clr-namespace:SheduleHelper.WpfApp"
-        mc:Ignorable="d"
+        mc:Ignorable="d" MinWidth="600" MinHeight="320"
         WindowStyle="None" ResizeMode="CanResize" AllowsTransparency="False"
-        Background="#1e293b"
+        Background="{DynamicResource LayerBackgroundFloatingBrush}"
+        
         Title="MainWindow" Height="450" Width="800">
     <Window.Resources>
         <!-- Base button style -->
@@ -19,19 +20,19 @@
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Focusable" Value="False"/>
-            <Setter Property="Foreground" Value="#6E7072"/>
+            <Setter Property="Foreground" Value="{DynamicResource DefaultControlForegroundDefaultBrush}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="root" Background="{TemplateBinding Background}" CornerRadius="6">
+                        <Border x:Name="root" Background="{TemplateBinding Background}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="root" Property="Background" Value="#1F000000"/>
+                                <Setter TargetName="root" Property="Background" Value="{DynamicResource DefaultControlBackgroundHoverBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="root" Property="Background" Value="#33000000"/>
+                                <Setter TargetName="root" Property="Background" Value="{DynamicResource DefaultControlBackgroundPressedBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -46,7 +47,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="root" Background="{TemplateBinding Background}">
                             <ContentPresenter HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"/>
+                                              VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -78,7 +79,8 @@
         <Border Height="32" Background="Transparent" x:Name="TitleBar"
                 MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
             <DockPanel VerticalAlignment="Center" LastChildFill="True">
-                <TextBlock Text="MyApp" VerticalAlignment="Center" Margin="12,0" Foreground="#E9F5FA"
+                <TextBlock Text="MyApp" VerticalAlignment="Center" Margin="12,0" 
+                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
                            WindowChrome.IsHitTestVisibleInChrome="True"/>
                 <StackPanel x:Name="ButtonsPanel" Orientation="Horizontal" 
                             VerticalAlignment="Center" HorizontalAlignment="Right" Background="Transparent"
