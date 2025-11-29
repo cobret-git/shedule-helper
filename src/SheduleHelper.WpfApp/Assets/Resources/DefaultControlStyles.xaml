@@ -232,4 +232,249 @@
     </Style>
 
     <Style TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}"/>
+
+    <!-- ================================================ -->
+    <!--   DEFAULT CHECKBOX STYLE                        -->
+    <!--   Material Design Checkbox                       -->
+    <!-- ================================================ -->
+
+    <Style x:Key="DefaultCheckBoxStyle" TargetType="{x:Type CheckBox}">
+        <!-- Base Properties -->
+        <Setter Property="Foreground" Value="{DynamicResource DefaultControlForegroundDefaultBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource DefaultControlBorderDefaultBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="Padding" Value="8,0,0,0"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type CheckBox}">
+                    <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- CheckBox Visual -->
+                        <Grid Width="18" Height="18" VerticalAlignment="Center">
+                            <!-- Unchecked Border -->
+                            <Border x:Name="CheckBoxBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="3"
+                                    SnapsToDevicePixels="True"/>
+
+                            <!-- Checked Background -->
+                            <Border x:Name="CheckedBackground"
+                                    Background="{DynamicResource AccentPrimaryBrush}"
+                                    BorderBrush="{DynamicResource AccentPrimaryBrush}"
+                                    BorderThickness="2"
+                                    CornerRadius="3"
+                                    Opacity="0"
+                                    SnapsToDevicePixels="True"/>
+
+                            <!-- Check Mark (✓) -->
+                            <Path x:Name="CheckMark"
+                                  Data="M 0,4 L 3,7 L 8,0"
+                                  Stroke="White"
+                                  StrokeThickness="2"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round"
+                                  Stretch="Uniform"
+                                  Margin="3"
+                                  Opacity="0"
+                                  SnapsToDevicePixels="True"/>
+
+                            <!-- Indeterminate Mark (—) -->
+                            <Path x:Name="IndeterminateMark"
+                                  Data="M 0,0 L 8,0"
+                                  Stroke="White"
+                                  StrokeThickness="2"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  Stretch="Uniform"
+                                  Margin="3"
+                                  VerticalAlignment="Center"
+                                  Opacity="0"
+                                  SnapsToDevicePixels="True"/>
+
+                            <!-- Focus Border -->
+                            <Border x:Name="FocusBorder"
+                                    BorderBrush="{DynamicResource AccentPrimaryBrush}"
+                                    BorderThickness="2"
+                                    CornerRadius="3"
+                                    Opacity="0"
+                                    IsHitTestVisible="False"
+                                    SnapsToDevicePixels="True"/>
+                        </Grid>
+
+                        <!-- Content -->
+                        <ContentPresenter x:Name="ContentPresenter"
+                                          Grid.Column="1"
+                                          Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          RecognizesAccessKey="True"
+                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+
+                        <!-- Hover State -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush"
+                                    Value="{DynamicResource DefaultControlBorderHoverBrush}"/>
+                        </Trigger>
+
+                        <!-- Pressed State -->
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush"
+                                    Value="{DynamicResource DefaultControlBorderPressedBrush}"/>
+                        </Trigger>
+
+                        <!-- Checked State -->
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="CheckedBackground" Property="Opacity" Value="1"/>
+                            <Setter TargetName="CheckMark" Property="Opacity" Value="1"/>
+                            <Setter TargetName="CheckBoxBorder" Property="Opacity" Value="0"/>
+                        </Trigger>
+
+                        <!-- Checked + Hover -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="CheckedBackground" Property="Background"
+                                    Value="{DynamicResource AccentPrimaryHoverBrush}"/>
+                            <Setter TargetName="CheckedBackground" Property="BorderBrush"
+                                    Value="{DynamicResource AccentPrimaryHoverBrush}"/>
+                        </MultiTrigger>
+
+                        <!-- Checked + Pressed -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True"/>
+                                <Condition Property="IsPressed" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="CheckedBackground" Property="Background"
+                                    Value="{DynamicResource AccentPrimaryPressedBrush}"/>
+                            <Setter TargetName="CheckedBackground" Property="BorderBrush"
+                                    Value="{DynamicResource AccentPrimaryPressedBrush}"/>
+                        </MultiTrigger>
+
+                        <!-- Indeterminate State -->
+                        <Trigger Property="IsChecked" Value="{x:Null}">
+                            <Setter TargetName="CheckedBackground" Property="Opacity" Value="1"/>
+                            <Setter TargetName="IndeterminateMark" Property="Opacity" Value="1"/>
+                            <Setter TargetName="CheckBoxBorder" Property="Opacity" Value="0"/>
+                        </Trigger>
+
+                        <!-- Indeterminate + Hover -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="{x:Null}"/>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="CheckedBackground" Property="Background"
+                                    Value="{DynamicResource AccentPrimaryHoverBrush}"/>
+                            <Setter TargetName="CheckedBackground" Property="BorderBrush"
+                                    Value="{DynamicResource AccentPrimaryHoverBrush}"/>
+                        </MultiTrigger>
+
+                        <!-- Indeterminate + Pressed -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="{x:Null}"/>
+                                <Condition Property="IsPressed" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="CheckedBackground" Property="Background"
+                                    Value="{DynamicResource AccentPrimaryPressedBrush}"/>
+                            <Setter TargetName="CheckedBackground" Property="BorderBrush"
+                                    Value="{DynamicResource AccentPrimaryPressedBrush}"/>
+                        </MultiTrigger>
+
+                        <!-- Focus State -->
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="FocusBorder"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="1"
+                                                         Duration="0:0:0.2">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="FocusBorder"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0"
+                                                         Duration="0:0:0.2">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+
+                        <!-- Disabled State -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="CheckBoxBorder" Property="Background"
+                                    Value="{DynamicResource DefaultControlBackgroundDisabledBrush}"/>
+                            <Setter TargetName="CheckBoxBorder" Property="BorderBrush"
+                                    Value="{DynamicResource DefaultControlBorderDisabledBrush}"/>
+                            <Setter TargetName="ContentPresenter" Property="Opacity"
+                                    Value="{DynamicResource DefaultControlDisabledOpacity}"/>
+                            <Setter Property="Cursor" Value="Arrow"/>
+                        </Trigger>
+
+                        <!-- Disabled + Checked -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsEnabled" Value="False"/>
+                                <Condition Property="IsChecked" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="CheckedBackground" Property="Background"
+                                    Value="{DynamicResource AccentPrimaryDisabledBrush}"/>
+                            <Setter TargetName="CheckedBackground" Property="BorderBrush"
+                                    Value="{DynamicResource AccentPrimaryDisabledBrush}"/>
+                            <Setter TargetName="CheckMark" Property="Opacity" Value="0.6"/>
+                        </MultiTrigger>
+
+                        <!-- Disabled + Indeterminate -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsEnabled" Value="False"/>
+                                <Condition Property="IsChecked" Value="{x:Null}"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="CheckedBackground" Property="Background"
+                                    Value="{DynamicResource AccentPrimaryDisabledBrush}"/>
+                            <Setter TargetName="CheckedBackground" Property="BorderBrush"
+                                    Value="{DynamicResource AccentPrimaryDisabledBrush}"/>
+                            <Setter TargetName="IndeterminateMark" Property="Opacity" Value="0.6"/>
+                        </MultiTrigger>
+
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="CheckBox" BasedOn="{StaticResource DefaultCheckBoxStyle}"/>
 </ResourceDictionary>

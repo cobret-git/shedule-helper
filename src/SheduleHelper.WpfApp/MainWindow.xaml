@@ -105,13 +105,50 @@
         </Border>
 
         <!-- rest of UI -->
-        <Border Grid.Row="1">
-            <StackPanel Orientation="Vertical"  VerticalAlignment="Center" HorizontalAlignment="Center">
-                <Button x:Name="SwitchThemeButton" Content="Switch Theme"
-                        Click="SwitchThemeButton_Click"/>
-                <Button Style="{StaticResource PrimaryButtonStyle}" Content="PrimaryButton"/>
+        <Grid Grid.Row="1">
+            <!-- Main Content Area -->
+            <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
+                <TextBlock Text="CheckBox Samples" FontSize="20" FontWeight="SemiBold"
+                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                           Margin="0,0,0,20"/>
+
+                <!-- Two-State CheckBoxes -->
+                <TextBlock Text="Two-State CheckBoxes:" FontWeight="Medium"
+                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                           Margin="0,0,0,8"/>
+                <CheckBox Content="Unchecked CheckBox" Margin="0,4"/>
+                <CheckBox Content="Checked CheckBox" IsChecked="True" Margin="0,4"/>
+                <CheckBox Content="Disabled Unchecked" IsEnabled="False" Margin="0,4"/>
+                <CheckBox Content="Disabled Checked" IsChecked="True" IsEnabled="False" Margin="0,4"/>
+
+                <!-- Three-State CheckBoxes -->
+                <TextBlock Text="Three-State CheckBoxes:" FontWeight="Medium"
+                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                           Margin="0,20,0,8"/>
+                <CheckBox Content="Unchecked" IsThreeState="True" Margin="0,4"/>
+                <CheckBox Content="Checked" IsChecked="True" IsThreeState="True" Margin="0,4"/>
+                <CheckBox Content="Indeterminate" IsChecked="{x:Null}" IsThreeState="True" Margin="0,4"/>
+                <CheckBox Content="Disabled Indeterminate" IsChecked="{x:Null}" IsThreeState="True" IsEnabled="False" Margin="0,4"/>
+
+                <!-- Button Samples -->
+                <TextBlock Text="Button Samples:" FontWeight="Medium"
+                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                           Margin="0,20,0,8"/>
+                <StackPanel Orientation="Horizontal" Margin="0,4">
+                    <Button Content="Default Button" Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource PrimaryButtonStyle}" Content="Primary Button"/>
+                </StackPanel>
             </StackPanel>
+
+            <!-- Theme Switch Button in Bottom-Right Corner -->
+            <Button x:Name="SwitchThemeButton"
+                    Content="Switch Theme"
+                    Click="SwitchThemeButton_Click"
+                    VerticalAlignment="Bottom"
+                    HorizontalAlignment="Right"
+                    Margin="16"/>
             
-        </Border>
+            
+        </Grid>
     </Grid>
 </Window>
