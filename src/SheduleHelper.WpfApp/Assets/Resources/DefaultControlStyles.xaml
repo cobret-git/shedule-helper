@@ -98,12 +98,12 @@
                         </Trigger>
 
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="MainBorder" Property="Background" 
+                            <Setter TargetName="MainBorder" Property="Background"
                                     Value="{DynamicResource DefaultControlBackgroundDisabledBrush}"/>
-                            <Setter TargetName="MainBorder" Property="BorderBrush" 
+                            <Setter TargetName="MainBorder" Property="BorderBrush"
                                     Value="{DynamicResource DefaultControlBorderDisabledBrush}"/>
-                            <Setter Property="Foreground" 
-                                    Value="{DynamicResource DefaultControlForegroundDisabledBrush}"/>
+                            <Setter TargetName="ContentPresenter" Property="Opacity"
+                                    Value="{DynamicResource DefaultControlDisabledOpacity}"/>
                             <Setter Property="Cursor" Value="Arrow"/>
                         </Trigger>
 
@@ -216,12 +216,12 @@
                         </Trigger>
 
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="MainBorder" Property="Background" 
+                            <Setter TargetName="MainBorder" Property="Background"
                                     Value="{DynamicResource PrimaryControlBackgroundDisabledBrush}"/>
-                            <Setter TargetName="MainBorder" Property="BorderBrush" 
+                            <Setter TargetName="MainBorder" Property="BorderBrush"
                                     Value="{DynamicResource PrimaryControlBorderDisabledBrush}"/>
-                            <Setter Property="Foreground" 
-                                    Value="{DynamicResource PrimaryControlForegroundDisabledBrush}"/>
+                            <Setter TargetName="ContentPresenter" Property="Opacity"
+                                    Value="{DynamicResource PrimaryControlDisabledOpacity}"/>
                             <Setter Property="Cursor" Value="Arrow"/>
                         </Trigger>
 

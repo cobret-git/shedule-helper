@@ -1,5 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
 
     <!-- ========================= -->
     <!--      LAYER BACKGROUNDS    -->
@@ -22,7 +23,7 @@
     <SolidColorBrush x:Key="DefaultControlForegroundDefaultBrush" x:Shared="False"  Color="#FF1A1A1A"/>
     <SolidColorBrush x:Key="DefaultControlForegroundHoverBrush" x:Shared="False"    Color="#FF1A1A1A"/>
     <SolidColorBrush x:Key="DefaultControlForegroundPressedBrush" x:Shared="False"  Color="#FF000000"/>
-    <SolidColorBrush x:Key="DefaultControlForegroundDisabledBrush" x:Shared="False" Color="#4D1A1A1A"/>
+    <system:Double x:Key="DefaultControlDisabledOpacity" x:Shared="False">0.8</system:Double>
 
     <!-- Background -->
     <SolidColorBrush x:Key="DefaultControlBackgroundDefaultBrush" x:Shared="False"  Color="#FFFFFFFF"/>
@@ -44,7 +45,7 @@
     <SolidColorBrush x:Key="PrimaryControlForegroundDefaultBrush" x:Shared="False"  Color="#FFFFFFFF"/>
     <SolidColorBrush x:Key="PrimaryControlForegroundHoverBrush" x:Shared="False"    Color="#FFFFFFFF"/>
     <SolidColorBrush x:Key="PrimaryControlForegroundPressedBrush" x:Shared="False"  Color="#FFFFFFFF"/>
-    <SolidColorBrush x:Key="PrimaryControlForegroundDisabledBrush" x:Shared="False" Color="#AAFFFFFF"/>
+    <system:Double x:Key="PrimaryControlDisabledOpacity" x:Shared="False">0.8</system:Double>
 
     <!-- Orange Backgrounds -->
     <SolidColorBrush x:Key="PrimaryControlBackgroundDefaultBrush" x:Shared="False"  Color="#FFFF6A2C"/>
@@ -79,7 +80,7 @@
     <!-- Foregrounds -->
     <SolidColorBrush x:Key="InputControlForegroundDefaultBrush" x:Shared="False" Color="#FF1A1A1A"/>
     <SolidColorBrush x:Key="InputControlForegroundFocusedBrush" x:Shared="False" Color="#FFFF6A2C"/>
-    <SolidColorBrush x:Key="InputControlForegroundDisabledBrush" x:Shared="False" Color="#4D1A1A1A"/>
+    <system:Double x:Key="InputControlDisabledOpacity" x:Shared="False">0.8</system:Double>
     <SolidColorBrush x:Key="InputControlForegroundErrorBrush" x:Shared="False" Color="#FFCC0000"/>
     <SolidColorBrush x:Key="InputControlForegroundSuccessBrush" x:Shared="False" Color="#FF1E8A4C"/>
 
