@@ -484,6 +484,192 @@
     <Style TargetType="ToggleButton" BasedOn="{StaticResource DefaultToggleButtonStyle}"/>
 
     <!-- ================================================ -->
+    <!--   DEFAULT SLIDER STYLE                          -->
+    <!--   Material Design Slider                         -->
+    <!-- ================================================ -->
+
+    <!-- Slider Thumb Style -->
+    <Style x:Key="SliderThumbStyle" TargetType="{x:Type Thumb}">
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Height" Value="18"/>
+        <Setter Property="Width" Value="18"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Thumb}">
+                    <Ellipse x:Name="ThumbEllipse"
+                             Fill="{DynamicResource AccentPrimaryBrush}"
+                             Stroke="{DynamicResource AccentPrimaryBrush}"
+                             StrokeThickness="0"
+                             SnapsToDevicePixels="True"/>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThumbEllipse" Property="Fill"
+                                    Value="{DynamicResource AccentPrimaryHoverBrush}"/>
+                            <Setter TargetName="ThumbEllipse" Property="Stroke"
+                                    Value="{DynamicResource AccentPrimaryHoverBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsDragging" Value="True">
+                            <Setter TargetName="ThumbEllipse" Property="Fill"
+                                    Value="{DynamicResource AccentPrimaryPressedBrush}"/>
+                            <Setter TargetName="ThumbEllipse" Property="Stroke"
+                                    Value="{DynamicResource AccentPrimaryPressedBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="ThumbEllipse" Property="Fill"
+                                    Value="{DynamicResource AccentPrimaryDisabledBrush}"/>
+                            <Setter TargetName="ThumbEllipse" Property="Stroke"
+                                    Value="{DynamicResource AccentPrimaryDisabledBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Slider RepeatButton Style (Track) -->
+    <Style x:Key="SliderRepeatButtonStyle" TargetType="{x:Type RepeatButton}">
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="IsTabStop" Value="False"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type RepeatButton}">
+                    <Border Background="Transparent"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Horizontal Slider Template -->
+    <ControlTemplate x:Key="HorizontalSlider" TargetType="{x:Type Slider}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Track Background -->
+            <Border x:Name="TrackBackground"
+                    Grid.Row="1"
+                    Height="4"
+                    Background="{DynamicResource DefaultControlBackgroundDefaultBrush}"
+                    BorderBrush="{DynamicResource DefaultControlBorderDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="2"
+                    VerticalAlignment="Center"
+                    SnapsToDevicePixels="True"/>
+
+            <!-- Progress Track -->
+            <Border x:Name="ProgressTrack"
+                    Grid.Row="1"
+                    Height="4"
+                    Background="{DynamicResource AccentPrimaryBrush}"
+                    CornerRadius="2"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    SnapsToDevicePixels="True"/>
+
+            <!-- Track with Thumb -->
+            <Track x:Name="PART_Track" Grid.Row="1">
+                <Track.DecreaseRepeatButton>
+                    <RepeatButton Style="{StaticResource SliderRepeatButtonStyle}" Command="Slider.DecreaseLarge"/>
+                </Track.DecreaseRepeatButton>
+                <Track.IncreaseRepeatButton>
+                    <RepeatButton Style="{StaticResource SliderRepeatButtonStyle}" Command="Slider.IncreaseLarge"/>
+                </Track.IncreaseRepeatButton>
+                <Track.Thumb>
+                    <Thumb x:Name="Thumb" Style="{StaticResource SliderThumbStyle}"/>
+                </Track.Thumb>
+            </Track>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="TrackBackground" Property="Opacity" Value="0.6"/>
+                <Setter TargetName="ProgressTrack" Property="Background"
+                        Value="{DynamicResource AccentPrimaryDisabledBrush}"/>
+                <Setter TargetName="ProgressTrack" Property="Opacity" Value="0.6"/>
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- Vertical Slider Template -->
+    <ControlTemplate x:Key="VerticalSlider" TargetType="{x:Type Slider}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto" MinWidth="{TemplateBinding MinWidth}"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Track Background -->
+            <Border x:Name="TrackBackground"
+                    Grid.Column="1"
+                    Width="4"
+                    Background="{DynamicResource DefaultControlBackgroundDefaultBrush}"
+                    BorderBrush="{DynamicResource DefaultControlBorderDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="2"
+                    HorizontalAlignment="Center"
+                    SnapsToDevicePixels="True"/>
+
+            <!-- Progress Track -->
+            <Border x:Name="ProgressTrack"
+                    Grid.Column="1"
+                    Width="4"
+                    Background="{DynamicResource AccentPrimaryBrush}"
+                    CornerRadius="2"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    SnapsToDevicePixels="True"/>
+
+            <!-- Track with Thumb -->
+            <Track x:Name="PART_Track" Grid.Column="1">
+                <Track.DecreaseRepeatButton>
+                    <RepeatButton Style="{StaticResource SliderRepeatButtonStyle}" Command="Slider.DecreaseLarge"/>
+                </Track.DecreaseRepeatButton>
+                <Track.IncreaseRepeatButton>
+                    <RepeatButton Style="{StaticResource SliderRepeatButtonStyle}" Command="Slider.IncreaseLarge"/>
+                </Track.IncreaseRepeatButton>
+                <Track.Thumb>
+                    <Thumb x:Name="Thumb" Style="{StaticResource SliderThumbStyle}"/>
+                </Track.Thumb>
+            </Track>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="TrackBackground" Property="Opacity" Value="0.6"/>
+                <Setter TargetName="ProgressTrack" Property="Background"
+                        Value="{DynamicResource AccentPrimaryDisabledBrush}"/>
+                <Setter TargetName="ProgressTrack" Property="Opacity" Value="0.6"/>
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- Slider Style -->
+    <Style x:Key="DefaultSliderStyle" TargetType="{x:Type Slider}">
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="MinHeight" Value="18"/>
+                <Setter Property="MinWidth" Value="100"/>
+                <Setter Property="Template" Value="{StaticResource HorizontalSlider}"/>
+            </Trigger>
+            <Trigger Property="Orientation" Value="Vertical">
+                <Setter Property="MinWidth" Value="18"/>
+                <Setter Property="MinHeight" Value="100"/>
+                <Setter Property="Template" Value="{StaticResource VerticalSlider}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="Slider" BasedOn="{StaticResource DefaultSliderStyle}"/>
+
+    <!-- ================================================ -->
     <!--   DEFAULT CHECKBOX STYLE                        -->
     <!--   Material Design Checkbox                       -->
     <!-- ================================================ -->

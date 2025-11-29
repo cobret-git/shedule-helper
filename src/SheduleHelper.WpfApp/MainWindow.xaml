@@ -108,71 +108,107 @@
         <Grid Grid.Row="1">
             <!-- Main Content Area -->
             <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
-                <TextBlock Text="ToggleButton Samples" FontSize="20" FontWeight="SemiBold"
+                <TextBlock Text="Slider Samples" FontSize="20" FontWeight="SemiBold"
                            Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
                            Margin="0,0,0,20"/>
 
-                <!-- Basic Toggle Buttons -->
-                <TextBlock Text="Basic Toggle Buttons:" FontWeight="Medium"
+                <!-- Basic Horizontal Slider -->
+                <TextBlock Text="Basic Horizontal Slider:" FontWeight="Medium"
                            Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
                            Margin="0,0,0,8"/>
-                <StackPanel Orientation="Horizontal" Margin="0,4">
-                    <ToggleButton Content="Unchecked" Margin="0,0,8,0" MinWidth="120"/>
-                    <ToggleButton Content="Checked" IsChecked="True" MinWidth="120"/>
-                </StackPanel>
+                <Slider x:Name="BasicSlider"
+                        Minimum="0" Maximum="100" Value="50"
+                        Width="300"
+                        Margin="0,4,0,0"/>
+                <TextBlock x:Name="BasicSliderValue"
+                           Text="{Binding ElementName=BasicSlider, Path=Value, StringFormat='Value: {0:F0}'}"
+                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,4,0,0"/>
 
-                <!-- Toggle Button Group (Manual Exclusive Selection) -->
-                <TextBlock Text="View Mode Toggle Group:" FontWeight="Medium"
+                <!-- Volume Control Example -->
+                <TextBlock Text="🔊 Volume Control:" FontWeight="Medium"
                            Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
                            Margin="0,20,0,8"/>
-                <StackPanel Orientation="Horizontal" Margin="0,4">
-                    <ToggleButton Content="📋 List" Margin="0,0,4,0" MinWidth="100" IsChecked="True"/>
-                    <ToggleButton Content="🔲 Grid" Margin="0,0,4,0" MinWidth="100"/>
-                    <ToggleButton Content="📊 Chart" MinWidth="100"/>
-                </StackPanel>
-
-                <!-- Icon Toggle Buttons -->
-                <TextBlock Text="Formatting Toggle Buttons:" FontWeight="Medium"
-                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                           Margin="0,20,0,8"/>
-                <StackPanel Orientation="Horizontal" Margin="0,4">
-                    <ToggleButton Content="B" FontWeight="Bold" Margin="0,0,4,0" MinWidth="40"/>
-                    <ToggleButton Content="I" FontStyle="Italic" Margin="0,0,4,0" MinWidth="40"/>
-                    <ToggleButton Content="U" Margin="0,0,4,0" MinWidth="40"/>
-                    <ToggleButton Content="S" MinWidth="40"/>
-                </StackPanel>
-
-                <!-- Filter Toggles -->
-                <TextBlock Text="Filter Options:" FontWeight="Medium"
-                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                           Margin="0,20,0,8"/>
-                <WrapPanel Margin="0,4">
-                    <ToggleButton Content="Active" Margin="0,0,8,8" MinWidth="80"/>
-                    <ToggleButton Content="Completed" IsChecked="True" Margin="0,0,8,8" MinWidth="80"/>
-                    <ToggleButton Content="Pending" Margin="0,0,8,8" MinWidth="80"/>
-                    <ToggleButton Content="Archived" Margin="0,0,8,8" MinWidth="80"/>
-                </WrapPanel>
-
-                <!-- Disabled States -->
-                <TextBlock Text="Disabled States:" FontWeight="Medium"
-                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                           Margin="0,20,0,8"/>
-                <StackPanel Orientation="Horizontal" Margin="0,4">
-                    <ToggleButton Content="Disabled Unchecked" IsEnabled="False" Margin="0,0,8,0" MinWidth="140"/>
-                    <ToggleButton Content="Disabled Checked" IsChecked="True" IsEnabled="False" MinWidth="140"/>
-                </StackPanel>
-
-                <!-- Interactive Toggle Example -->
-                <TextBlock Text="Interactive Example:" FontWeight="Medium"
-                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                           Margin="0,20,0,8"/>
-                <StackPanel Orientation="Horizontal" Margin="0,4">
-                    <ToggleButton x:Name="NotificationToggle" Content="🔔 Notifications" MinWidth="140" Margin="0,0,8,0"/>
-                    <TextBlock Text="(Try toggling this)"
+                <Grid Width="300" Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="🔇" Grid.Column="0"
                                Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                               VerticalAlignment="Center"
-                               FontStyle="Italic"/>
+                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Slider x:Name="VolumeSlider" Grid.Column="1"
+                            Minimum="0" Maximum="100" Value="75"/>
+                    <TextBlock Text="🔊" Grid.Column="2"
+                               Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                               VerticalAlignment="Center" Margin="8,0,0,0"/>
+                </Grid>
+
+                <!-- Range Sliders -->
+                <TextBlock Text="Brightness &amp; Contrast:" FontWeight="Medium"
+                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                           Margin="0,20,0,8"/>
+                <Grid Width="300" Margin="0,4,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Brightness:" Grid.Row="0" Grid.Column="0"
+                               Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                               VerticalAlignment="Center"/>
+                    <Slider Grid.Row="0" Grid.Column="1"
+                            Minimum="0" Maximum="100" Value="60"
+                            Margin="8,0,0,0"/>
+
+                    <TextBlock Text="Contrast:" Grid.Row="1" Grid.Column="0"
+                               Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                               VerticalAlignment="Center" Margin="0,8,0,0"/>
+                    <Slider Grid.Row="1" Grid.Column="1"
+                            Minimum="0" Maximum="100" Value="50"
+                            Margin="8,8,0,0"/>
+                </Grid>
+
+                <!-- Vertical Sliders -->
+                <TextBlock Text="Vertical Sliders (Equalizer):" FontWeight="Medium"
+                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                           Margin="0,20,0,8"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="Bass"
+                                   Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                        <Slider Orientation="Vertical" Height="120" Value="40"
+                                Minimum="0" Maximum="100"/>
+                    </StackPanel>
+                    <StackPanel Margin="0,0,16,0">
+                        <TextBlock Text="Mid"
+                                   Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                        <Slider Orientation="Vertical" Height="120" Value="50"
+                                Minimum="0" Maximum="100"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Treble"
+                                   Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                        <Slider Orientation="Vertical" Height="120" Value="60"
+                                Minimum="0" Maximum="100"/>
+                    </StackPanel>
                 </StackPanel>
+
+                <!-- Disabled State -->
+                <TextBlock Text="Disabled State:" FontWeight="Medium"
+                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                           Margin="0,20,0,8"/>
+                <Slider Width="300" Minimum="0" Maximum="100" Value="30"
+                        IsEnabled="False" Margin="0,4,0,0"/>
             </StackPanel>
 
             <!-- Theme Switch Button in Bottom-Right Corner -->
