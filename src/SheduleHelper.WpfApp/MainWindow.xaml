@@ -108,107 +108,95 @@
         <Grid Grid.Row="1">
             <!-- Main Content Area -->
             <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
-                <TextBlock Text="Slider Samples" FontSize="20" FontWeight="SemiBold"
+                <TextBlock Text="ComboBox Samples" FontSize="20" FontWeight="SemiBold"
                            Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
                            Margin="0,0,0,20"/>
 
-                <!-- Basic Horizontal Slider -->
-                <TextBlock Text="Basic Horizontal Slider:" FontWeight="Medium"
+                <!-- Basic ComboBox -->
+                <TextBlock Text="Basic ComboBox:" FontWeight="Medium"
                            Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
                            Margin="0,0,0,8"/>
-                <Slider x:Name="BasicSlider"
-                        Minimum="0" Maximum="100" Value="50"
-                        Width="300"
-                        Margin="0,4,0,0"/>
-                <TextBlock x:Name="BasicSliderValue"
-                           Text="{Binding ElementName=BasicSlider, Path=Value, StringFormat='Value: {0:F0}'}"
-                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                           HorizontalAlignment="Center"
-                           Margin="0,4,0,0"/>
+                <ComboBox x:Name="BasicComboBox" Width="300" Margin="0,4" SelectedIndex="0">
+                    <ComboBoxItem Content="Option 1"/>
+                    <ComboBoxItem Content="Option 2"/>
+                    <ComboBoxItem Content="Option 3"/>
+                    <ComboBoxItem Content="Option 4"/>
+                    <ComboBoxItem Content="Option 5"/>
+                </ComboBox>
 
-                <!-- Volume Control Example -->
-                <TextBlock Text="🔊 Volume Control:" FontWeight="Medium"
+                <!-- Country Selection -->
+                <TextBlock Text="Select Country:" FontWeight="Medium"
                            Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
                            Margin="0,20,0,8"/>
-                <Grid Width="300" Margin="0,4,0,0">
+                <ComboBox Width="300" Margin="0,4" SelectedIndex="2">
+                    <ComboBoxItem Content="🇺🇸 United States"/>
+                    <ComboBoxItem Content="🇬🇧 United Kingdom"/>
+                    <ComboBoxItem Content="🇨🇦 Canada"/>
+                    <ComboBoxItem Content="🇦🇺 Australia"/>
+                    <ComboBoxItem Content="🇩🇪 Germany"/>
+                    <ComboBoxItem Content="🇫🇷 France"/>
+                    <ComboBoxItem Content="🇯🇵 Japan"/>
+                </ComboBox>
+
+                <!-- Font Size Selection -->
+                <TextBlock Text="Font Size:" FontWeight="Medium"
+                           Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
+                           Margin="0,20,0,8"/>
+                <Grid Width="300" Margin="0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="🔇" Grid.Column="0"
+                    <TextBlock Text="Size:" Grid.Column="0"
                                Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                               VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <Slider x:Name="VolumeSlider" Grid.Column="1"
-                            Minimum="0" Maximum="100" Value="75"/>
-                    <TextBlock Text="🔊" Grid.Column="2"
-                               Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                               VerticalAlignment="Center" Margin="8,0,0,0"/>
+                               VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <ComboBox Grid.Column="1" SelectedIndex="2">
+                        <ComboBoxItem Content="Small (12px)"/>
+                        <ComboBoxItem Content="Medium (14px)"/>
+                        <ComboBoxItem Content="Large (16px)"/>
+                        <ComboBoxItem Content="Extra Large (18px)"/>
+                    </ComboBox>
                 </Grid>
 
-                <!-- Range Sliders -->
-                <TextBlock Text="Brightness &amp; Contrast:" FontWeight="Medium"
+                <!-- Many Items (Scrollable) -->
+                <TextBlock Text="Long List (Scrollable):" FontWeight="Medium"
                            Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
                            Margin="0,20,0,8"/>
-                <Grid Width="300" Margin="0,4,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                <ComboBox Width="300" Margin="0,4" MaxDropDownHeight="200">
+                    <ComboBoxItem Content="Item 1"/>
+                    <ComboBoxItem Content="Item 2"/>
+                    <ComboBoxItem Content="Item 3"/>
+                    <ComboBoxItem Content="Item 4"/>
+                    <ComboBoxItem Content="Item 5"/>
+                    <ComboBoxItem Content="Item 6"/>
+                    <ComboBoxItem Content="Item 7"/>
+                    <ComboBoxItem Content="Item 8"/>
+                    <ComboBoxItem Content="Item 9"/>
+                    <ComboBoxItem Content="Item 10"/>
+                    <ComboBoxItem Content="Item 11"/>
+                    <ComboBoxItem Content="Item 12"/>
+                </ComboBox>
 
-                    <TextBlock Text="Brightness:" Grid.Row="0" Grid.Column="0"
-                               Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                               VerticalAlignment="Center"/>
-                    <Slider Grid.Row="0" Grid.Column="1"
-                            Minimum="0" Maximum="100" Value="60"
-                            Margin="8,0,0,0"/>
-
-                    <TextBlock Text="Contrast:" Grid.Row="1" Grid.Column="0"
-                               Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                               VerticalAlignment="Center" Margin="0,8,0,0"/>
-                    <Slider Grid.Row="1" Grid.Column="1"
-                            Minimum="0" Maximum="100" Value="50"
-                            Margin="8,8,0,0"/>
-                </Grid>
-
-                <!-- Vertical Sliders -->
-                <TextBlock Text="Vertical Sliders (Equalizer):" FontWeight="Medium"
+                <!-- Editable ComboBox -->
+                <TextBlock Text="Editable ComboBox:" FontWeight="Medium"
                            Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
                            Margin="0,20,0,8"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
-                    <StackPanel Margin="0,0,16,0">
-                        <TextBlock Text="Bass"
-                                   Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                                   HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                        <Slider Orientation="Vertical" Height="120" Value="40"
-                                Minimum="0" Maximum="100"/>
-                    </StackPanel>
-                    <StackPanel Margin="0,0,16,0">
-                        <TextBlock Text="Mid"
-                                   Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                                   HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                        <Slider Orientation="Vertical" Height="120" Value="50"
-                                Minimum="0" Maximum="100"/>
-                    </StackPanel>
-                    <StackPanel>
-                        <TextBlock Text="Treble"
-                                   Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                                   HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                        <Slider Orientation="Vertical" Height="120" Value="60"
-                                Minimum="0" Maximum="100"/>
-                    </StackPanel>
-                </StackPanel>
+                <ComboBox Width="300" Margin="0,4" IsEditable="True">
+                    <ComboBoxItem Content="Red"/>
+                    <ComboBoxItem Content="Green"/>
+                    <ComboBoxItem Content="Blue"/>
+                    <ComboBoxItem Content="Yellow"/>
+                </ComboBox>
 
                 <!-- Disabled State -->
                 <TextBlock Text="Disabled State:" FontWeight="Medium"
                            Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
                            Margin="0,20,0,8"/>
-                <Slider Width="300" Minimum="0" Maximum="100" Value="30"
-                        IsEnabled="False" Margin="0,4,0,0"/>
+                <ComboBox Width="300" Margin="0,4" IsEnabled="False" SelectedIndex="1">
+                    <ComboBoxItem Content="Disabled Option 1"/>
+                    <ComboBoxItem Content="Disabled Option 2"/>
+                    <ComboBoxItem Content="Disabled Option 3"/>
+                </ComboBox>
             </StackPanel>
 
             <!-- Theme Switch Button in Bottom-Right Corner -->
