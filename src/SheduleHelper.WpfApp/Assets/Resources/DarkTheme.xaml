@@ -6,5 +6,6 @@
         <ResourceDictionary Source="/Assets/Resources/TextStyles.xaml"/>
         <ResourceDictionary Source="/Assets/Resources/StatusStyles.xaml"/>
         <ResourceDictionary Source="/Assets/Resources/NavigationStyles.xaml"/>
+        <ResourceDictionary Source="/Assets/Resources/WindowStyles.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>
