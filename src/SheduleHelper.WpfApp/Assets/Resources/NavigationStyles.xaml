@@ -190,6 +190,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Padding="{TemplateBinding Padding}"
+                            CornerRadius="6,6,0,0"
                             SnapsToDevicePixels="True">
                         <ContentPresenter x:Name="PART_SelectedContentHost"
                                         ContentSource="SelectedContent"
