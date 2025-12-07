@@ -241,51 +241,69 @@
 
     <!-- ================================================ -->
     <!--   NAVIGATION LISTBOXITEM STYLE                  -->
-    <!--   Styled as navigation button                    -->
+    <!--   GitHub-style navigation button                 -->
     <!-- ================================================ -->
 
     <Style x:Key="NavigationListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="Foreground" Value="{DynamicResource DefaultControlForegroundDefaultBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Padding" Value="12,10"/>
-        <Setter Property="Margin" Value="4,2"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="Margin" Value="4,1"/>
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="FontWeight" Value="Normal"/>
 
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                    <Border x:Name="ItemBorder"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="{TemplateBinding BorderThickness}"
-                            Padding="{TemplateBinding Padding}"
-                            Margin="{TemplateBinding Margin}"
-                            CornerRadius="6"
-                            SnapsToDevicePixels="True">
-                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-                    </Border>
+                    <Grid x:Name="RootGrid" Margin="{TemplateBinding Margin}" Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="4"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left Indicator (GitHub-style) - rounded rectangle -->
+                        <Border x:Name="LeftIndicator"
+                                Grid.Column="0"
+                                Width="4"
+                                Height="24"
+                                Background="{DynamicResource AccentPrimaryBrush}"
+                                CornerRadius="2"
+                                VerticalAlignment="Center"
+                                Opacity="0"
+                                SnapsToDevicePixels="True"/>
+
+                        <!-- Content Background - fully rounded, separate from indicator -->
+                        <Border x:Name="ContentBackground"
+                                Grid.Column="2"
+                                Background="Transparent"
+                                CornerRadius="6"
+                                SnapsToDevicePixels="True">
+                            <!-- Content Presenter -->
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                            SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                        </Border>
+                    </Grid>
 
                     <ControlTemplate.Triggers>
                         <!-- Hover State -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ItemBorder" Property="Background"
+                            <Setter TargetName="ContentBackground" Property="Background"
                                     Value="{DynamicResource DefaultControlBackgroundHoverBrush}"/>
                         </Trigger>
 
                         <!-- Selected State -->
                         <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="ItemBorder" Property="Background"
-                                    Value="{DynamicResource AccentPrimaryBrush}"/>
-                            <Setter Property="Foreground" Value="White"/>
-                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter TargetName="ContentBackground" Property="Background"
+                                    Value="{DynamicResource LayerBackgroundElevatedBrush}"/>
+                            <Setter TargetName="LeftIndicator" Property="Opacity" Value="1"/>
                         </Trigger>
 
                         <!-- Selected + Hover -->
@@ -294,7 +312,9 @@
                                 <Condition Property="IsSelected" Value="True"/>
                                 <Condition Property="IsMouseOver" Value="True"/>
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ItemBorder" Property="Background"
+                            <Setter TargetName="ContentBackground" Property="Background"
+                                    Value="{DynamicResource DefaultControlBackgroundPressedBrush}"/>
+                            <Setter TargetName="LeftIndicator" Property="Background"
                                     Value="{DynamicResource AccentPrimaryHoverBrush}"/>
                         </MultiTrigger>
 
