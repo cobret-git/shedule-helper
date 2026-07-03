@@ -81,56 +81,37 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="6">
                         <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
+                            <!-- Main Content Area (full window) -->
+                            <ContentPresenter Margin="0"
+                                            Content="{TemplateBinding Content}"
+                                            ContentTemplate="{TemplateBinding ContentTemplate}"/>
 
-                            <!-- Title Bar -->
-                            <Border Grid.Row="0"
-                                    Height="32"
-                                    Background="Transparent"
-                                    x:Name="PART_TitleBar">
-                                <DockPanel VerticalAlignment="Center" LastChildFill="True">
-                                    <!-- Title Text -->
-                                    <TextBlock Text="{TemplateBinding Title}"
-                                               VerticalAlignment="Center"
-                                               Margin="12,0"
-                                               Foreground="{DynamicResource DefaultControlForegroundDefaultBrush}"
-                                               shell:WindowChrome.IsHitTestVisibleInChrome="True"/>
+                            <!-- Window Control Buttons (floating on top) -->
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Top"
+                                        HorizontalAlignment="Right"
+                                        Background="Transparent"
+                                        Panel.ZIndex="1000"
+                                        shell:WindowChrome.IsHitTestVisibleInChrome="True">
 
-                                    <!-- Window Control Buttons -->
-                                    <StackPanel Orientation="Horizontal"
-                                                VerticalAlignment="Center"
-                                                HorizontalAlignment="Right"
-                                                Background="Transparent"
-                                                shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                                <!-- Minimize Button -->
+                                <Button x:Name="PART_MinimizeButton"
+                                        Style="{StaticResource WindowButtonStyle}">
+                                    <TextBlock Text="&#xE921;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                                </Button>
 
-                                        <!-- Minimize Button -->
-                                        <Button x:Name="PART_MinimizeButton"
-                                                Style="{StaticResource WindowButtonStyle}">
-                                            <TextBlock Text="&#xE921;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
-                                        </Button>
+                                <!-- Maximize/Restore Button -->
+                                <Button x:Name="PART_MaximizeRestoreButton"
+                                        Style="{StaticResource WindowButtonStyle}">
+                                    <TextBlock x:Name="MaximizeRestoreIcon" Text="&#xE922;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                                </Button>
 
-                                        <!-- Maximize/Restore Button -->
-                                        <Button x:Name="PART_MaximizeRestoreButton"
-                                                Style="{StaticResource WindowButtonStyle}">
-                                            <TextBlock x:Name="MaximizeRestoreIcon" Text="&#xE922;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
-                                        </Button>
-
-                                        <!-- Close Button -->
-                                        <Button x:Name="PART_CloseButton"
-                                                Style="{StaticResource WindowCloseButtonStyle}">
-                                            <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
-                                        </Button>
-                                    </StackPanel>
-                                </DockPanel>
-                            </Border>
-
-                            <!-- Main Content Area -->
-                            <ContentPresenter Grid.Row="1" Margin="0"
-                                              Content="{TemplateBinding Content}"
-                                              ContentTemplate="{TemplateBinding ContentTemplate}"/>
+                                <!-- Close Button -->
+                                <Button x:Name="PART_CloseButton"
+                                        Style="{StaticResource WindowCloseButtonStyle}">
+                                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons" FontSize="12"/>
+                                </Button>
+                            </StackPanel>
                         </Grid>
                     </Border>
 
