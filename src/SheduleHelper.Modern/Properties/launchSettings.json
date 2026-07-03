@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SheduleHelper.Modern (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "SheduleHelper.Modern (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
