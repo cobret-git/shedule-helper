@@ -432,6 +432,38 @@ namespace SheduleHelper.Core.Models
             return await UserSettings.FirstOrDefaultAsync(s => s.UserId == userId, cancellationToken);
         }
 
+        /// <summary>
+        /// Retrieves all of the specified user's attendance logs whose clock-in falls within the given period.
+        /// Intended as raw input for <see cref="TimeBudgetCalculator"/> rolling budget calculations.
+        /// </summary>
+        /// <param name="userId">The identifier of the user whose attendance logs should be retrieved.</param>
+        /// <param name="from">The inclusive start of the period.</param>
+        /// <param name="to">The inclusive end of the period.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns>A list containing the matching <see cref="AttendanceLog"/> entities.</returns>
+        public async Task<List<AttendanceLog>> GetAttendanceLogsAsync(int userId, DateTime from, DateTime to, CancellationToken cancellationToken)
+        {
+            return await AttendanceLogs
+                .Where(a => a.UserId == userId && a.ClockIn >= from && a.ClockIn <= to)
+                .ToListAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Retrieves all of the specified user's project time log segments whose start time falls within the given period.
+        /// Intended as raw input for <see cref="TimeBudgetCalculator"/> per-project/per-task time summaries.
+        /// </summary>
+        /// <param name="userId">The identifier of the user whose project time logs should be retrieved.</param>
+        /// <param name="from">The inclusive start of the period.</param>
+        /// <param name="to">The inclusive end of the period.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns>A list containing the matching <see cref="ProjectTimeLog"/> entities.</returns>
+        public async Task<List<ProjectTimeLog>> GetProjectTimeLogsAsync(int userId, DateTime from, DateTime to, CancellationToken cancellationToken)
+        {
+            return await ProjectTimeLogs
+                .Where(l => l.AttendanceLog.UserId == userId && l.StartTime >= from && l.StartTime <= to)
+                .ToListAsync(cancellationToken);
+        }
+
         #endregion
 
         #region Update Methods
