@@ -97,7 +97,7 @@ namespace SheduleHelper.Core.Models
             return userSetting.LunchStrategy switch
             {
                 LunchStrategy.FixedWindow when clockInTime <= userSetting.LunchStartTime && clockOutTime >= userSetting.LunchEndTime
-                    => (userSetting.LunchEndTime - userSetting.LunchStartTime).ToTimeSpan(),
+                    => userSetting.LunchEndTime - userSetting.LunchStartTime,
                 LunchStrategy.DurationBased when rawTime >= TimeSpan.FromHours(6)
                     => TimeSpan.FromMinutes(userSetting.LunchDurationMinutes),
                 _ => TimeSpan.Zero
