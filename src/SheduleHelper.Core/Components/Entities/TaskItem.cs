@@ -42,10 +42,10 @@ namespace SheduleHelper.Core.Components.Entities
         public string? Description { get; set; }
 
         /// <summary>
-        /// Current status of the task (e.g., 'Todo', 'In Progress', 'Done'). Maps to 'Status'.
+        /// Current status of the task. Maps to 'Status'.
         /// </summary>
         [Column("Status")]
-        public string Status { get; set; } = "Todo";
+        public TaskItemStatus Status { get; set; } = TaskItemStatus.Todo;
 
         /// <summary>
         /// Timestamp indicating when the task was created. Maps to 'CreatedAt'.

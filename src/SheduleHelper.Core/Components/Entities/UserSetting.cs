@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -26,34 +27,34 @@ namespace SheduleHelper.Core.Components.Entities
         public decimal TargetShiftHours { get; set; } = 8.00m;
 
         /// <summary>
-        /// The default daily start time. Format matches SQLite 'HH:mm:ss' text representation. Maps to 'DefaultClockInTime'.
+        /// The default daily start time. Maps to 'DefaultClockInTime'.
         /// </summary>
         [Column("DefaultClockInTime")]
-        public string DefaultClockInTime { get; set; } = "08:30:00";
+        public TimeOnly DefaultClockInTime { get; set; } = new(8, 30);
 
         /// <summary>
-        /// The default daily end time. Format matches SQLite 'HH:mm:ss' text representation. Maps to 'DefaultClockOutTime'.
+        /// The default daily end time. Maps to 'DefaultClockOutTime'.
         /// </summary>
         [Column("DefaultClockOutTime")]
-        public string DefaultClockOutTime { get; set; } = "17:00:00";
+        public TimeOnly DefaultClockOutTime { get; set; } = new(17, 0);
 
         /// <summary>
-        /// Defines the user's lunch break strategy (e.g., 'FIXED_WINDOW', 'AUTO_DEDUCT'). Maps to 'LunchStrategy'.
+        /// Defines the user's lunch break strategy. Maps to 'LunchStrategy'.
         /// </summary>
         [Column("LunchStrategy")]
-        public string LunchStrategy { get; set; } = "FIXED_WINDOW";
+        public LunchStrategy LunchStrategy { get; set; } = LunchStrategy.FixedWindow;
 
         /// <summary>
         /// The daily start time of the lunch window. Maps to 'LunchStartTime'.
         /// </summary>
         [Column("LunchStartTime")]
-        public string LunchStartTime { get; set; } = "11:00:00";
+        public TimeOnly LunchStartTime { get; set; } = new(11, 0);
 
         /// <summary>
         /// The daily end time of the lunch window. Maps to 'LunchEndTime'.
         /// </summary>
         [Column("LunchEndTime")]
-        public string LunchEndTime { get; set; } = "11:30:00";
+        public TimeOnly LunchEndTime { get; set; } = new(11, 30);
 
         /// <summary>
         /// Total lunch duration in minutes. Maps to 'LunchDurationMinutes'.
