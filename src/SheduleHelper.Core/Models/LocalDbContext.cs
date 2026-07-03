@@ -549,6 +549,90 @@ namespace SheduleHelper.Core.Models
 
         #region Delete Methods
 
+        /// <summary>
+        /// Deletes the specified user and relies on the database's cascade configuration to remove
+        /// their settings, projects, and attendance logs.
+        /// </summary>
+        /// <param name="userId">The identifier of the user to delete.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns><see langword="true"/> if the user was found and deleted; otherwise, <see langword="false"/>.</returns>
+        public async Task<bool> DeleteUserAsync(int userId, CancellationToken cancellationToken)
+        {
+            var user = await Users.FindAsync(new object?[] { userId }, cancellationToken);
+            if (user is null)
+            {
+                return false;
+            }
+
+            Users.Remove(user);
+            await SaveChangesAsync(cancellationToken);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Deletes the specified project and relies on the database's cascade configuration to remove
+        /// its tasks and project time logs.
+        /// </summary>
+        /// <param name="projectId">The identifier of the project to delete.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns><see langword="true"/> if the project was found and deleted; otherwise, <see langword="false"/>.</returns>
+        public async Task<bool> DeleteProjectAsync(int projectId, CancellationToken cancellationToken)
+        {
+            var project = await Projects.FindAsync(new object?[] { projectId }, cancellationToken);
+            if (project is null)
+            {
+                return false;
+            }
+
+            Projects.Remove(project);
+            await SaveChangesAsync(cancellationToken);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Deletes the specified task. Any <see cref="ProjectTimeLog"/> referencing it has its
+        /// <see cref="ProjectTimeLog.TaskId"/> set to <see langword="null"/> by the database's cascade configuration.
+        /// </summary>
+        /// <param name="taskId">The identifier of the task to delete.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns><see langword="true"/> if the task was found and deleted; otherwise, <see langword="false"/>.</returns>
+        public async Task<bool> DeleteTaskAsync(int taskId, CancellationToken cancellationToken)
+        {
+            var task = await Tasks.FindAsync(new object?[] { taskId }, cancellationToken);
+            if (task is null)
+            {
+                return false;
+            }
+
+            Tasks.Remove(task);
+            await SaveChangesAsync(cancellationToken);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Deletes the specified attendance log and relies on the database's cascade configuration to remove
+        /// its project time logs.
+        /// </summary>
+        /// <param name="attendanceLogId">The identifier of the attendance log to delete.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns><see langword="true"/> if the attendance log was found and deleted; otherwise, <see langword="false"/>.</returns>
+        public async Task<bool> DeleteAttendanceLogAsync(int attendanceLogId, CancellationToken cancellationToken)
+        {
+            var attendanceLog = await AttendanceLogs.FindAsync(new object?[] { attendanceLogId }, cancellationToken);
+            if (attendanceLog is null)
+            {
+                return false;
+            }
+
+            AttendanceLogs.Remove(attendanceLog);
+            await SaveChangesAsync(cancellationToken);
+
+            return true;
+        }
+
         #endregion
 
         #region Helpers
