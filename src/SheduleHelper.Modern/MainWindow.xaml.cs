@@ -1,31 +1,39 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using SheduleHelper.Modern.Services;
 
 namespace SheduleHelper.Modern
 {
     /// <summary>
-    /// An empty window that can be used on its own or navigated to within a Frame.
+    /// The application's main window, hosting the breadcrumb bar and page navigation Frame.
     /// </summary>
     public sealed partial class MainWindow : Window
     {
+        #region Fields
+        #endregion
+
+        #region Constructors
+
         public MainWindow()
         {
             InitializeComponent();
+
+            //NavigationService.Initialize(ContentFrame);
+            //NavigationService.NavigateToHome();
         }
+
+        #endregion
+
+        #region Handlers
+
+        private void AppBreadcrumbBar_ItemClicked(BreadcrumbBar sender, BreadcrumbBarItemClickedEventArgs args)
+        {
+            //if (args.Item is BreadcrumbItem item)
+            //{
+            //    NavigationService.NavigateToBreadcrumbItem(item);
+            //}
+        }
+
+        #endregion
     }
 }
