@@ -1,23 +1,9 @@
-﻿using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Xaml;
+using SheduleHelper.Core.Services;
+using SheduleHelper.Core.ViewModels;
+using SheduleHelper.Modern.Services;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace SheduleHelper.Modern
 {
@@ -26,7 +12,13 @@ namespace SheduleHelper.Modern
     /// </summary>
     public partial class App : Application
     {
+        #region Fields
+
         private Window? _window;
+
+        #endregion
+
+        #region Constructors
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
@@ -34,17 +26,57 @@ namespace SheduleHelper.Modern
         /// </summary>
         public App()
         {
+            Services = ConfigureServices();
             InitializeComponent();
         }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Gets the current <see cref="App"/> instance in use.
+        /// </summary>
+        public new static App Current => (App)Application.Current;
+
+        /// <summary>
+        /// Gets the <see cref="IServiceProvider"/> instance used to resolve application services and ViewModels.
+        /// </summary>
+        public IServiceProvider Services { get; }
+
+        #endregion
+
+        #region Handlers
 
         /// <summary>
         /// Invoked when the application is launched.
         /// </summary>
         /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+        protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
             _window = new MainWindow();
             _window.Activate();
         }
+
+        #endregion
+
+        #region Helpers
+
+        /// <summary>
+        /// Configures the services and ViewModels for the application.
+        /// </summary>
+        private static IServiceProvider ConfigureServices()
+        {
+            var services = new ServiceCollection();
+
+            services.AddSingleton<DialogService>();
+            services.AddSingleton<IDialogService>(sp => sp.GetRequiredService<DialogService>());
+
+            services.AddTransient<EditProjectDialogViewModel>();
+
+            return services.BuildServiceProvider();
+        }
+
+        #endregion
     }
 }
