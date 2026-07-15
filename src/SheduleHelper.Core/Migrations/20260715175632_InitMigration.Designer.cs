@@ -11,7 +11,7 @@ using SheduleHelper.Core.Models;
 namespace SheduleHelper.Core.Migrations
 {
     [DbContext(typeof(LocalDbContext))]
-    [Migration("20260715173030_InitMigration")]
+    [Migration("20260715175632_InitMigration")]
     partial class InitMigration
     {
         /// <inheritdoc />
@@ -64,6 +64,7 @@ namespace SheduleHelper.Core.Migrations
                         .HasColumnName("CreatedAt");
 
                     b.Property<string>("Description")
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT")
                         .HasColumnName("Description");
 
@@ -73,6 +74,7 @@ namespace SheduleHelper.Core.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT")
                         .HasColumnName("Name");
 
@@ -140,6 +142,7 @@ namespace SheduleHelper.Core.Migrations
                         .HasColumnName("CreatedAt");
 
                     b.Property<string>("Description")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT")
                         .HasColumnName("Description");
 
@@ -154,6 +157,7 @@ namespace SheduleHelper.Core.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
+                        .HasMaxLength(150)
                         .HasColumnType("TEXT")
                         .HasColumnName("Title");
 
@@ -177,11 +181,13 @@ namespace SheduleHelper.Core.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
+                        .HasMaxLength(254)
                         .HasColumnType("TEXT")
                         .HasColumnName("Email");
 
                     b.Property<string>("Username")
                         .IsRequired()
+                        .HasMaxLength(50)
                         .HasColumnType("TEXT")
                         .HasColumnName("Username");
 

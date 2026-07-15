@@ -26,6 +26,7 @@ namespace SheduleHelper.Core.Components.Entities
         /// The unique username of the user. Maps to 'Username'.
         /// </summary>
         [Required]
+        [MaxLength(50)]
         [Column("Username")]
         public string Username { get; set; } = null!;
 
@@ -33,6 +34,7 @@ namespace SheduleHelper.Core.Components.Entities
         /// The unique email address of the user. Maps to 'Email'.
         /// </summary>
         [Required]
+        [MaxLength(254)]
         [Column("Email")]
         public string Email { get; set; } = null!;
 

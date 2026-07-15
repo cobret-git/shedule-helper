@@ -32,12 +32,14 @@ namespace SheduleHelper.Core.Components.Entities
         /// Name of the project. Maps to 'Name'.
         /// </summary>
         [Required]
+        [MaxLength(100)]
         [Column("Name")]
         public string Name { get; set; } = null!;
 
         /// <summary>
         /// Detailed description of the project. Maps to 'Description'.
         /// </summary>
+        [MaxLength(500)]
         [Column("Description")]
         public string? Description { get; set; }
 

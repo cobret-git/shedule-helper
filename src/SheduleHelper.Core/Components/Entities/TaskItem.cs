@@ -32,12 +32,14 @@ namespace SheduleHelper.Core.Components.Entities
         /// Title of the task. Maps to 'Title'.
         /// </summary>
         [Required]
+        [MaxLength(150)]
         [Column("Title")]
         public string Title { get; set; } = null!;
 
         /// <summary>
         /// Detailed description of the task. Maps to 'Description'.
         /// </summary>
+        [MaxLength(1000)]
         [Column("Description")]
         public string? Description { get; set; }
 
