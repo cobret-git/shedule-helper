@@ -69,8 +69,20 @@ namespace SheduleHelper.Modern
         {
             var services = new ServiceCollection();
 
+            services.AddSingleton<IDatabasePathProvider, DatabasePathProvider>();
+            services.AddSingleton<ILocalDbContextFactory, LocalDbContextFactory>();
+
+            services.AddSingleton<NavigationService>();
+            services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
+
             services.AddSingleton<DialogService>();
             services.AddSingleton<IDialogService>(sp => sp.GetRequiredService<DialogService>());
+
+            services.AddTransient<HomeViewModel>();
+            services.AddTransient<ProjectsAndTasksViewModel>();
+            services.AddTransient<ProjectViewModel>();
+            services.AddTransient<HistoryAndReportsViewModel>();
+            services.AddTransient<SettingsViewModel>();
 
             services.AddTransient<EditProjectDialogViewModel>();
 

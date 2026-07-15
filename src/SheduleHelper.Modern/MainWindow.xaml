@@ -13,18 +13,18 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid>
+    <Grid x:Name="RootGrid" Loaded="RootGrid_Loaded">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!--<BreadcrumbBar
+        <BreadcrumbBar
             x:Name="AppBreadcrumbBar"
             Grid.Row="0"
             Margin="16,12"
             ItemsSource="{x:Bind NavigationService.Breadcrumbs}"
-            ItemClicked="AppBreadcrumbBar_ItemClicked" />-->
+            ItemClicked="AppBreadcrumbBar_ItemClicked" />
 
         <Frame x:Name="ContentFrame" Grid.Row="1" />
     </Grid>

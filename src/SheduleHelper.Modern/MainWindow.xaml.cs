@@ -1,5 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using SheduleHelper.Core.Services;
 using SheduleHelper.Modern.Services;
 
 namespace SheduleHelper.Modern
@@ -10,6 +12,10 @@ namespace SheduleHelper.Modern
     public sealed partial class MainWindow : Window
     {
         #region Fields
+
+        private readonly NavigationService _navigationService;
+        private readonly DialogService _dialogService;
+
         #endregion
 
         #region Constructors
@@ -18,20 +24,37 @@ namespace SheduleHelper.Modern
         {
             InitializeComponent();
 
-            //NavigationService.Initialize(ContentFrame);
-            //NavigationService.NavigateToHome();
+            _navigationService = App.Current.Services.GetRequiredService<NavigationService>();
+            _dialogService = App.Current.Services.GetRequiredService<DialogService>();
+
+            _navigationService.Initialize(ContentFrame);
+            _navigationService.NavigateToHome();
         }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Drives page navigation and the breadcrumb trail bound by <see cref="AppBreadcrumbBar"/>.
+        /// </summary>
+        public INavigationService NavigationService => _navigationService;
 
         #endregion
 
         #region Handlers
 
+        private void RootGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            _dialogService.Initialize(RootGrid.XamlRoot);
+        }
+
         private void AppBreadcrumbBar_ItemClicked(BreadcrumbBar sender, BreadcrumbBarItemClickedEventArgs args)
         {
-            //if (args.Item is BreadcrumbItem item)
-            //{
-            //    NavigationService.NavigateToBreadcrumbItem(item);
-            //}
+            if (args.Item is BreadcrumbItem item)
+            {
+                _navigationService.NavigateToBreadcrumbItem(item);
+            }
         }
 
         #endregion
