@@ -1,9 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
+using Serilog;
 using SheduleHelper.Core.Services;
 using SheduleHelper.Core.ViewModels;
 using SheduleHelper.Modern.Services;
 using System;
+using System.Threading;
 
 namespace SheduleHelper.Modern
 {
@@ -52,8 +54,10 @@ namespace SheduleHelper.Modern
         /// Invoked when the application is launched.
         /// </summary>
         /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(LaunchActivatedEventArgs args)
+        protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
+            await Services.GetRequiredService<ICurrentUserContext>().EnsureInitializedAsync(CancellationToken.None);
+
             _window = new MainWindow();
             _window.Activate();
         }
@@ -69,8 +73,11 @@ namespace SheduleHelper.Modern
         {
             var services = new ServiceCollection();
 
+            services.AddSingleton(Log.Logger);
+
             services.AddSingleton<IDatabasePathProvider, DatabasePathProvider>();
             services.AddSingleton<ILocalDbContextFactory, LocalDbContextFactory>();
+            services.AddSingleton<ICurrentUserContext, CurrentUserContext>();
 
             services.AddSingleton<NavigationService>();
             services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
