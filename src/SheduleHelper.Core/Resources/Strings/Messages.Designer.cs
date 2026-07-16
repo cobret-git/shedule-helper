@@ -95,5 +95,23 @@ namespace SheduleHelper.Core.Resources.Strings {
                 return ResourceManager.GetString("error_taskSaveUnexpected", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Something went wrong while saving your settings. Please try again..
+        /// </summary>
+        internal static string error_settingsSaveUnexpected {
+            get {
+                return ResourceManager.GetString("error_settingsSaveUnexpected", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Something went wrong while loading your settings. Please try again..
+        /// </summary>
+        internal static string error_settingsLoadUnexpected {
+            get {
+                return ResourceManager.GetString("error_settingsLoadUnexpected", resourceCulture);
+            }
+        }
     }
 }
