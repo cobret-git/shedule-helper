@@ -3,13 +3,13 @@ using SheduleHelper.Core.Services;
 
 namespace SheduleHelper.Core.ViewModels
 {
-    public partial class EditTaskItemDialog : DialogViewModel<TaskItem?, TaskItem?>
+    public partial class EditTaskItemDialogViewModel : DialogViewModel<TaskItem?, TaskItem?>
     {
         #region Fields
         #endregion
 
         #region Constructors
-        public EditTaskItemDialog(IDialogService dialogService) : base(dialogService)
+        public EditTaskItemDialogViewModel(IDialogService dialogService) : base(dialogService)
         {
         }
         #endregion
