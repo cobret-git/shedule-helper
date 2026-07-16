@@ -33,7 +33,13 @@ namespace SheduleHelper.Core.ViewModels
         [ObservableProperty] private DateTime? _clockInTime;
         [ObservableProperty] private DateTime? _clockOutTime;
         [ObservableProperty] private TimeOnly _selectedCustomTime;
-        [ObservableProperty] private DateTime _forgottenSessionClockOutTime;
+        [ObservableProperty] private DateTime _forgottenSessionDate;
+        [ObservableProperty] private TimeOnly _forgottenSessionClockOutTimeOfDay;
+        [ObservableProperty] private TimeOnly _defaultClockInTimeOfDay;
+        [ObservableProperty] private TimeOnly _defaultClockOutTimeOfDay;
+        [ObservableProperty] private TimeSpan _workedToday;
+        [ObservableProperty] private TimeSpan _targetShiftDuration;
+        [ObservableProperty] private TimeSpan _rollingMonthlyBalance;
         private string? _message;
         #endregion
 
@@ -50,6 +56,11 @@ namespace SheduleHelper.Core.ViewModels
         #endregion
 
         #region Properties
+        /// <summary>
+        /// Static greeting shown on the Current Session card. Not yet time-of-day or user aware -
+        /// a placeholder until greetings are designed properly.
+        /// </summary>
+        public string Greeting => "Good day! Ready to make progress?";
         public string? Message { get => _message; private set { if (SetProperty(ref _message, value)) OnPropertyChanged(nameof(MessageVisible)); } }
         public bool MessageVisible { get => !string.IsNullOrWhiteSpace(Message); }
         public bool IsBusy { get => _isBusy; private set { if (SetProperty(ref _isBusy, value)) NotifyCanExecuteChanged(); } }
@@ -63,7 +74,7 @@ namespace SheduleHelper.Core.ViewModels
         [RelayCommand(CanExecute = nameof(CanClockOut))] private Task ClockOutAtDefaultTimeAsync() => PerformClockOutAsync(DateTime.Today + _userSetting.DefaultClockOutTime.ToTimeSpan());
         [RelayCommand(CanExecute = nameof(CanClockOut))] private Task ClockOutAtCustomTimeAsync() => PerformClockOutAsync(DateTime.Today + SelectedCustomTime.ToTimeSpan());
         [RelayCommand(CanExecute = nameof(CanResolveForgottenSession))] private Task ResolveForgottenSessionAtDefaultTimeAsync() => PerformClockOutAsync(_openAttendanceLog!.ClockIn.Date + _userSetting.DefaultClockOutTime.ToTimeSpan());
-        [RelayCommand(CanExecute = nameof(CanResolveForgottenSession))] private Task ResolveForgottenSessionAtCustomTimeAsync() => PerformClockOutAsync(ForgottenSessionClockOutTime);
+        [RelayCommand(CanExecute = nameof(CanResolveForgottenSession))] private Task ResolveForgottenSessionAtCustomTimeAsync() => PerformClockOutAsync(_openAttendanceLog!.ClockIn.Date + ForgottenSessionClockOutTimeOfDay.ToTimeSpan());
         #endregion
 
         #region Methods
@@ -95,6 +106,9 @@ namespace SheduleHelper.Core.ViewModels
 
                 await using var dbContext = _localDbFactory.CreateDbContext();
                 _userSetting = await dbContext.GetUserSettingAsync(userId, ct) ?? await dbContext.CreateUserSettingAsync(userId, ct);
+                DefaultClockInTimeOfDay = _userSetting.DefaultClockInTime;
+                DefaultClockOutTimeOfDay = _userSetting.DefaultClockOutTime;
+                TargetShiftDuration = TimeSpan.FromHours((double)_userSetting.TargetShiftHours);
 
                 await RefreshDayStateAsync(dbContext, ct);
             }
@@ -193,26 +207,34 @@ namespace SheduleHelper.Core.ViewModels
                 DayState = isToday ? AttendanceDayState.ClockedIn : AttendanceDayState.ForgottenSession;
                 ClockInTime = openLog.ClockIn;
                 ClockOutTime = null;
+                WorkedToday = isToday ? TimeBudgetCalculator.CalculateNetWorkedTime(openLog, _userSetting, DateTime.Now) : TimeSpan.Zero;
                 if (!isToday)
                 {
-                    ForgottenSessionClockOutTime = openLog.ClockIn.Date + _userSetting.DefaultClockOutTime.ToTimeSpan();
+                    ForgottenSessionDate = openLog.ClockIn.Date;
+                    ForgottenSessionClockOutTimeOfDay = _userSetting.DefaultClockOutTime;
                 }
-                return;
             }
-
-            var todayStart = DateTime.Today;
-            var todayEnd = todayStart.AddDays(1).AddTicks(-1);
-            var todayLog = (await dbContext.GetAttendanceLogsAsync(userId, todayStart, todayEnd, ct)).FirstOrDefault();
-
-            _openAttendanceLog = null;
-            _todayClosedAttendanceLog = todayLog;
-            DayState = todayLog is not null ? AttendanceDayState.DayComplete : AttendanceDayState.NotClockedIn;
-            ClockInTime = todayLog?.ClockIn;
-            ClockOutTime = todayLog?.ClockOut;
-            if (todayLog is null)
+            else
             {
-                SelectedCustomTime = TimeOnly.FromDateTime(DateTime.Now);
+                var todayStart = DateTime.Today;
+                var todayEnd = todayStart.AddDays(1).AddTicks(-1);
+                var todayLog = (await dbContext.GetAttendanceLogsAsync(userId, todayStart, todayEnd, ct)).FirstOrDefault();
+
+                _openAttendanceLog = null;
+                _todayClosedAttendanceLog = todayLog;
+                DayState = todayLog is not null ? AttendanceDayState.DayComplete : AttendanceDayState.NotClockedIn;
+                ClockInTime = todayLog?.ClockIn;
+                ClockOutTime = todayLog?.ClockOut;
+                WorkedToday = todayLog is not null ? TimeBudgetCalculator.CalculateNetWorkedTime(todayLog, _userSetting, todayLog.ClockOut!.Value) : TimeSpan.Zero;
+                if (todayLog is null)
+                {
+                    SelectedCustomTime = TimeOnly.FromDateTime(DateTime.Now);
+                }
             }
+
+            var monthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            var monthLogs = await dbContext.GetAttendanceLogsAsync(userId, monthStart, DateTime.Now, ct);
+            RollingMonthlyBalance = TimeBudgetCalculator.CalculateRollingBudget(monthLogs, _userSetting);
         }
         private void NotifyCanExecuteChanged()
         {

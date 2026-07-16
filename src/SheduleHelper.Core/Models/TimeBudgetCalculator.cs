@@ -29,10 +29,29 @@ namespace SheduleHelper.Core.Models
             }
 
             var rawTime = attendanceLog.ClockOut.Value - attendanceLog.ClockIn;
-            var breakTime = CalculateBreakTime(attendanceLog, rawTime, userSetting);
+            var breakTime = CalculateBreakTime(attendanceLog.ClockIn, attendanceLog.ClockOut.Value, rawTime, userSetting);
             var netTime = rawTime - breakTime;
 
             return netTime - TimeSpan.FromHours((double)userSetting.TargetShiftHours);
+        }
+
+        /// <summary>
+        /// Calculates the net worked time so far for an attendance session as of a given instant,
+        /// applying the same break-time deduction rules as <see cref="CalculateDailyBalance"/>.
+        /// Unlike that method, this does not subtract the target shift hours and works for a still-open
+        /// session (pass <see cref="DateTime.Now"/> as <paramref name="asOf"/>) as well as a completed one
+        /// (pass <see cref="AttendanceLog.ClockOut"/>).
+        /// </summary>
+        /// <param name="attendanceLog">The attendance log being evaluated.</param>
+        /// <param name="userSetting">The user's settings, providing the lunch strategy and its parameters.</param>
+        /// <param name="asOf">The instant to measure worked time up to.</param>
+        /// <returns>The net worked time ($T_{net}$) from clock-in up to <paramref name="asOf"/>.</returns>
+        public static TimeSpan CalculateNetWorkedTime(AttendanceLog attendanceLog, UserSetting userSetting, DateTime asOf)
+        {
+            var rawTime = asOf - attendanceLog.ClockIn;
+            var breakTime = CalculateBreakTime(attendanceLog.ClockIn, asOf, rawTime, userSetting);
+
+            return rawTime - breakTime;
         }
 
         /// <summary>
@@ -85,14 +104,15 @@ namespace SheduleHelper.Core.Models
         /// <summary>
         /// Determines the break time to deduct from a day's raw attendance time, based on the user's lunch strategy.
         /// </summary>
-        /// <param name="attendanceLog">The attendance log being evaluated, used to check whether it spans the fixed lunch window.</param>
+        /// <param name="clockIn">The session's clock-in timestamp.</param>
+        /// <param name="clockOutOrAsOf">The session's clock-out timestamp, or the instant being measured up to for a still-open session.</param>
         /// <param name="rawTime">The raw attendance time ($T_{raw}$) for the day.</param>
         /// <param name="userSetting">The user's settings, providing the lunch strategy and its parameters.</param>
         /// <returns>The break time to deduct ($T_{break}$).</returns>
-        private static TimeSpan CalculateBreakTime(AttendanceLog attendanceLog, TimeSpan rawTime, UserSetting userSetting)
+        private static TimeSpan CalculateBreakTime(DateTime clockIn, DateTime clockOutOrAsOf, TimeSpan rawTime, UserSetting userSetting)
         {
-            var clockInTime = TimeOnly.FromDateTime(attendanceLog.ClockIn);
-            var clockOutTime = TimeOnly.FromDateTime(attendanceLog.ClockOut!.Value);
+            var clockInTime = TimeOnly.FromDateTime(clockIn);
+            var clockOutTime = TimeOnly.FromDateTime(clockOutOrAsOf);
 
             return userSetting.LunchStrategy switch
             {

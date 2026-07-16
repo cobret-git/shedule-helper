@@ -1,11 +1,230 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="SheduleHelper.Modern.View.HomePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:SheduleHelper.Modern.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid />
+    <Page.Resources>
+        <converters:AttendanceDayStateToVisibilityConverter x:Key="DayStateToVisibility" />
+        <converters:TimeOnlyToTimeSpanConverter x:Key="TimeOnlyToTimeSpanConverter" />
+        <converters:TimeSpanToMinutesConverter x:Key="TimeSpanToMinutesConverter" />
+    </Page.Resources>
+
+    <Grid Padding="24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <InfoBar
+            Grid.Row="0"
+            IsClosable="False"
+            IsOpen="{x:Bind ViewModel.MessageVisible, Mode=OneWay}"
+            Message="{x:Bind ViewModel.Message, Mode=OneWay}"
+            Severity="Error" />
+
+        <!-- Current Session + Daily Status -->
+        <Grid Grid.Row="1" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <Border
+                Grid.Column="0"
+                Padding="24"
+                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                CornerRadius="{ThemeResource ControlCornerRadius}">
+                <StackPanel VerticalAlignment="Center" Spacing="4">
+                    <TextBlock
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Foreground="{ThemeResource TextOnAccentFillColorSecondaryBrush}"
+                        Text="CURRENT SESSION" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                        Style="{StaticResource DisplayTextBlockStyle}"
+                        Text="{x:Bind FormatDuration(ViewModel.WorkedToday), Mode=OneWay}" />
+                    <TextBlock
+                        Margin="0,8,0,0"
+                        Foreground="{ThemeResource TextOnAccentFillColorSecondaryBrush}"
+                        Style="{StaticResource BodyTextBlockStyle}"
+                        Text="{x:Bind ViewModel.Greeting}" />
+                </StackPanel>
+            </Border>
+
+            <Border
+                Grid.Column="1"
+                Padding="20"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{ThemeResource ControlCornerRadius}">
+                <StackPanel Spacing="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Daily Status" />
+                        <Border
+                            Grid.Column="1"
+                            Padding="8,4"
+                            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                            CornerRadius="{ThemeResource ControlCornerRadius}">
+                            <TextBlock
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="{x:Bind FormatMonthlyBalance(ViewModel.RollingMonthlyBalance), Mode=OneWay}" />
+                        </Border>
+                    </Grid>
+
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" Text="Worked Hours" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Style="{StaticResource BodyStrongTextBlockStyle}"
+                            Text="{x:Bind FormatWorkedProgress(ViewModel.WorkedToday, ViewModel.TargetShiftDuration), Mode=OneWay}" />
+                    </Grid>
+
+                    <ProgressBar
+                        Maximum="{x:Bind ViewModel.TargetShiftDuration, Mode=OneWay, Converter={StaticResource TimeSpanToMinutesConverter}}"
+                        Value="{x:Bind ViewModel.WorkedToday, Mode=OneWay, Converter={StaticResource TimeSpanToMinutesConverter}}" />
+
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Text="{x:Bind FormatRemaining(ViewModel.WorkedToday, ViewModel.TargetShiftDuration), Mode=OneWay}"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Smart Punch Action Center -->
+        <Border
+            Grid.Row="2"
+            Padding="24"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="{ThemeResource ControlCornerRadius}">
+            <Grid>
+                <!-- Not clocked in yet -->
+                <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.DayState, Mode=OneWay, Converter={StaticResource DayStateToVisibility}, ConverterParameter=NotClockedIn}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Start Day" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{StaticResource BodyTextBlockStyle}"
+                            Text="Good day! Ready to track your first session?" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Command="{x:Bind ViewModel.ClockInNowCommand}" Content="Punch Now" Style="{StaticResource AccentButtonStyle}" />
+                        <Button Command="{x:Bind ViewModel.ClockInAtDefaultTimeCommand}" Content="{x:Bind FormatDefaultTimeOption(ViewModel.DefaultClockInTimeOfDay), Mode=OneWay}" />
+                        <Button Content="Manual Entry">
+                            <Button.Flyout>
+                                <Flyout Placement="Bottom">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TimePicker
+                                            ClockIdentifier="24HourClock"
+                                            Time="{x:Bind ViewModel.SelectedCustomTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                                        <Button Command="{x:Bind ViewModel.ClockInAtCustomTimeCommand}" Content="Set" />
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Clocked in -->
+                <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.DayState, Mode=OneWay, Converter={StaticResource DayStateToVisibility}, ConverterParameter=ClockedIn}">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse
+                                Width="8"
+                                Height="8"
+                                VerticalAlignment="Center"
+                                Fill="{ThemeResource SystemFillColorSuccessBrush}" />
+                            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Currently Working" />
+                        </StackPanel>
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{StaticResource BodyTextBlockStyle}"
+                            Text="{x:Bind FormatClockedInSince(ViewModel.ClockInTime), Mode=OneWay}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Command="{x:Bind ViewModel.ClockOutNowCommand}" Content="Finish Day" Style="{StaticResource AccentButtonStyle}" />
+                        <Button Command="{x:Bind ViewModel.ClockOutAtDefaultTimeCommand}" Content="{x:Bind FormatDefaultTimeOption(ViewModel.DefaultClockOutTimeOfDay), Mode=OneWay}" />
+                        <Button Content="Manual Entry">
+                            <Button.Flyout>
+                                <Flyout Placement="Bottom">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TimePicker
+                                            ClockIdentifier="24HourClock"
+                                            Time="{x:Bind ViewModel.SelectedCustomTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                                        <Button Command="{x:Bind ViewModel.ClockOutAtCustomTimeCommand}" Content="Set" />
+                                    </StackPanel>
+                                </Flyout>
+                            </Button.Flyout>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Forgotten to clock out on a prior day -->
+                <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.DayState, Mode=OneWay, Converter={StaticResource DayStateToVisibility}, ConverterParameter=ForgottenSession}">
+                    <InfoBar
+                        Title="Forgotten clock-out"
+                        IsClosable="False"
+                        IsOpen="True"
+                        Message="{x:Bind FormatForgottenSessionBanner(ViewModel.ForgottenSessionDate), Mode=OneWay}"
+                        Severity="Warning" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Command="{x:Bind ViewModel.ResolveForgottenSessionAtDefaultTimeCommand}" Content="{x:Bind FormatDefaultTimeOption(ViewModel.DefaultClockOutTimeOfDay), Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" />
+                        <TimePicker
+                            ClockIdentifier="24HourClock"
+                            Time="{x:Bind ViewModel.ForgottenSessionClockOutTimeOfDay, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                        <Button Command="{x:Bind ViewModel.ResolveForgottenSessionAtCustomTimeCommand}" Content="Set" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Today is already fully logged -->
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    Spacing="4"
+                    Visibility="{x:Bind ViewModel.DayState, Mode=OneWay, Converter={StaticResource DayStateToVisibility}, ConverterParameter=DayComplete}">
+                    <FontIcon
+                        HorizontalAlignment="Center"
+                        FontSize="28"
+                        Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                        Glyph="&#xE930;" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                        Text="Day Complete" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind FormatLoggedRange(ViewModel.ClockInTime, ViewModel.ClockOutTime), Mode=OneWay}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <ProgressRing
+            Grid.Row="2"
+            Width="20"
+            Height="20"
+            Margin="0,-8,-8,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
+    </Grid>
 </Page>
