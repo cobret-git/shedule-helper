@@ -20,6 +20,8 @@ namespace SheduleHelper.Core.Services
         /// <returns>The created/edited project, or <see langword="null"/> if the dialog was dismissed without confirming.</returns>
         Task<Project?> ShowEditProjectDialogAsync(Project? existingProject);
 
+        Task<TaskItem?> ShowEditTaskItemDialogAsync(TaskItem? existingTaskItem);
+
         /// <summary>
         /// Closes the dialog currently being shown, if any.
         /// </summary>
