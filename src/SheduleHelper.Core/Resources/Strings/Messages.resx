@@ -122,4 +122,36 @@
 		<value>Something went wrong while loading your settings. Please try again.</value>
 		<comment>Shown when loading settings fails for any unexpected reason.</comment>
 	</data>
+	<data name="error_clockInTimeInFuture" xml:space="preserve">
+		<value>Clock-in time can't be in the future.</value>
+		<comment>Shown when the user picks a clock-in time later than now.</comment>
+	</data>
+	<data name="error_clockOutTimeInFuture" xml:space="preserve">
+		<value>Clock-out time can't be in the future.</value>
+		<comment>Shown when the user picks a clock-out time later than now.</comment>
+	</data>
+	<data name="error_clockOutBeforeClockIn" xml:space="preserve">
+		<value>Clock-out time must be after your clock-in time.</value>
+		<comment>Shown when the user picks a clock-out time at or before the session's clock-in time.</comment>
+	</data>
+	<data name="error_alreadyClockedInToday" xml:space="preserve">
+		<value>You're already clocked in for today.</value>
+		<comment>Shown when clocking in fails because an attendance log for today already exists.</comment>
+	</data>
+	<data name="error_notClockedIn" xml:space="preserve">
+		<value>You're not currently clocked in.</value>
+		<comment>Shown when clocking out fails because there is no open attendance session.</comment>
+	</data>
+	<data name="error_clockInUnexpected" xml:space="preserve">
+		<value>Something went wrong while clocking in. Please try again.</value>
+		<comment>Shown when clocking in fails for any unexpected reason.</comment>
+	</data>
+	<data name="error_clockOutUnexpected" xml:space="preserve">
+		<value>Something went wrong while clocking out. Please try again.</value>
+		<comment>Shown when clocking out fails for any unexpected reason.</comment>
+	</data>
+	<data name="error_homeLoadUnexpected" xml:space="preserve">
+		<value>Something went wrong while loading your dashboard. Please try again.</value>
+		<comment>Shown when loading the Home page's attendance state fails for any unexpected reason.</comment>
+	</data>
 </root>

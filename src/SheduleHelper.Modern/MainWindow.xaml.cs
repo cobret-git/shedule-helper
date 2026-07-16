@@ -15,6 +15,7 @@ namespace SheduleHelper.Modern
 
         private readonly NavigationService _navigationService;
         private readonly DialogService _dialogService;
+        private readonly DispatcherService _dispatcherService;
 
         #endregion
 
@@ -23,6 +24,9 @@ namespace SheduleHelper.Modern
         public MainWindow()
         {
             InitializeComponent();
+
+            _dispatcherService = App.Current.Services.GetRequiredService<DispatcherService>();
+            _dispatcherService.Initialize(DispatcherQueue);
 
             _navigationService = App.Current.Services.GetRequiredService<NavigationService>();
             _dialogService = App.Current.Services.GetRequiredService<DialogService>();

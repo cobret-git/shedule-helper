@@ -85,6 +85,9 @@ namespace SheduleHelper.Modern
             services.AddSingleton<DialogService>();
             services.AddSingleton<IDialogService>(sp => sp.GetRequiredService<DialogService>());
 
+            services.AddSingleton<DispatcherService>();
+            services.AddSingleton<IDispatcherService>(sp => sp.GetRequiredService<DispatcherService>());
+
             services.AddTransient<HomeViewModel>();
             services.AddTransient<ProjectsAndTasksViewModel>();
             services.AddTransient<ProjectViewModel>();
