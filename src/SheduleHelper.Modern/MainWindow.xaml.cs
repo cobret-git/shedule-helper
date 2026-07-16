@@ -32,7 +32,6 @@ namespace SheduleHelper.Modern
             _dialogService = App.Current.Services.GetRequiredService<DialogService>();
 
             _navigationService.Initialize(ContentFrame);
-            _navigationService.NavigateToHome();
         }
 
         #endregion
@@ -58,6 +57,36 @@ namespace SheduleHelper.Modern
             if (args.Item is BreadcrumbItem item)
             {
                 _navigationService.NavigateToBreadcrumbItem(item);
+            }
+        }
+
+        private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+        {
+            if (args.IsSettingsSelected)
+            {
+                _navigationService.NavigateToSettings();
+                return;
+            }
+
+            if (args.SelectedItemContainer is not NavigationViewItem { Tag: string tag })
+            {
+                return;
+            }
+
+            switch (tag)
+            {
+                case "home":
+                    _navigationService.NavigateToHome();
+                    break;
+                case "projectsAndTasks":
+                    _navigationService.NavigateToProjectsAndTasks();
+                    break;
+                case "historyAndReports":
+                    _navigationService.NavigateToHistoryAndReports();
+                    break;
+                case "settings":
+                    _navigationService.NavigateToSettings();
+                    break;
             }
         }
 

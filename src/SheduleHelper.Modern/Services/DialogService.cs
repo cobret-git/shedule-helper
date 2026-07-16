@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using SheduleHelper.Core.Components.Entities;
+using SheduleHelper.Core.Models;
 using SheduleHelper.Core.Services;
 using SheduleHelper.Core.ViewModels;
 using SheduleHelper.Modern.View;
@@ -55,6 +56,12 @@ namespace SheduleHelper.Modern.Services
         public Task<Project?> ShowEditProjectDialogAsync(Project? existingProject)
         {
             return ShowCoreAsync<EditProjectDialog, EditProjectDialogViewModel, Project?, Project?>(existingProject);
+        }
+
+        /// <inheritdoc/>
+        public Task<TaskItem?> ShowEditTaskItemDialogAsync(EditTaskItemDialogContext context)
+        {
+            throw new NotImplementedException();
         }
 
         /// <inheritdoc/>

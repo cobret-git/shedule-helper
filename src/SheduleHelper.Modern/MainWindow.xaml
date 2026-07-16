@@ -23,9 +23,39 @@
             x:Name="AppBreadcrumbBar"
             Grid.Row="0"
             Margin="16,12"
-            ItemsSource="{x:Bind NavigationService.Breadcrumbs}"
-            ItemClicked="AppBreadcrumbBar_ItemClicked" />
+            ItemClicked="AppBreadcrumbBar_ItemClicked"
+            ItemsSource="{x:Bind NavigationService.Breadcrumbs}" />
 
-        <Frame x:Name="ContentFrame" Grid.Row="1" />
+        <NavigationView
+            x:Name="nv"
+            Grid.Row="1"
+            IsSettingsVisible="False"
+            SelectionChanged="NavigationView_SelectionChanged">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Home" Tag="home">
+                    <NavigationViewItem.Icon>
+                        <SymbolIcon Symbol="Home" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="Projects &amp; Tasks" Tag="projectsAndTasks">
+                    <NavigationViewItem.Icon>
+                        <SymbolIcon Symbol="List" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="History &amp; Reports" Tag="historyAndReports">
+                    <NavigationViewItem.Icon>
+                        <SymbolIcon Symbol="Calendar" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem Content="Settings" Tag="settings">
+                    <NavigationViewItem.Icon>
+                        <SymbolIcon Symbol="Setting" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
+            <Frame x:Name="ContentFrame" />
+        </NavigationView>
     </Grid>
 </Window>
