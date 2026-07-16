@@ -60,7 +60,7 @@ namespace SheduleHelper.Core.ViewModels
         {
             await Task.Run(async () =>
             {
-                var createResult = await _dialogService.ShowEditTaskItemDialogAsync(null);
+                var createResult = await _dialogService.ShowEditTaskItemDialogAsync(new EditTaskItemDialogContext(_project));
                 if (createResult != null)
                 {
                     _dispatcherService.Run(() =>
@@ -75,7 +75,7 @@ namespace SheduleHelper.Core.ViewModels
             if (SelectedTask == null) return;
             await Task.Run(async () =>
             {
-                var editResult = await _dialogService.ShowEditTaskItemDialogAsync(SelectedTask);
+                var editResult = await _dialogService.ShowEditTaskItemDialogAsync(new EditTaskItemDialogContext(_project, SelectedTask));
                 if (editResult != null)
                 {
                     _dispatcherService.Run(() =>

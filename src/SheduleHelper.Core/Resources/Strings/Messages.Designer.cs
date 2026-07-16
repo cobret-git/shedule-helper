@@ -77,5 +77,23 @@ namespace SheduleHelper.Core.Resources.Strings {
                 return ResourceManager.GetString("error_projectSaveUnexpected", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Please enter a title for the task..
+        /// </summary>
+        internal static string error_taskTitleEmpty {
+            get {
+                return ResourceManager.GetString("error_taskTitleEmpty", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Something went wrong while saving your task. Please try again..
+        /// </summary>
+        internal static string error_taskSaveUnexpected {
+            get {
+                return ResourceManager.GetString("error_taskSaveUnexpected", resourceCulture);
+            }
+        }
     }
 }

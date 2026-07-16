@@ -106,4 +106,12 @@
 		<value>Something went wrong while saving your project. Please try again.</value>
 		<comment>Shown when saving a project fails for any unexpected reason.</comment>
 	</data>
+	<data name="error_taskTitleEmpty" xml:space="preserve">
+		<value>Please enter a title for the task.</value>
+		<comment>Shown when the user tries to save a task without entering a title.</comment>
+	</data>
+	<data name="error_taskSaveUnexpected" xml:space="preserve">
+		<value>Something went wrong while saving your task. Please try again.</value>
+		<comment>Shown when saving a task fails for any unexpected reason.</comment>
+	</data>
 </root>

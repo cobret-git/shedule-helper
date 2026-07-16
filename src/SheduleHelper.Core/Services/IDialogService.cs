@@ -1,4 +1,5 @@
 using SheduleHelper.Core.Components.Entities;
+using SheduleHelper.Core.Models;
 using System.Threading.Tasks;
 
 namespace SheduleHelper.Core.Services
@@ -20,7 +21,12 @@ namespace SheduleHelper.Core.Services
         /// <returns>The created/edited project, or <see langword="null"/> if the dialog was dismissed without confirming.</returns>
         Task<Project?> ShowEditProjectDialogAsync(Project? existingProject);
 
-        Task<TaskItem?> ShowEditTaskItemDialogAsync(TaskItem? existingTaskItem);
+        /// <summary>
+        /// Shows the Edit Task Item dialog.
+        /// </summary>
+        /// <param name="context">The task to edit (or <see langword="null"/> to create a new one), together with the project it belongs to.</param>
+        /// <returns>The created/edited task, or <see langword="null"/> if the dialog was dismissed without confirming.</returns>
+        Task<TaskItem?> ShowEditTaskItemDialogAsync(EditTaskItemDialogContext context);
 
         /// <summary>
         /// Closes the dialog currently being shown, if any.

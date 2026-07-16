@@ -88,6 +88,10 @@ namespace SheduleHelper.Core.ViewModels
                 IsBusy = false;
             }
         }
+        [RelayCommand] private void Cancel()
+        {
+            Close();
+        }
         #endregion
 
         #region Methods
