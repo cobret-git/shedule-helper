@@ -15,5 +15,10 @@ namespace SheduleHelper.Modern.View
             InitializeComponent();
             DataContext = App.Current.Services.GetRequiredService<SettingsViewModel>();
         }
+
+        /// <summary>
+        /// The page's ViewModel, exposed for compiled (<c>x:Bind</c>) bindings in the page's XAML.
+        /// </summary>
+        public SettingsViewModel ViewModel => (SettingsViewModel)DataContext;
     }
 }

@@ -3,11 +3,137 @@
     x:Class="SheduleHelper.Modern.View.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:SheduleHelper.Modern.Controls"
+    xmlns:converters="using:SheduleHelper.Modern.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid>
-        <TextBlock Text="Settings!" />
+    <Page.Resources>
+        <converters:DecimalToDoubleConverter x:Key="DecimalToDoubleConverter" />
+        <converters:Int32ToDoubleConverter x:Key="Int32ToDoubleConverter" />
+        <converters:TimeOnlyToTimeSpanConverter x:Key="TimeOnlyToTimeSpanConverter" />
+        <converters:LunchStrategyDisplayConverter x:Key="LunchStrategyDisplayConverter" />
+        <converters:LunchStrategyToBooleanConverter x:Key="LunchStrategyToBooleanConverter" />
+    </Page.Resources>
+
+    <Grid Padding="24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Spacing="4">
+            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Settings" />
+            <TextBlock
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Style="{StaticResource BodyTextBlockStyle}"
+                Text="Configure your shift target, default clock times, and lunch break rules." />
+        </StackPanel>
+
+        <InfoBar
+            Grid.Row="1"
+            IsClosable="False"
+            IsOpen="{x:Bind ViewModel.MessageVisible, Mode=OneWay}"
+            Message="{x:Bind ViewModel.Message, Mode=OneWay}"
+            Severity="Error" />
+
+        <ScrollViewer Grid.Row="2">
+            <StackPanel Spacing="8">
+                <controls:SettingsCard Description="How many hours count as a full workday." Header="Target shift hours">
+                    <controls:SettingsCard.HeaderIcon>
+                        <SymbolIcon Symbol="Clock" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <NumberBox
+                        Width="140"
+                        LargeChange="1"
+                        Maximum="24"
+                        Minimum="0"
+                        SmallChange="0.25"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.TargetShiftHours, Mode=TwoWay, Converter={StaticResource DecimalToDoubleConverter}}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Description="Suggested arrival time for one-click clock-in." Header="Default clock-in time">
+                    <controls:SettingsCard.HeaderIcon>
+                        <SymbolIcon Symbol="Play" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TimePicker
+                        ClockIdentifier="24HourClock"
+                        Time="{x:Bind ViewModel.DefaultClockInTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Description="Suggested departure time for one-click clock-out." Header="Default clock-out time">
+                    <controls:SettingsCard.HeaderIcon>
+                        <SymbolIcon Symbol="Stop" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <TimePicker
+                        ClockIdentifier="24HourClock"
+                        Time="{x:Bind ViewModel.DefaultClockOutTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Description="How the app deducts your lunch break from attendance time." Header="Lunch break rule">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE706;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <ComboBox
+                        Width="180"
+                        ItemsSource="{x:Bind ViewModel.LunchStrategyOptions}"
+                        SelectedItem="{x:Bind ViewModel.LunchStrategy, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource LunchStrategyDisplayConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Description="Start of the fixed lunch window to deduct."
+                    Header="Lunch window start"
+                    IsEnabled="{x:Bind ViewModel.LunchStrategy, Mode=OneWay, Converter={StaticResource LunchStrategyToBooleanConverter}, ConverterParameter=FixedWindow}">
+                    <TimePicker
+                        ClockIdentifier="24HourClock"
+                        Time="{x:Bind ViewModel.LunchStartTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Description="End of the fixed lunch window to deduct."
+                    Header="Lunch window end"
+                    IsEnabled="{x:Bind ViewModel.LunchStrategy, Mode=OneWay, Converter={StaticResource LunchStrategyToBooleanConverter}, ConverterParameter=FixedWindow}">
+                    <TimePicker
+                        ClockIdentifier="24HourClock"
+                        Time="{x:Bind ViewModel.LunchEndTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    Description="Minutes deducted once you've been clocked in past the threshold."
+                    Header="Lunch duration"
+                    IsEnabled="{x:Bind ViewModel.LunchStrategy, Mode=OneWay, Converter={StaticResource LunchStrategyToBooleanConverter}, ConverterParameter=DurationBased}">
+                    <NumberBox
+                        Width="140"
+                        Maximum="180"
+                        Minimum="0"
+                        SmallChange="5"
+                        SpinButtonPlacementMode="Compact"
+                        Value="{x:Bind ViewModel.LunchDurationMinutes, Mode=TwoWay, Converter={StaticResource Int32ToDoubleConverter}}" />
+                </controls:SettingsCard>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="3" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+            <ProgressRing
+                Width="20"
+                Height="20"
+                Margin="0,0,8,0"
+                IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
+            <Button Command="{x:Bind ViewModel.DiscardChangesCommand}" Content="Discard" />
+            <Button
+                Command="{x:Bind ViewModel.SaveChangesCommand}"
+                Content="Save"
+                Style="{StaticResource AccentButtonStyle}" />
+        </StackPanel>
     </Grid>
 </Page>

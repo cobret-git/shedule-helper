@@ -4,6 +4,7 @@ using Serilog;
 using SheduleHelper.Core.Components.Entities;
 using SheduleHelper.Core.Services;
 using System;
+using System.Collections.Generic;
 using MSG = SheduleHelper.Core.Resources.Strings.Messages;
 
 namespace SheduleHelper.Core.ViewModels
@@ -46,6 +47,7 @@ namespace SheduleHelper.Core.ViewModels
         #endregion
 
         #region Properties
+        public IReadOnlyList<LunchStrategy> LunchStrategyOptions { get; } = Enum.GetValues<LunchStrategy>();
         public string? Message { get => _message; private set { if (SetProperty(ref _message, value)) OnPropertyChanged(nameof(MessageVisible)); } }
         public bool MessageVisible { get => !string.IsNullOrWhiteSpace(Message); }
         public bool IsBusy { get => _isBusy; private set { if (SetProperty(ref _isBusy, value)) NotifyCanExecuteChanged(); } }
