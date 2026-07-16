@@ -9,6 +9,8 @@ namespace SheduleHelper.Core.Services
     /// <summary>
     /// Default <see cref="ICurrentUserContext"/> implementation. Fetches the single local user if
     /// one already exists, or provisions a default one on first run - no login UI is involved.
+    /// Registered as a singleton, it is disposed by the DI container on application shutdown,
+    /// canceling any in-flight <see cref="EnsureInitializedAsync"/> call.
     /// </summary>
     public class CurrentUserContext : ICurrentUserContext
     {
@@ -19,6 +21,7 @@ namespace SheduleHelper.Core.Services
 
         private readonly ILocalDbContextFactory _dbContextFactory;
         private readonly ILogger _logger;
+        private CancellationTokenSource? _cts;
         private int? _userId;
 
         #endregion
@@ -48,26 +51,53 @@ namespace SheduleHelper.Core.Services
         #region Methods
 
         /// <inheritdoc/>
-        public async Task EnsureInitializedAsync(CancellationToken cancellationToken)
+        public async Task EnsureInitializedAsync()
         {
             try
             {
+                var ct = CreateCancellationToken();
                 using var db = _dbContextFactory.CreateDbContext();
 
-                var user = (await db.GetAllUsersAsync(cancellationToken)).FirstOrDefault();
+                var user = (await db.GetAllUsersAsync(ct)).FirstOrDefault();
                 if (user is null)
                 {
-                    user = await db.CreateUserAsync(DefaultUsername, DefaultEmail, cancellationToken);
-                    await db.CreateUserSettingAsync(user.Id, cancellationToken);
+                    user = await db.CreateUserAsync(DefaultUsername, DefaultEmail, ct);
+                    await db.CreateUserSettingAsync(user.Id, ct);
                 }
 
                 _userId = user.Id;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "Failed to initialize the current user context.");
                 throw;
             }
+        }
+
+        #endregion
+
+        #region Helpers
+        private CancellationToken CreateCancellationToken()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = new();
+            return _cts.Token;
+        }
+        #endregion
+
+        #region IDisposable
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
         }
 
         #endregion

@@ -5,7 +5,6 @@ using SheduleHelper.Core.Services;
 using SheduleHelper.Core.ViewModels;
 using SheduleHelper.Modern.Services;
 using System;
-using System.Threading;
 
 namespace SheduleHelper.Modern
 {
@@ -56,10 +55,22 @@ namespace SheduleHelper.Modern
         /// <param name="args">Details about the launch request and process.</param>
         protected override async void OnLaunched(LaunchActivatedEventArgs args)
         {
-            await Services.GetRequiredService<ICurrentUserContext>().EnsureInitializedAsync(CancellationToken.None);
-
-            _window = new MainWindow();
+            var mainWindow = new MainWindow();
+            mainWindow.Closed += (_, _) => (Services as IDisposable)?.Dispose();
+            _window = mainWindow;
             _window.Activate();
+
+            try
+            {
+                await Services.GetRequiredService<DatabaseMigrationService>().MigrateAsync();
+                await Services.GetRequiredService<ICurrentUserContext>().EnsureInitializedAsync();
+
+                mainWindow.NavigationService.NavigateToHome();
+            }
+            catch (OperationCanceledException)
+            {
+                // The window was closed before startup finished - the app is shutting down, nothing more to do.
+            }
         }
 
         #endregion
@@ -77,6 +88,7 @@ namespace SheduleHelper.Modern
 
             services.AddSingleton<IDatabasePathProvider, DatabasePathProvider>();
             services.AddSingleton<ILocalDbContextFactory, LocalDbContextFactory>();
+            services.AddSingleton<DatabaseMigrationService>();
             services.AddSingleton<ICurrentUserContext, CurrentUserContext>();
 
             services.AddSingleton<NavigationService>();
@@ -95,6 +107,7 @@ namespace SheduleHelper.Modern
             services.AddTransient<SettingsViewModel>();
 
             services.AddTransient<EditProjectDialogViewModel>();
+            services.AddTransient<EditTaskItemDialogViewModel>();
 
             return services.BuildServiceProvider();
         }

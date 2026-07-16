@@ -122,7 +122,7 @@ namespace SheduleHelper.Core.ViewModels
             {
                 IsBusy = true;
                 var ct = CreateCancellationToken();
-                await _currentUserContext.EnsureInitializedAsync(ct);
+                await _currentUserContext.EnsureInitializedAsync();
                 var userId = _currentUserContext.UserId;
 
                 await using var dbContext = _localDbFactory.CreateDbContext();
