@@ -100,6 +100,8 @@ namespace SheduleHelper.Modern
             services.AddSingleton<DispatcherService>();
             services.AddSingleton<IDispatcherService>(sp => sp.GetRequiredService<DispatcherService>());
 
+            services.AddSingleton<ThemeService>();
+
             services.AddTransient<HomeViewModel>();
             services.AddTransient<ProjectsAndTasksViewModel>();
             services.AddTransient<ProjectViewModel>();

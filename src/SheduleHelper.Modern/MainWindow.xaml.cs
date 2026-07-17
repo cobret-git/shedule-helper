@@ -16,6 +16,7 @@ namespace SheduleHelper.Modern
         private readonly NavigationService _navigationService;
         private readonly DialogService _dialogService;
         private readonly DispatcherService _dispatcherService;
+        private readonly ThemeService _themeService;
 
         #endregion
 
@@ -30,6 +31,9 @@ namespace SheduleHelper.Modern
 
             _navigationService = App.Current.Services.GetRequiredService<NavigationService>();
             _dialogService = App.Current.Services.GetRequiredService<DialogService>();
+
+            _themeService = App.Current.Services.GetRequiredService<ThemeService>();
+            _themeService.Initialize(RootGrid);
 
             _navigationService.Initialize(ContentFrame);
         }
