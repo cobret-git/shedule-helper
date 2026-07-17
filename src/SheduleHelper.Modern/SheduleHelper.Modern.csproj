@@ -14,18 +14,16 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Content Remove="Assets\Images\LockScreenLogo.scale-200.png" />
-    <Content Remove="Assets\Images\SplashScreen.scale-200.png" />
-    <Content Remove="Assets\Images\Square150x150Logo.scale-200.png" />
-    <Content Remove="Assets\Images\Square44x44Logo.scale-200.png" />
-    <Content Remove="Assets\Images\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Content Remove="Assets\Images\Wide310x150Logo.scale-200.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Remove="Assets\Fonts\Inter-VariableFont.ttf" />
+    <None Remove="Assets\Fonts\InterVariableFont.ttf" />
     <None Remove="Assets\Fonts\MaterialSymbolsRounded-Regular.ttf" />
     <None Remove="Assets\Fonts\MaterialSymbolsRounded_Filled-Regular.ttf" />
+    <None Remove="Assets\Images\LockScreenLogo.scale-200.png" />
+    <None Remove="Assets\Images\SplashScreen.scale-200.png" />
+    <None Remove="Assets\Images\Square150x150Logo.scale-200.png" />
+    <None Remove="Assets\Images\Square44x44Logo.scale-200.png" />
+    <None Remove="Assets\Images\Square44x44Logo.targetsize-24_altform-unplated.png" />
     <None Remove="Assets\Images\StoreLogo.png" />
+    <None Remove="Assets\Images\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
 
   <ItemGroup>
