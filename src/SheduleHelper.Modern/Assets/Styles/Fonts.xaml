@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Shared font resources. Merged by App.xaml and by every dictionary under Assets/Styles that
+        needs to reference InterVariableFont - a merged ResourceDictionary can only resolve
+        StaticResource lookups against itself and whatever it merges in, never against whoever merges
+        it in, so each consumer must merge this file directly rather than relying on App.xaml's copy.
+    -->
+
+    <FontFamily x:Key="InterVariableFont">ms-appx:///Assets/Fonts/InterVariableFont.ttf#Inter</FontFamily>
+    <FontFamily x:Key="MaterialIconsRoundedFont">ms-appx:///Assets/Fonts/MaterialSymbolsRounded-Regular.ttf#Material Symbols Rounded</FontFamily>
+    <FontFamily x:Key="MaterialIconsRoundedFilledFont">ms-appx:///Assets/Fonts/MaterialSymbolsRounded_Filled-Regular.ttf#Material Symbols Rounded Filled</FontFamily>
+</ResourceDictionary>

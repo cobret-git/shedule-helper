@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Safety net for controls whose default WinUI style has no separately-named resource to base
+        an override on (its full template sits directly under the bare, keyless implicit style for
+        that TargetType - e.g. NavigationView, InfoBar, NumberBox, SplitButton/ToggleSplitButton,
+        ProgressRing, TimePicker, the ListView/GridView containers, TabViewItem, BreadcrumbBar and
+        BreadcrumbBarItem). Most
+        of those controls' internal text elements read this shared theme resource for their font, so
+        overriding it here is the only safe way to reach them without copying their entire template
+        (which would be extremely fragile against future WinUI SDK updates). Controls with a real
+        named default style are instead overridden directly in the other dictionaries in this folder.
+    -->
+    <FontFamily x:Key="ContentControlThemeFontFamily">ms-appx:///Assets/Fonts/Inter-VariableFont_opsz,wght.ttf#Inter</FontFamily>
+</ResourceDictionary>

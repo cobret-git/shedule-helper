@@ -22,6 +22,9 @@
     <Content Remove="Assets\Images\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="Assets\Fonts\Inter-VariableFont.ttf" />
+    <None Remove="Assets\Fonts\MaterialSymbolsRounded-Regular.ttf" />
+    <None Remove="Assets\Fonts\MaterialSymbolsRounded_Filled-Regular.ttf" />
     <None Remove="Assets\Images\StoreLogo.png" />
   </ItemGroup>
 
