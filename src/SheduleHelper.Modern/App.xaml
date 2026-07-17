@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Application
     x:Class="SheduleHelper.Modern.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -8,9 +8,19 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <!-- Other merged dictionaries here -->
+
+                <ResourceDictionary Source="Assets/Styles/Fonts.xaml" />
+                <ResourceDictionary Source="Assets/Styles/ThemeFontFallback.xaml" />
+                <ResourceDictionary Source="Assets/Palettes/LightPalette.xaml" />
+                <ResourceDictionary Source="Assets/Styles/ButtonStyles.xaml" />
+                <ResourceDictionary Source="Assets/Styles/TextControlStyles.xaml" />
+                <ResourceDictionary Source="Assets/Styles/SelectionControlStyles.xaml" />
+                <ResourceDictionary Source="Assets/Styles/DateTimeControlStyles.xaml" />
+                <ResourceDictionary Source="Assets/Styles/FlyoutAndDialogStyles.xaml" />
+                <ResourceDictionary Source="Assets/Styles/MiscControlStyles.xaml" />
+                <!--  Other merged dictionaries here  -->
             </ResourceDictionary.MergedDictionaries>
-            <!-- Other app resources here -->
+            <!--  Other app resources here  -->
         </ResourceDictionary>
     </Application.Resources>
 </Application>

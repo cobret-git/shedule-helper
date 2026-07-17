@@ -9,9 +9,15 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <converters:AttendanceDayStateToVisibilityConverter x:Key="DayStateToVisibility" />
-        <converters:TimeOnlyToTimeSpanConverter x:Key="TimeOnlyToTimeSpanConverter" />
-        <converters:TimeSpanToMinutesConverter x:Key="TimeSpanToMinutesConverter" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Assets/Styles/Fonts.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <converters:AttendanceDayStateToVisibilityConverter x:Key="DayStateToVisibility" />
+            <converters:TimeOnlyToTimeSpanConverter x:Key="TimeOnlyToTimeSpanConverter" />
+            <converters:TimeSpanToMinutesConverter x:Key="TimeSpanToMinutesConverter" />
+        </ResourceDictionary>
     </Page.Resources>
 
     <Grid Padding="24" RowSpacing="16">
@@ -29,7 +35,7 @@
             Message="{x:Bind ViewModel.Message, Mode=OneWay}"
             Severity="Error" />
 
-        <!-- Current Session + Daily Status -->
+        <!--  Current Session + Daily Status  -->
         <Grid Grid.Row="1" ColumnSpacing="16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" />
@@ -78,9 +84,7 @@
                             Padding="8,4"
                             Background="{ThemeResource SubtleFillColorSecondaryBrush}"
                             CornerRadius="{ThemeResource ControlCornerRadius}">
-                            <TextBlock
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                Text="{x:Bind FormatMonthlyBalance(ViewModel.RollingMonthlyBalance), Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Text="{x:Bind FormatMonthlyBalance(ViewModel.RollingMonthlyBalance), Mode=OneWay}" />
                         </Border>
                     </Grid>
 
@@ -89,16 +93,17 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Style="{StaticResource CaptionTextBlockStyle}" Text="Worked Hours" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="Worked Hours" />
                         <TextBlock
                             Grid.Column="1"
                             Style="{StaticResource BodyStrongTextBlockStyle}"
                             Text="{x:Bind FormatWorkedProgress(ViewModel.WorkedToday, ViewModel.TargetShiftDuration), Mode=OneWay}" />
                     </Grid>
 
-                    <ProgressBar
-                        Maximum="{x:Bind ViewModel.TargetShiftDuration, Mode=OneWay, Converter={StaticResource TimeSpanToMinutesConverter}}"
-                        Value="{x:Bind ViewModel.WorkedToday, Mode=OneWay, Converter={StaticResource TimeSpanToMinutesConverter}}" />
+                    <ProgressBar Maximum="{x:Bind ViewModel.TargetShiftDuration, Mode=OneWay, Converter={StaticResource TimeSpanToMinutesConverter}}" Value="{x:Bind ViewModel.WorkedToday, Mode=OneWay, Converter={StaticResource TimeSpanToMinutesConverter}}" />
 
                     <TextBlock
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -109,7 +114,7 @@
             </Border>
         </Grid>
 
-        <!-- Smart Punch Action Center -->
+        <!--  Smart Punch Action Center  -->
         <Border
             Grid.Row="2"
             Padding="24"
@@ -118,7 +123,7 @@
             BorderThickness="1"
             CornerRadius="{ThemeResource ControlCornerRadius}">
             <Grid>
-                <!-- Not clocked in yet -->
+                <!--  Not clocked in yet  -->
                 <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.DayState, Mode=OneWay, Converter={StaticResource DayStateToVisibility}, ConverterParameter=NotClockedIn}">
                     <StackPanel Spacing="4">
                         <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Start Day" />
@@ -128,15 +133,16 @@
                             Text="Good day! Ready to track your first session?" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Command="{x:Bind ViewModel.ClockInNowCommand}" Content="Punch Now" Style="{StaticResource AccentButtonStyle}" />
+                        <Button
+                            Command="{x:Bind ViewModel.ClockInNowCommand}"
+                            Content="Punch Now"
+                            Style="{StaticResource AccentButtonStyle}" />
                         <Button Command="{x:Bind ViewModel.ClockInAtDefaultTimeCommand}" Content="{x:Bind FormatDefaultTimeOption(ViewModel.DefaultClockInTimeOfDay), Mode=OneWay}" />
                         <Button Content="Manual Entry">
                             <Button.Flyout>
                                 <Flyout Placement="Bottom">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <TimePicker
-                                            ClockIdentifier="24HourClock"
-                                            Time="{x:Bind ViewModel.SelectedCustomTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                                        <TimePicker ClockIdentifier="24HourClock" Time="{x:Bind ViewModel.SelectedCustomTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
                                         <Button Command="{x:Bind ViewModel.ClockInAtCustomTimeCommand}" Content="Set" />
                                     </StackPanel>
                                 </Flyout>
@@ -145,7 +151,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Clocked in -->
+                <!--  Clocked in  -->
                 <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.DayState, Mode=OneWay, Converter={StaticResource DayStateToVisibility}, ConverterParameter=ClockedIn}">
                     <StackPanel Spacing="4">
                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -162,15 +168,16 @@
                             Text="{x:Bind FormatClockedInSince(ViewModel.ClockInTime), Mode=OneWay}" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Command="{x:Bind ViewModel.ClockOutNowCommand}" Content="Finish Day" Style="{StaticResource AccentButtonStyle}" />
+                        <Button
+                            Command="{x:Bind ViewModel.ClockOutNowCommand}"
+                            Content="Finish Day"
+                            Style="{StaticResource AccentButtonStyle}" />
                         <Button Command="{x:Bind ViewModel.ClockOutAtDefaultTimeCommand}" Content="{x:Bind FormatDefaultTimeOption(ViewModel.DefaultClockOutTimeOfDay), Mode=OneWay}" />
                         <Button Content="Manual Entry">
                             <Button.Flyout>
                                 <Flyout Placement="Bottom">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <TimePicker
-                                            ClockIdentifier="24HourClock"
-                                            Time="{x:Bind ViewModel.SelectedCustomTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                                        <TimePicker ClockIdentifier="24HourClock" Time="{x:Bind ViewModel.SelectedCustomTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
                                         <Button Command="{x:Bind ViewModel.ClockOutAtCustomTimeCommand}" Content="Set" />
                                     </StackPanel>
                                 </Flyout>
@@ -179,7 +186,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Forgotten to clock out on a prior day -->
+                <!--  Forgotten to clock out on a prior day  -->
                 <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.DayState, Mode=OneWay, Converter={StaticResource DayStateToVisibility}, ConverterParameter=ForgottenSession}">
                     <InfoBar
                         Title="Forgotten clock-out"
@@ -188,15 +195,16 @@
                         Message="{x:Bind FormatForgottenSessionBanner(ViewModel.ForgottenSessionDate), Mode=OneWay}"
                         Severity="Warning" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Command="{x:Bind ViewModel.ResolveForgottenSessionAtDefaultTimeCommand}" Content="{x:Bind FormatDefaultTimeOption(ViewModel.DefaultClockOutTimeOfDay), Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" />
-                        <TimePicker
-                            ClockIdentifier="24HourClock"
-                            Time="{x:Bind ViewModel.ForgottenSessionClockOutTimeOfDay, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                        <Button
+                            Command="{x:Bind ViewModel.ResolveForgottenSessionAtDefaultTimeCommand}"
+                            Content="{x:Bind FormatDefaultTimeOption(ViewModel.DefaultClockOutTimeOfDay), Mode=OneWay}"
+                            Style="{StaticResource AccentButtonStyle}" />
+                        <TimePicker ClockIdentifier="24HourClock" Time="{x:Bind ViewModel.ForgottenSessionClockOutTimeOfDay, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
                         <Button Command="{x:Bind ViewModel.ResolveForgottenSessionAtCustomTimeCommand}" Content="Set" />
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Today is already fully logged -->
+                <!--  Today is already fully logged  -->
                 <StackPanel
                     HorizontalAlignment="Center"
                     Spacing="4"
@@ -226,5 +234,114 @@
             HorizontalAlignment="Right"
             VerticalAlignment="Top"
             IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
+
+        <!--  Font smoke test - remove once the Inter variable font is confirmed to render correctly  -->
+        <ScrollViewer Grid.Row="3">
+            <StackPanel Orientation="Horizontal" Spacing="24">
+                <StackPanel Spacing="4">
+                    <TextBlock
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Text="Inter (variable)" />
+                    <TextBlock
+                        FontFamily="{StaticResource InterVariableFont}"
+                        FontSize="36"
+                        FontWeight="Thin"
+                        Text="Thin" />
+                    <TextBlock
+                        FontFamily="{StaticResource InterVariableFont}"
+                        FontSize="36"
+                        FontWeight="ExtraLight"
+                        Text="ExtraLight" />
+                    <TextBlock
+                        FontFamily="{StaticResource InterVariableFont}"
+                        FontSize="36"
+                        FontWeight="Light"
+                        Text="Light" />
+                    <TextBlock
+                        FontFamily="{StaticResource InterVariableFont}"
+                        FontSize="36"
+                        FontWeight="Normal"
+                        Text="Normal" />
+                    <TextBlock
+                        FontFamily="{StaticResource InterVariableFont}"
+                        FontSize="36"
+                        FontWeight="Medium"
+                        Text="Medium" />
+                    <TextBlock
+                        FontFamily="{StaticResource InterVariableFont}"
+                        FontSize="36"
+                        FontWeight="SemiBold"
+                        Text="SemiBold" />
+                    <TextBlock
+                        FontFamily="{StaticResource InterVariableFont}"
+                        FontSize="36"
+                        FontWeight="Bold"
+                        Text="Bold" />
+                    <TextBlock
+                        FontFamily="{StaticResource InterVariableFont}"
+                        FontSize="36"
+                        FontWeight="ExtraBold"
+                        Text="ExtraBold" />
+                    <TextBlock
+                        FontFamily="{StaticResource InterVariableFont}"
+                        FontSize="36"
+                        FontWeight="Black"
+                        Text="Black" />
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                    <TextBlock
+                        FontSize="16"
+                        FontWeight="Bold"
+                        Text="Segoe UI (default)" />
+                    <TextBlock
+                        FontFamily="Segoe UI"
+                        FontSize="36"
+                        FontWeight="Thin"
+                        Text="Thin" />
+                    <TextBlock
+                        FontFamily="Segoe UI"
+                        FontSize="36"
+                        FontWeight="ExtraLight"
+                        Text="ExtraLight" />
+                    <TextBlock
+                        FontFamily="Segoe UI"
+                        FontSize="36"
+                        FontWeight="Light"
+                        Text="Light" />
+                    <TextBlock
+                        FontFamily="Segoe UI"
+                        FontSize="36"
+                        FontWeight="Normal"
+                        Text="Normal" />
+                    <TextBlock
+                        FontFamily="Segoe UI"
+                        FontSize="36"
+                        FontWeight="Medium"
+                        Text="Medium" />
+                    <TextBlock
+                        FontFamily="Segoe UI"
+                        FontSize="36"
+                        FontWeight="SemiBold"
+                        Text="SemiBold" />
+                    <TextBlock
+                        FontFamily="Segoe UI"
+                        FontSize="36"
+                        FontWeight="Bold"
+                        Text="Bold" />
+                    <TextBlock
+                        FontFamily="Segoe UI"
+                        FontSize="36"
+                        FontWeight="ExtraBold"
+                        Text="ExtraBold" />
+                    <TextBlock
+                        FontFamily="Segoe UI"
+                        FontSize="36"
+                        FontWeight="Black"
+                        Text="Black" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>

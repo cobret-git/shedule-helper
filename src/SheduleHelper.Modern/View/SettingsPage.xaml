@@ -60,18 +60,14 @@
                     <controls:SettingsCard.HeaderIcon>
                         <SymbolIcon Symbol="Play" />
                     </controls:SettingsCard.HeaderIcon>
-                    <TimePicker
-                        ClockIdentifier="24HourClock"
-                        Time="{x:Bind ViewModel.DefaultClockInTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                    <TimePicker ClockIdentifier="24HourClock" Time="{x:Bind ViewModel.DefaultClockInTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard Description="Suggested departure time for one-click clock-out." Header="Default clock-out time">
                     <controls:SettingsCard.HeaderIcon>
                         <SymbolIcon Symbol="Stop" />
                     </controls:SettingsCard.HeaderIcon>
-                    <TimePicker
-                        ClockIdentifier="24HourClock"
-                        Time="{x:Bind ViewModel.DefaultClockOutTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                    <TimePicker ClockIdentifier="24HourClock" Time="{x:Bind ViewModel.DefaultClockOutTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard Description="How the app deducts your lunch break from attendance time." Header="Lunch break rule">
@@ -94,18 +90,14 @@
                     Description="Start of the fixed lunch window to deduct."
                     Header="Lunch window start"
                     IsEnabled="{x:Bind ViewModel.LunchStrategy, Mode=OneWay, Converter={StaticResource LunchStrategyToBooleanConverter}, ConverterParameter=FixedWindow}">
-                    <TimePicker
-                        ClockIdentifier="24HourClock"
-                        Time="{x:Bind ViewModel.LunchStartTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                    <TimePicker ClockIdentifier="24HourClock" Time="{x:Bind ViewModel.LunchStartTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
                     Description="End of the fixed lunch window to deduct."
                     Header="Lunch window end"
                     IsEnabled="{x:Bind ViewModel.LunchStrategy, Mode=OneWay, Converter={StaticResource LunchStrategyToBooleanConverter}, ConverterParameter=FixedWindow}">
-                    <TimePicker
-                        ClockIdentifier="24HourClock"
-                        Time="{x:Bind ViewModel.LunchEndTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
+                    <TimePicker ClockIdentifier="24HourClock" Time="{x:Bind ViewModel.LunchEndTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
@@ -120,10 +112,18 @@
                         SpinButtonPlacementMode="Compact"
                         Value="{x:Bind ViewModel.LunchDurationMinutes, Mode=TwoWay, Converter={StaticResource Int32ToDoubleConverter}}" />
                 </controls:SettingsCard>
+                <TextBlock
+                    FontFamily="{StaticResource MaterialIconsRoundedFont}"
+                    FontSize="72"
+                    Text="&#xe14b;" />
             </StackPanel>
         </ScrollViewer>
 
-        <StackPanel Grid.Row="3" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
+        <StackPanel
+            Grid.Row="3"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal"
+            Spacing="8">
             <ProgressRing
                 Width="20"
                 Height="20"
