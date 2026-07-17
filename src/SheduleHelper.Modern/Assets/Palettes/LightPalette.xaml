@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Material Theme Builder palette (Light), generated from light.css.
+        Each -md-sys-color-* token becomes an Md{Token}Color / Md{Token}Brush pair. Swap the
+        active palette dictionary in App.xaml's MergedDictionaries to switch themes at runtime.
+    -->
+    <Color x:Key="MdPrimaryColor">#FF006382</Color>
+    <SolidColorBrush x:Key="MdPrimaryBrush" Color="{StaticResource MdPrimaryColor}" />
+    <Color x:Key="MdSurfaceTintColor">#FF096685</Color>
+    <SolidColorBrush x:Key="MdSurfaceTintBrush" Color="{StaticResource MdSurfaceTintColor}" />
+    <Color x:Key="MdOnPrimaryColor">#FFFFFFFF</Color>
+    <SolidColorBrush x:Key="MdOnPrimaryBrush" Color="{StaticResource MdOnPrimaryColor}" />
+    <Color x:Key="MdPrimaryContainerColor">#FF2F7C9C</Color>
+    <SolidColorBrush x:Key="MdPrimaryContainerBrush" Color="{StaticResource MdPrimaryContainerColor}" />
+    <Color x:Key="MdOnPrimaryContainerColor">#FFF9FCFF</Color>
+    <SolidColorBrush x:Key="MdOnPrimaryContainerBrush" Color="{StaticResource MdOnPrimaryContainerColor}" />
+    <Color x:Key="MdSecondaryColor">#FF3E555E</Color>
+    <SolidColorBrush x:Key="MdSecondaryBrush" Color="{StaticResource MdSecondaryColor}" />
+    <Color x:Key="MdOnSecondaryColor">#FFFFFFFF</Color>
+    <SolidColorBrush x:Key="MdOnSecondaryBrush" Color="{StaticResource MdOnSecondaryColor}" />
+    <Color x:Key="MdSecondaryContainerColor">#FF566D77</Color>
+    <SolidColorBrush x:Key="MdSecondaryContainerBrush" Color="{StaticResource MdSecondaryContainerColor}" />
+    <Color x:Key="MdOnSecondaryContainerColor">#FFD6EEFA</Color>
+    <SolidColorBrush x:Key="MdOnSecondaryContainerBrush" Color="{StaticResource MdOnSecondaryContainerColor}" />
+    <Color x:Key="MdTertiaryColor">#FF5B5975</Color>
+    <SolidColorBrush x:Key="MdTertiaryBrush" Color="{StaticResource MdTertiaryColor}" />
+    <Color x:Key="MdOnTertiaryColor">#FFFFFFFF</Color>
+    <SolidColorBrush x:Key="MdOnTertiaryBrush" Color="{StaticResource MdOnTertiaryColor}" />
+    <Color x:Key="MdTertiaryContainerColor">#FF74718F</Color>
+    <SolidColorBrush x:Key="MdTertiaryContainerBrush" Color="{StaticResource MdTertiaryContainerColor}" />
+    <Color x:Key="MdOnTertiaryContainerColor">#FFFFFBFF</Color>
+    <SolidColorBrush x:Key="MdOnTertiaryContainerBrush" Color="{StaticResource MdOnTertiaryContainerColor}" />
+    <Color x:Key="MdErrorColor">#FF900708</Color>
+    <SolidColorBrush x:Key="MdErrorBrush" Color="{StaticResource MdErrorColor}" />
+    <Color x:Key="MdOnErrorColor">#FFFFFFFF</Color>
+    <SolidColorBrush x:Key="MdOnErrorBrush" Color="{StaticResource MdOnErrorColor}" />
+    <Color x:Key="MdErrorContainerColor">#FFB3261E</Color>
+    <SolidColorBrush x:Key="MdErrorContainerBrush" Color="{StaticResource MdErrorContainerColor}" />
+    <Color x:Key="MdOnErrorContainerColor">#FFFFCBC4</Color>
+    <SolidColorBrush x:Key="MdOnErrorContainerBrush" Color="{StaticResource MdOnErrorContainerColor}" />
+    <Color x:Key="MdBackgroundColor">#FFF7F9FC</Color>
+    <SolidColorBrush x:Key="MdBackgroundBrush" Color="{StaticResource MdBackgroundColor}" />
+    <Color x:Key="MdOnBackgroundColor">#FF191C1E</Color>
+    <SolidColorBrush x:Key="MdOnBackgroundBrush" Color="{StaticResource MdOnBackgroundColor}" />
+    <Color x:Key="MdSurfaceColor">#FFFCF8F8</Color>
+    <SolidColorBrush x:Key="MdSurfaceBrush" Color="{StaticResource MdSurfaceColor}" />
+    <Color x:Key="MdOnSurfaceColor">#FF1C1B1B</Color>
+    <SolidColorBrush x:Key="MdOnSurfaceBrush" Color="{StaticResource MdOnSurfaceColor}" />
+    <Color x:Key="MdSurfaceVariantColor">#FFE1E2E6</Color>
+    <SolidColorBrush x:Key="MdSurfaceVariantBrush" Color="{StaticResource MdSurfaceVariantColor}" />
+    <Color x:Key="MdOnSurfaceVariantColor">#FF44474A</Color>
+    <SolidColorBrush x:Key="MdOnSurfaceVariantBrush" Color="{StaticResource MdOnSurfaceVariantColor}" />
+    <Color x:Key="MdOutlineColor">#FF75777A</Color>
+    <SolidColorBrush x:Key="MdOutlineBrush" Color="{StaticResource MdOutlineColor}" />
+    <Color x:Key="MdOutlineVariantColor">#FFC5C6CA</Color>
+    <SolidColorBrush x:Key="MdOutlineVariantBrush" Color="{StaticResource MdOutlineVariantColor}" />
+    <Color x:Key="MdShadowColor">#FF000000</Color>
+    <SolidColorBrush x:Key="MdShadowBrush" Color="{StaticResource MdShadowColor}" />
+    <Color x:Key="MdScrimColor">#FF000000</Color>
+    <SolidColorBrush x:Key="MdScrimBrush" Color="{StaticResource MdScrimColor}" />
+    <Color x:Key="MdInverseSurfaceColor">#FF313030</Color>
+    <SolidColorBrush x:Key="MdInverseSurfaceBrush" Color="{StaticResource MdInverseSurfaceColor}" />
+    <Color x:Key="MdInverseOnSurfaceColor">#FFF3F0EF</Color>
+    <SolidColorBrush x:Key="MdInverseOnSurfaceBrush" Color="{StaticResource MdInverseOnSurfaceColor}" />
+    <Color x:Key="MdInversePrimaryColor">#FF89D0F3</Color>
+    <SolidColorBrush x:Key="MdInversePrimaryBrush" Color="{StaticResource MdInversePrimaryColor}" />
+    <Color x:Key="MdPrimaryFixedColor">#FFC0E8FF</Color>
+    <SolidColorBrush x:Key="MdPrimaryFixedBrush" Color="{StaticResource MdPrimaryFixedColor}" />
+    <Color x:Key="MdOnPrimaryFixedColor">#FF001E2B</Color>
+    <SolidColorBrush x:Key="MdOnPrimaryFixedBrush" Color="{StaticResource MdOnPrimaryFixedColor}" />
+    <Color x:Key="MdPrimaryFixedDimColor">#FF89D0F3</Color>
+    <SolidColorBrush x:Key="MdPrimaryFixedDimBrush" Color="{StaticResource MdPrimaryFixedDimColor}" />
+    <Color x:Key="MdOnPrimaryFixedVariantColor">#FF004D66</Color>
+    <SolidColorBrush x:Key="MdOnPrimaryFixedVariantBrush" Color="{StaticResource MdOnPrimaryFixedVariantColor}" />
+    <Color x:Key="MdSecondaryFixedColor">#FFCEE6F2</Color>
+    <SolidColorBrush x:Key="MdSecondaryFixedBrush" Color="{StaticResource MdSecondaryFixedColor}" />
+    <Color x:Key="MdOnSecondaryFixedColor">#FF051E27</Color>
+    <SolidColorBrush x:Key="MdOnSecondaryFixedBrush" Color="{StaticResource MdOnSecondaryFixedColor}" />
+    <Color x:Key="MdSecondaryFixedDimColor">#FFB2CAD6</Color>
+    <SolidColorBrush x:Key="MdSecondaryFixedDimBrush" Color="{StaticResource MdSecondaryFixedDimColor}" />
+    <Color x:Key="MdOnSecondaryFixedVariantColor">#FF334A53</Color>
+    <SolidColorBrush x:Key="MdOnSecondaryFixedVariantBrush" Color="{StaticResource MdOnSecondaryFixedVariantColor}" />
+    <Color x:Key="MdTertiaryFixedColor">#FFE3DFFF</Color>
+    <SolidColorBrush x:Key="MdTertiaryFixedBrush" Color="{StaticResource MdTertiaryFixedColor}" />
+    <Color x:Key="MdOnTertiaryFixedColor">#FF1A1931</Color>
+    <SolidColorBrush x:Key="MdOnTertiaryFixedBrush" Color="{StaticResource MdOnTertiaryFixedColor}" />
+    <Color x:Key="MdTertiaryFixedDimColor">#FFC7C3E4</Color>
+    <SolidColorBrush x:Key="MdTertiaryFixedDimBrush" Color="{StaticResource MdTertiaryFixedDimColor}" />
+    <Color x:Key="MdOnTertiaryFixedVariantColor">#FF46445F</Color>
+    <SolidColorBrush x:Key="MdOnTertiaryFixedVariantBrush" Color="{StaticResource MdOnTertiaryFixedVariantColor}" />
+    <Color x:Key="MdSurfaceDimColor">#FFDCD9D9</Color>
+    <SolidColorBrush x:Key="MdSurfaceDimBrush" Color="{StaticResource MdSurfaceDimColor}" />
+    <Color x:Key="MdSurfaceBrightColor">#FFFCF8F8</Color>
+    <SolidColorBrush x:Key="MdSurfaceBrightBrush" Color="{StaticResource MdSurfaceBrightColor}" />
+    <Color x:Key="MdSurfaceContainerLowestColor">#FFFFFFFF</Color>
+    <SolidColorBrush x:Key="MdSurfaceContainerLowestBrush" Color="{StaticResource MdSurfaceContainerLowestColor}" />
+    <Color x:Key="MdSurfaceContainerLowColor">#FFF6F3F2</Color>
+    <SolidColorBrush x:Key="MdSurfaceContainerLowBrush" Color="{StaticResource MdSurfaceContainerLowColor}" />
+    <Color x:Key="MdSurfaceContainerColor">#FFF1EDEC</Color>
+    <SolidColorBrush x:Key="MdSurfaceContainerBrush" Color="{StaticResource MdSurfaceContainerColor}" />
+    <Color x:Key="MdSurfaceContainerHighColor">#FFEBE7E7</Color>
+    <SolidColorBrush x:Key="MdSurfaceContainerHighBrush" Color="{StaticResource MdSurfaceContainerHighColor}" />
+    <Color x:Key="MdSurfaceContainerHighestColor">#FFE5E2E1</Color>
+    <SolidColorBrush x:Key="MdSurfaceContainerHighestBrush" Color="{StaticResource MdSurfaceContainerHighestColor}" />
+</ResourceDictionary>
