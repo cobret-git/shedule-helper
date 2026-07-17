@@ -17,7 +17,7 @@
   <Properties>
     <DisplayName>SheduleHelper.Modern</DisplayName>
     <PublisherDisplayName>konst</PublisherDisplayName>
-    <Logo>Assets\StoreLogo.png</Logo>
+    <Logo>Assets\Images\StoreLogo.png</Logo>
   </Properties>
 
   <Dependencies>
@@ -37,10 +37,10 @@
         DisplayName="SheduleHelper.Modern"
         Description="SheduleHelper.Modern"
         BackgroundColor="transparent"
-        Square150x150Logo="Assets\Square150x150Logo.png"
-        Square44x44Logo="Assets\Square44x44Logo.png">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
-        <uap:SplashScreen Image="Assets\SplashScreen.png" />
+        Square150x150Logo="Assets\Images\Square150x150Logo.png"
+        Square44x44Logo="Assets\Images\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Images\Wide310x150Logo.png" />
+        <uap:SplashScreen Image="Assets\Images\SplashScreen.png" />
       </uap:VisualElements>
     </Application>
   </Applications>
