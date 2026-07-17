@@ -1,7 +1,10 @@
+using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Linq;
+using Windows.UI;
 
 namespace SheduleHelper.Modern.Services
 {
@@ -26,7 +29,7 @@ namespace SheduleHelper.Modern.Services
         private const string DarkPaletteSource = "Assets/Palettes/DarkPalette.xaml";
 
         private FrameworkElement? _root;
-
+        private Microsoft.UI.Windowing.AppWindow? _appWindow;
         #endregion
 
         #region Constructors
@@ -57,9 +60,10 @@ namespace SheduleHelper.Modern.Services
         /// </summary>
         /// <param name="root">The root element whose <see cref="FrameworkElement.RequestedTheme"/> drives the window's theme.</param>
         /// <param name="theme">The theme to apply on startup. Defaults to <see cref="ElementTheme.Light"/> rather than following the OS.</param>
-        public void Initialize(FrameworkElement root, ElementTheme theme = ElementTheme.Light)
+        public void Initialize(FrameworkElement root, AppWindow appWindow, ElementTheme theme = ElementTheme.Light)
         {
             _root = root;
+            _appWindow = appWindow;
             SetTheme(theme);
         }
 
@@ -82,6 +86,19 @@ namespace SheduleHelper.Modern.Services
             SwapPaletteDictionary(theme);
             _root.RequestedTheme = theme;
             CurrentTheme = theme;
+            UpdateTitleBarColors();
+        }
+
+        /// <summary>
+        /// Re-applies the caption-button colors for <see cref="CurrentTheme"/>. The WinUI
+        /// <c>TitleBar</c> control re-syncs <see cref="AppWindow.TitleBar"/> to the OS theme once it
+        /// finishes loading, silently overwriting whatever <see cref="SetTheme"/> applied earlier -
+        /// call this again after that control (and the rest of the page) has loaded, e.g. from the
+        /// root element's <c>Loaded</c> event, so our colors are applied last and win.
+        /// </summary>
+        public void ReapplyTitleBarColors()
+        {
+            UpdateTitleBarColors();
         }
 
         #endregion
@@ -115,7 +132,36 @@ namespace SheduleHelper.Modern.Services
                 mergedDictionaries.Add(paletteDictionary);
             }
         }
+        private void UpdateTitleBarColors()
+        {
+            if (_appWindow == null) return;
 
+            var titleBar = _appWindow.TitleBar;
+
+            // Determine if we're in dark mode
+            bool isDarkMode = (CurrentTheme == ElementTheme.Dark);
+
+            if (isDarkMode)
+            {
+                // Dark theme colors
+                titleBar.ButtonForegroundColor = Colors.White;
+                titleBar.ButtonBackgroundColor = Colors.Transparent;
+                titleBar.ButtonHoverForegroundColor = Colors.White;
+                titleBar.ButtonHoverBackgroundColor = Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF);
+                titleBar.ButtonPressedForegroundColor = Colors.White;
+                titleBar.ButtonPressedBackgroundColor = Color.FromArgb(0x66, 0xFF, 0xFF, 0xFF);
+            }
+            else
+            {
+                // Light theme colors
+                titleBar.ButtonForegroundColor = Colors.Black;
+                titleBar.ButtonBackgroundColor = Colors.Transparent;
+                titleBar.ButtonHoverForegroundColor = Colors.Black;
+                titleBar.ButtonHoverBackgroundColor = Color.FromArgb(0x33, 0x00, 0x00, 0x00);
+                titleBar.ButtonPressedForegroundColor = Colors.Black;
+                titleBar.ButtonPressedBackgroundColor = Color.FromArgb(0x66, 0x00, 0x00, 0x00);
+            }
+        }
         #endregion
     }
 }

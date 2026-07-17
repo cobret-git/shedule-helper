@@ -4,6 +4,7 @@ using Serilog;
 using SheduleHelper.Core.Services;
 using SheduleHelper.Core.ViewModels;
 using SheduleHelper.Modern.Services;
+using SheduleHelper.Modern.View;
 using System;
 
 namespace SheduleHelper.Modern

@@ -33,6 +33,20 @@ namespace SheduleHelper.Modern.Services
 
         #endregion
 
+        #region Events
+
+        /// <summary>
+        /// Raised after navigating to a root-level destination, with the <c>Tag</c> of the matching
+        /// <c>NavigationViewItem</c> (e.g. <c>"home"</c>). WinUI-specific, so it lives only here, not
+        /// on <see cref="INavigationService"/> - lets the hosting window keep its
+        /// <c>NavigationView.SelectedItem</c> in sync even when navigation is triggered
+        /// programmatically (e.g. the initial navigation on startup) rather than by the user
+        /// selecting an item themselves.
+        /// </summary>
+        public event EventHandler<string>? RootNavigated;
+
+        #endregion
+
         #region Properties
 
         /// <summary>
@@ -59,7 +73,7 @@ namespace SheduleHelper.Modern.Services
         /// </summary>
         public void NavigateToHome()
         {
-            NavigateToRoot<HomeViewModel, HomePage>("Home");
+            NavigateToRoot<HomeViewModel, HomePage>("Home", "home");
         }
 
         /// <summary>
@@ -67,7 +81,7 @@ namespace SheduleHelper.Modern.Services
         /// </summary>
         public void NavigateToProjectsAndTasks()
         {
-            NavigateToRoot<ProjectsAndTasksViewModel, ProjectsAndTasksPage>("Projects & Tasks");
+            NavigateToRoot<ProjectsAndTasksViewModel, ProjectsAndTasksPage>("Projects & Tasks", "projectsAndTasks");
         }
 
         /// <summary>
@@ -84,7 +98,7 @@ namespace SheduleHelper.Modern.Services
         /// </summary>
         public void NavigateToHistoryAndReports()
         {
-            NavigateToRoot<HistoryAndReportsViewModel, HistoryAndReportsPage>("History & Reports");
+            NavigateToRoot<HistoryAndReportsViewModel, HistoryAndReportsPage>("History & Reports", "historyAndReports");
         }
 
         /// <summary>
@@ -92,7 +106,7 @@ namespace SheduleHelper.Modern.Services
         /// </summary>
         public void NavigateToSettings()
         {
-            NavigateToRoot<SettingsViewModel, SettingsPage>("Settings");
+            NavigateToRoot<SettingsViewModel, SettingsPage>("Settings", "settings");
         }
 
         /// <summary>
@@ -123,7 +137,9 @@ namespace SheduleHelper.Modern.Services
         /// Navigates to a root-level destination (Home, Projects &amp; Tasks, History &amp; Reports, Settings),
         /// replacing the entire breadcrumb trail with a single segment for that destination.
         /// </summary>
-        private void NavigateToRoot<TViewModel, TPage>(string label)
+        /// <param name="label">The breadcrumb label for this destination.</param>
+        /// <param name="navigationViewItemTag">The <c>Tag</c> of the matching <c>NavigationViewItem</c>, reported via <see cref="RootNavigated"/>.</param>
+        private void NavigateToRoot<TViewModel, TPage>(string label, string navigationViewItemTag)
             where TViewModel : PageViewModelBase
             where TPage : Page
         {
@@ -131,6 +147,8 @@ namespace SheduleHelper.Modern.Services
 
             Breadcrumbs.Clear();
             Breadcrumbs.Add(new BreadcrumbItem(label, NavigateCore<TViewModel, TPage>));
+
+            RootNavigated?.Invoke(this, navigationViewItemTag);
         }
 
         /// <summary>
