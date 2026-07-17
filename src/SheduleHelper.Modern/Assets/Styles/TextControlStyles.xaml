@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Fonts.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!--
+        TextBlock/RichTextBlock have no default style at all in the WinUI SDK (they're plain
+        FrameworkElements, not templated Controls), so their own implicit style is defined fresh here
+        rather than via BasedOn - there is nothing to base it on, and doing so is safe since there's
+        no template to lose. Every other control below is BasedOn its real default style so only
+        FontFamily changes.
+    -->
+
+    <Style TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style TargetType="RichTextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultTextBoxStyle}" TargetType="TextBox">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultPasswordBoxStyle}" TargetType="PasswordBox">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultRichEditBoxStyle}" TargetType="RichEditBox">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultAutoSuggestBoxStyle}" TargetType="AutoSuggestBox">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+</ResourceDictionary>

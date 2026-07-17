@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Fonts.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!--
+        ListView and GridView themselves are intentionally NOT overridden here - their default style
+        has no separately-named resource to base on in the WinUI SDK (only their *Item styles do), so
+        overriding the container without one would replace its entire template. They're covered by
+        ThemeFontFallback.xaml instead; their item containers below are safe to override directly.
+    -->
+
+    <Style BasedOn="{StaticResource DefaultComboBoxStyle}" TargetType="ComboBox">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultComboBoxItemStyle}" TargetType="ComboBoxItem">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultListBoxStyle}" TargetType="ListBox">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultListBoxItemStyle}" TargetType="ListBoxItem">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultGridViewItemStyle}" TargetType="GridViewItem">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultTreeViewStyle}" TargetType="TreeView">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+</ResourceDictionary>

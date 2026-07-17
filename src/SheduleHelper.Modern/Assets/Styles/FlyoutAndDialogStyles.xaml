@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Fonts.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <Style BasedOn="{StaticResource DefaultContentDialogStyle}" TargetType="ContentDialog">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultMenuFlyoutItemStyle}" TargetType="MenuFlyoutItem">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultMenuFlyoutSubItemStyle}" TargetType="MenuFlyoutSubItem">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultToggleMenuFlyoutItemStyle}" TargetType="ToggleMenuFlyoutItem">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultRadioMenuFlyoutItemStyle}" TargetType="RadioMenuFlyoutItem">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultToolTipStyle}" TargetType="ToolTip">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultTeachingTipStyle}" TargetType="TeachingTip">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+</ResourceDictionary>

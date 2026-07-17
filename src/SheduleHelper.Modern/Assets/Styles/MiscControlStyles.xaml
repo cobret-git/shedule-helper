@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Fonts.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!--
+        BreadcrumbBar and ProgressRing themselves have no separately-named default style resource in
+        the WinUI SDK, so they're covered by ThemeFontFallback.xaml instead - only BreadcrumbBarItem
+        has one and is safe to override directly below.
+    -->
+
+    <Style BasedOn="{StaticResource DefaultProgressBarStyle}" TargetType="ProgressBar">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultSliderStyle}" TargetType="Slider">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultExpanderStyle}" TargetType="Expander">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultPersonPictureStyle}" TargetType="PersonPicture">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultInfoBadgeStyle}" TargetType="InfoBadge">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultSelectorBarStyle}" TargetType="SelectorBar">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultSelectorBarItemStyle}" TargetType="SelectorBarItem">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultPivotStyle}" TargetType="Pivot">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultPivotItemStyle}" TargetType="PivotItem">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultPivotHeaderItemStyle}" TargetType="PivotHeaderItem">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultMenuBarStyle}" TargetType="MenuBar">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultCommandBarStyle}" TargetType="CommandBar">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <Style BasedOn="{StaticResource DefaultTabViewStyle}" TargetType="TabView">
+        <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+</ResourceDictionary>
