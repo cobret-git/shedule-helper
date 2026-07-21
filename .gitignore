@@ -419,3 +419,6 @@ FodyWeavers.xsd
 
 # Private documentation (not to be committed)
 docs/
+
+# Local Claude Code instructions (not to be committed)
+/CLAUDE.md
