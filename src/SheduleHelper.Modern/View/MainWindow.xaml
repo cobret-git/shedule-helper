@@ -9,11 +9,10 @@
     Title="SheduleHelper.Modern"
     mc:Ignorable="d">
 
-    <Window.SystemBackdrop>
-        <MicaBackdrop />
-    </Window.SystemBackdrop>
-
-    <Grid x:Name="RootGrid" Loaded="RootGrid_Loaded">
+    <Grid
+        x:Name="RootGrid"
+        Background="{ThemeResource MdBackgroundBrush}"
+        Loaded="RootGrid_Loaded">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -21,9 +20,14 @@
 
         <TitleBar
             x:Name="titleBar"
-            IsBackButtonVisible="False" IsPaneToggleButtonVisible="False"
             Title="SheduleHelper.Modern"
-            Grid.Row="0" />
+            Grid.Row="0"
+            FontFamily="{StaticResource InterVariableFont}"
+            Foreground="{ThemeResource MdOnBackgroundBrush}"
+            IsBackButtonVisible="False"
+            IsPaneToggleButtonVisible="True"
+            BackRequested="TitleBar_BackRequested"
+            PaneToggleRequested="TitleBar_PaneToggleRequested" />
 
         <BreadcrumbBar
             x:Name="AppBreadcrumbBar"
@@ -36,6 +40,8 @@
         <NavigationView
             x:Name="nv"
             Grid.Row="1"
+            IsBackButtonVisible="Collapsed"
+            IsPaneToggleButtonVisible="False"
             IsSettingsVisible="False"
             SelectionChanged="NavigationView_SelectionChanged">
             <NavigationView.MenuItems>
@@ -62,7 +68,7 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.FooterMenuItems>
-            <Frame x:Name="ContentFrame" />
+            <Frame x:Name="ContentFrame"/>
         </NavigationView>
     </Grid>
 </Window>

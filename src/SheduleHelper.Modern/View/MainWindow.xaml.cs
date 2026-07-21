@@ -41,6 +41,7 @@ namespace SheduleHelper.Modern.View
 
             _navigationService.Initialize(ContentFrame);
             _navigationService.RootNavigated += NavigationService_RootNavigated;
+            _navigationService.Breadcrumbs.CollectionChanged += Breadcrumbs_CollectionChanged;
 
             // Hides the default system title bar.
             ExtendsContentIntoTitleBar = true;
@@ -84,6 +85,21 @@ namespace SheduleHelper.Modern.View
             {
                 _navigationService.NavigateToBreadcrumbItem(item);
             }
+        }
+
+        private void TitleBar_PaneToggleRequested(TitleBar sender, object args)
+        {
+            nv.IsPaneOpen = !nv.IsPaneOpen;
+        }
+
+        private void TitleBar_BackRequested(TitleBar sender, object args)
+        {
+            if (_navigationService.Breadcrumbs.Count < 2)
+            {
+                return;
+            }
+
+            _navigationService.NavigateToBreadcrumbItem(_navigationService.Breadcrumbs[^2]);
         }
 
         private void NavigationView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
@@ -147,6 +163,11 @@ namespace SheduleHelper.Modern.View
             _isSyncingNavigationViewSelection = true;
             nv.SelectedItem = matchingItem;
             _isSyncingNavigationViewSelection = false;
+        }
+
+        private void Breadcrumbs_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            titleBar.IsBackButtonVisible = _navigationService.Breadcrumbs.Count > 1;
         }
 
         #endregion

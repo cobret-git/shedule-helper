@@ -7,7 +7,6 @@ namespace SheduleHelper.Core.ViewModels
     {
         public override void Dispose()
         {
-            throw new NotImplementedException();
         }
     }
 }
