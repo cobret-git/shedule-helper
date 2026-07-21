@@ -18,6 +18,7 @@
                 <ResourceDictionary Source="Assets/Styles/DateTimeControlStyles.xaml" />
                 <ResourceDictionary Source="Assets/Styles/FlyoutAndDialogStyles.xaml" />
                 <ResourceDictionary Source="Assets/Styles/MiscControlStyles.xaml" />
+                <ResourceDictionary Source="Assets/Styles/NavigationViewStyles.xaml" />
                 <!--  Other merged dictionaries here  -->
             </ResourceDictionary.MergedDictionaries>
             <!--  Other app resources here  -->
