@@ -39,7 +39,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="NavigationView">
-                    <Grid x:Name="RootGrid">
+                    <Grid x:Name="RootGrid" Margin="0,0,0,0">
                         <!--  Button grid  -->
                         <Grid
                             x:Name="PaneToggleButtonGrid"
@@ -122,7 +122,7 @@
                                 Grid.Row="0"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Top"
-                                Background="{ThemeResource NavigationViewTopPaneBackground}"
+                                Background="{ThemeResource MdSurfaceContainerLowBrush}"
                                 Canvas.ZIndex="1"
                                 XYFocusKeyboardNavigation="Enabled">
                                 <Grid
@@ -311,7 +311,7 @@
                                             <!--  above list margin  -->
                                             <RowDefinition x:Name="ItemsContainerRow" Height="*" />
                                         </Grid.RowDefinitions>
-                                        <Grid x:Name="ContentPaneTopPadding" Height="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=TemplateSettings.TopPadding}" />
+                                        <Grid x:Name="ContentPaneTopPadding" Height="3" />
                                         <Grid Grid.Row="2">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition x:Name="PaneHeaderContentBorderRow" />
@@ -715,9 +715,9 @@
         takes effect.
     -->
     <Style TargetType="controls:NavigationViewItem">
-        <Setter Property="Foreground" Value="{ThemeResource NavigationViewItemForeground}" />
-        <Setter Property="Background" Value="{ThemeResource NavigationViewItemBackground}" />
-        <Setter Property="BorderBrush" Value="{ThemeResource NavigationViewItemBorderBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource MdOnSurfaceVariantBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="{StaticResource NavigationViewItemBorderThickness}" />
         <Setter Property="FontFamily" Value="{ThemeResource ContentControlThemeFontFamily}" />
         <Setter Property="FontWeight" Value="Normal" />
@@ -726,7 +726,7 @@
         <Setter Property="UseSystemFocusVisuals" Value="True" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="TabNavigation" Value="Once" />
-        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+        <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="controls:NavigationViewItem">
@@ -861,9 +861,9 @@
         collapse, so it self-corrects regardless of those margins.
     -->
     <Style x:Key="AppNavigationViewItemPresenterStyleWhenOnLeftPane" TargetType="primitives:NavigationViewItemPresenter">
-        <Setter Property="Foreground" Value="{ThemeResource NavigationViewItemForeground}" />
-        <Setter Property="Background" Value="{ThemeResource NavigationViewItemBackground}" />
-        <Setter Property="BorderBrush" Value="{ThemeResource NavigationViewItemBorderBrush}" />
+        <Setter Property="Foreground" Value="{ThemeResource MdOnSurfaceVariantBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="{StaticResource NavigationViewItemBorderThickness}" />
         <Setter Property="UseSystemFocusVisuals" Value="True" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -886,7 +886,7 @@
                                     x:Name="SelectionIndicator"
                                     Width="{ThemeResource NavigationViewSelectionIndicatorWidth}"
                                     Height="{ThemeResource NavigationViewSelectionIndicatorHeight}"
-                                    Fill="{ThemeResource NavigationViewSelectionIndicatorForeground}"
+                                    Fill="Transparent"
                                     Opacity="0.0"
                                     RadiusX="{ThemeResource NavigationViewSelectionIndicatorRadius}"
                                     RadiusY="{ThemeResource NavigationViewSelectionIndicatorRadius}" />
@@ -957,7 +957,7 @@
                                             <controls:FontIconSource
                                                 FontFamily="{StaticResource SymbolThemeFontFamily}"
                                                 FontSize="{ThemeResource NavigationViewItemExpandedGlyphFontSize}"
-                                                Foreground="{ThemeResource NavigationViewItemForeground}"
+                                                Foreground="{ThemeResource MdOnSurfaceVariantBrush}"
                                                 Glyph="{StaticResource NavigationViewItemExpandedGlyph}" />
                                         </controls:AnimatedIcon.FallbackIconSource>
                                         <controls:AnimatedIcon.RenderTransform />
@@ -979,9 +979,9 @@
 
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource NavigationViewItemBackgroundPointerOver}" />
-                                        <Setter Target="Icon.Foreground" Value="{ThemeResource NavigationViewItemForegroundPointerOver}" />
-                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource NavigationViewItemForegroundPointerOver}" />
+                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource MdSurfaceContainerHighBrush}" />
+                                        <Setter Target="Icon.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
                                         <Setter Target="Icon.(controls:AnimatedIcon.State)" Value="PointerOver" />
 
                                     </VisualState.Setters>
@@ -989,9 +989,9 @@
 
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource NavigationViewItemBackgroundPressed}" />
-                                        <Setter Target="Icon.Foreground" Value="{ThemeResource NavigationViewItemForegroundPressed}" />
-                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource NavigationViewItemForegroundPressed}" />
+                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource MdSurfaceContainerHighestBrush}" />
+                                        <Setter Target="Icon.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
                                         <Setter Target="Icon.(controls:AnimatedIcon.State)" Value="Pressed" />
 
                                     </VisualState.Setters>
@@ -999,18 +999,18 @@
 
                                 <VisualState x:Name="Selected">
                                     <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource NavigationViewItemBackgroundSelected}" />
-                                        <Setter Target="Icon.Foreground" Value="{ThemeResource NavigationViewItemForegroundSelected}" />
-                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource NavigationViewItemForegroundSelected}" />
+                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource MdSecondaryContainerBrush}" />
+                                        <Setter Target="Icon.Foreground" Value="{ThemeResource MdOnSecondaryContainerBrush}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource MdOnSecondaryContainerBrush}" />
 
                                     </VisualState.Setters>
                                 </VisualState>
 
                                 <VisualState x:Name="PointerOverSelected">
                                     <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource NavigationViewItemBackgroundSelectedPointerOver}" />
-                                        <Setter Target="Icon.Foreground" Value="{ThemeResource NavigationViewItemForegroundSelectedPointerOver}" />
-                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource NavigationViewItemForegroundSelectedPointerOver}" />
+                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource MdSecondaryContainerBrush}" />
+                                        <Setter Target="Icon.Foreground" Value="{ThemeResource MdOnSecondaryContainerBrush}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource MdOnSecondaryContainerBrush}" />
                                         <Setter Target="Icon.(controls:AnimatedIcon.State)" Value="PointerOver" />
 
                                     </VisualState.Setters>
@@ -1018,9 +1018,9 @@
 
                                 <VisualState x:Name="PressedSelected">
                                     <VisualState.Setters>
-                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource NavigationViewItemBackgroundSelectedPressed}" />
-                                        <Setter Target="Icon.Foreground" Value="{ThemeResource NavigationViewItemForegroundSelectedPressed}" />
-                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource NavigationViewItemForegroundSelectedPressed}" />
+                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource MdSecondaryContainerBrush}" />
+                                        <Setter Target="Icon.Foreground" Value="{ThemeResource MdOnSecondaryContainerBrush}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource MdOnSecondaryContainerBrush}" />
                                         <Setter Target="Icon.(controls:AnimatedIcon.State)" Value="Pressed" />
 
                                     </VisualState.Setters>
@@ -1099,14 +1099,14 @@
                                 </VisualState>
                                 <VisualState x:Name="PointerOverChevronVisibleOpen">
                                     <VisualState.Setters>
-                                        <Setter Target="ExpandCollapseChevronIcon.Foreground" Value="{ThemeResource NavigationViewItemForegroundPointerOver}" />
+                                        <Setter Target="ExpandCollapseChevronIcon.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
                                         <Setter Target="ExpandCollapseChevron.(controls:AnimatedIcon.State)" Value="PointerOverOn" />
 
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="PointerOverChevronVisibleClosed">
                                     <VisualState.Setters>
-                                        <Setter Target="ExpandCollapseChevronIcon.Foreground" Value="{ThemeResource NavigationViewItemForegroundPointerOver}" />
+                                        <Setter Target="ExpandCollapseChevronIcon.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
                                         <Setter Target="ExpandCollapseChevron.(controls:AnimatedIcon.State)" Value="PointerOverOff" />
 
                                     </VisualState.Setters>
@@ -1119,14 +1119,14 @@
                                 </VisualState>
                                 <VisualState x:Name="PressedChevronVisibleOpen">
                                     <VisualState.Setters>
-                                        <Setter Target="ExpandCollapseChevronIcon.Foreground" Value="{ThemeResource NavigationViewItemForegroundPressed}" />
+                                        <Setter Target="ExpandCollapseChevronIcon.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
                                         <Setter Target="ExpandCollapseChevron.(controls:AnimatedIcon.State)" Value="PressedOn" />
 
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="PressedChevronVisibleClosed">
                                     <VisualState.Setters>
-                                        <Setter Target="ExpandCollapseChevronIcon.Foreground" Value="{ThemeResource NavigationViewItemForegroundPressed}" />
+                                        <Setter Target="ExpandCollapseChevronIcon.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
                                         <Setter Target="ExpandCollapseChevron.(controls:AnimatedIcon.State)" Value="PressedOff" />
 
                                     </VisualState.Setters>
@@ -1151,6 +1151,157 @@
                                         <Setter Target="InfoBadgePresenter.VerticalAlignment" Value="Top" />
                                         <Setter Target="InfoBadgePresenter.HorizontalAlignment" Value="Right" />
                                         <Setter Target="InfoBadgePresenter.Margin" Value="0,2,2,0" />
+
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                            </VisualStateGroup>
+
+                        </VisualStateManager.VisualStateGroups>
+                    </Grid>
+
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Copy of the SDK's default style for NavigationViewItemHeader (Microsoft.WindowsAppSDK 1.7),
+        with Foreground pointed at the Material palette instead of NavigationViewItemHeaderForeground.
+    -->
+    <Style TargetType="controls:NavigationViewItemHeader">
+        <Setter Property="Foreground" Value="{ThemeResource MdOnSurfaceVariantBrush}" />
+        <Setter Property="IsEnabled" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:NavigationViewItemHeader">
+                    <Grid x:Name="NavigationViewItemHeaderRootGrid">
+                        <Grid
+                            x:Name="InnerHeaderGrid"
+                            Height="40"
+                            Margin="{ThemeResource NavigationViewItemInnerHeaderMargin}"
+                            HorizontalAlignment="Left">
+                            <TextBlock
+                                x:Name="HeaderText"
+                                Margin="0,-1,0,-1"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource NavigationViewItemHeaderTextStyle}"
+                                Text="{TemplateBinding Content}"
+                                TextWrapping="NoWrap" />
+
+                        </Grid>
+
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="PaneStates">
+
+                                <VisualStateGroup.Transitions>
+                                    <VisualTransition From="HeaderTextCollapsed" To="HeaderTextVisible">
+
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="InnerHeaderGrid" Storyboard.TargetProperty="Height">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="40" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="HeaderText" Storyboard.TargetProperty="Visibility">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="Visible" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="HeaderText" Storyboard.TargetProperty="Opacity">
+                                                <LinearDoubleKeyFrame KeyTime="0:0:0" Value="0.0" />
+                                                <LinearDoubleKeyFrame KeyTime="0:0:0.1" Value="0.0" />
+                                                <SplineDoubleKeyFrame
+                                                    KeySpline="0.0,0.35 0.15,1.0"
+                                                    KeyTime="0:0:0.2"
+                                                    Value="1.0" />
+                                            </DoubleAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualTransition>
+                                    <VisualTransition From="HeaderTextVisible" To="HeaderTextCollapsed">
+
+                                        <Storyboard>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="InnerHeaderGrid" Storyboard.TargetProperty="Height">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0" Value="0" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <ObjectAnimationUsingKeyFrames Storyboard.TargetName="HeaderText" Storyboard.TargetProperty="Visibility">
+                                                <DiscreteObjectKeyFrame KeyTime="0:0:0.2" Value="Collapsed" />
+                                            </ObjectAnimationUsingKeyFrames>
+                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="HeaderText" Storyboard.TargetProperty="Opacity">
+                                                <LinearDoubleKeyFrame KeyTime="0:0:0" Value="1.0" />
+                                                <SplineDoubleKeyFrame
+                                                    KeySpline="0.0,0.35 0.15,1.0"
+                                                    KeyTime="0:0:0.1"
+                                                    Value="0.0" />
+                                            </DoubleAnimationUsingKeyFrames>
+                                        </Storyboard>
+                                    </VisualTransition>
+                                </VisualStateGroup.Transitions>
+                                <VisualState x:Name="HeaderTextVisible" />
+                                <VisualState x:Name="HeaderTextCollapsed">
+                                    <VisualState.Setters>
+                                        <Setter Target="HeaderText.Visibility" Value="Collapsed" />
+                                        <Setter Target="InnerHeaderGrid.Height" Value="0" />
+
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                            </VisualStateGroup>
+                            <VisualStateGroup x:Name="DisplayModeStates">
+                                <VisualState x:Name="LeftMode" />
+                                <VisualState x:Name="TopMode">
+                                    <VisualState.Setters>
+                                        <Setter Target="InnerHeaderGrid.Margin" Value="{ThemeResource TopNavigationViewItemInnerHeaderMargin}" />
+
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                            </VisualStateGroup>
+
+                        </VisualStateManager.VisualStateGroups>
+                    </Grid>
+
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Copy of the SDK's default style for NavigationViewItemSeparator (Microsoft.WindowsAppSDK
+        1.7), with the separator line's Fill pointed at the Material palette's divider token instead
+        of NavigationViewItemSeparatorForeground/TopNavigationViewItemSeparatorForeground.
+    -->
+    <Style TargetType="controls:NavigationViewItemSeparator">
+        <Setter Property="IsEnabled" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Grid x:Name="NavigationViewItemSeparatorRootGrid">
+                        <Rectangle
+                            x:Name="SeparatorLine"
+                            Height="{ThemeResource NavigationViewItemSeparatorHeight}"
+                            Margin="{ThemeResource NavigationViewItemSeparatorMargin}"
+                            Fill="{ThemeResource MdOutlineVariantBrush}" />
+
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="NavigationSeparatorLineStates">
+                                <VisualState x:Name="HorizontalLine" />
+                                <VisualState x:Name="HorizontalLineCompact">
+                                    <VisualState.Setters>
+                                        <Setter Target="SeparatorLine.Margin" Value="{ThemeResource NavigationViewCompactItemSeparatorMargin}" />
+
+                                    </VisualState.Setters>
+                                </VisualState>
+                                <VisualState x:Name="VerticalLine">
+                                    <VisualState.Setters>
+                                        <Setter Target="SeparatorLine.Height" Value="24" />
+                                        <Setter Target="SeparatorLine.Width" Value="{ThemeResource TopNavigationViewItemSeparatorWidth}" />
+                                        <Setter Target="SeparatorLine.Margin" Value="{ThemeResource TopNavigationViewItemSeparatorMargin}" />
+                                        <Setter Target="SeparatorLine.VerticalAlignment" Value="Center" />
+                                        <Setter Target="SeparatorLine.Fill" Value="{ThemeResource MdOutlineVariantBrush}" />
 
                                     </VisualState.Setters>
                                 </VisualState>

@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:animatedvisuals="using:Microsoft.UI.Xaml.Controls.AnimatedVisuals"
+    xmlns:controls="using:Microsoft.UI.Xaml.Controls">
 
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="Fonts.xaml" />
@@ -53,5 +57,237 @@
 
     <Style TargetType="ToggleSwitch" BasedOn="{StaticResource DefaultToggleSwitchStyle}">
         <Setter Property="FontFamily" Value="{StaticResource InterVariableFont}" />
+    </Style>
+
+    <!--
+        Copy of the SDK's PaneToggleButtonStyle (Microsoft.WindowsAppSDK 1.7) - the NavigationView
+        rail toggle button - with its background/foreground states pointed at the Material palette
+        instead of the NavigationViewButtonBackground*/NavigationViewButtonForeground*/
+        NavigationViewItemBackground/NavigationViewItemForeground theme keys.
+    -->
+    <Style x:Key="PaneToggleButtonStyle" TargetType="Button">
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontFamily" Value="{StaticResource SymbolThemeFontFamily}" />
+        <Setter Property="MinHeight" Value="{StaticResource PaneToggleButtonHeight}" />
+        <Setter Property="MinWidth" Value="{StaticResource PaneToggleButtonWidth}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{ThemeResource MdOnSurfaceVariantBrush}" />
+        <Setter Property="BorderThickness" Value="{ThemeResource NavigationViewToggleBorderThickness}" />
+        <Setter Property="Padding" Value="{ThemeResource NavigationViewItemButtonMargin}" />
+        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid
+                        x:Name="LayoutRoot"
+                        Height="{TemplateBinding MinHeight}"
+                        Margin="{TemplateBinding Padding}"
+                        HorizontalAlignment="Stretch"
+                        Background="{TemplateBinding Background}"
+                        CornerRadius="{TemplateBinding CornerRadius}">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="{ThemeResource PaneToggleButtonHeight}" />
+                        </Grid.RowDefinitions>
+
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+
+                                <VisualState x:Name="PointerOver">
+                                    <VisualState.Setters>
+                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource MdSurfaceContainerHighBrush}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
+                                        <Setter Target="Icon.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
+                                        <Setter Target="Icon.(controls:AnimatedIcon.State)" Value="PointerOver" />
+
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                                <VisualState x:Name="Pressed">
+                                    <VisualState.Setters>
+                                        <Setter Target="LayoutRoot.Background" Value="{ThemeResource MdSurfaceContainerHighestBrush}" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
+                                        <Setter Target="Icon.Foreground" Value="{ThemeResource MdOnSurfaceBrush}" />
+                                        <Setter Target="Icon.(controls:AnimatedIcon.State)" Value="Pressed" />
+
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                                <VisualState x:Name="Disabled">
+                                    <VisualState.Setters>
+                                        <Setter Target="LayoutRoot.Background" Value="Transparent" />
+                                        <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource MdOnSurfaceVariantBrush}" />
+
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                            </VisualStateGroup>
+
+                        </VisualStateManager.VisualStateGroups>
+                        <Border Width="{TemplateBinding MinWidth}">
+                            <controls:AnimatedIcon
+                                x:Name="Icon"
+                                xmlns:local="using:Microsoft.UI.Xaml.Controls"
+                                Width="16"
+                                Height="16"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                local:AnimatedIcon.State="Normal"
+                                AutomationProperties.AccessibilityView="Raw"
+                                Foreground="{TemplateBinding Foreground}">
+                                <animatedvisuals:AnimatedGlobalNavigationButtonVisualSource />
+                                <controls:AnimatedIcon.FallbackIconSource>
+                                    <controls:FontIconSource FontSize="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=FontSize}" Glyph="&#xE700;" />
+                                </controls:AnimatedIcon.FallbackIconSource>
+                            </controls:AnimatedIcon>
+                        </Border>
+                        <ContentPresenter
+                            x:Name="ContentPresenter"
+                            Grid.Column="1"
+                            Padding="4,0,0,0"
+                            VerticalContentAlignment="Center"
+                            Content="{TemplateBinding Content}"
+                            FontSize="{TemplateBinding FontSize}" />
+
+                    </Grid>
+
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Copy of the SDK's NavigationBackButtonNormalStyle (Microsoft.WindowsAppSDK 1.7) - used for
+        the NavigationView back button and (via NavigationViewStyles.xaml) the pane close button -
+        with its background/foreground states pointed at the Material palette instead of
+        NavigationViewBackButtonBackground/NavigationViewItemForeground/NavigationViewButtonBackground*/
+        NavigationViewButtonForeground*.
+    -->
+    <Style x:Key="NavigationBackButtonNormalStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{ThemeResource MdOnSurfaceVariantBrush}" />
+        <Setter Property="FontFamily" Value="{ThemeResource SymbolThemeFontFamily}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="Height" Value="{ThemeResource NavigationBackButtonHeight}" />
+        <Setter Property="Width" Value="{ThemeResource NavigationBackButtonWidth}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}" />
+        <Setter Property="Content" Value="&#xE72B;" />
+        <Setter Property="Margin" Value="4,2" />
+        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="RootGrid" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+
+                                <VisualState x:Name="PointerOver">
+
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="Background">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource MdSurfaceContainerHighBrush}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Content" Storyboard.TargetProperty="Foreground">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource MdOnSurfaceBrush}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                    <VisualState.Setters>
+                                        <Setter Target="Content.(controls:AnimatedIcon.State)" Value="PointerOver" />
+
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                                <VisualState x:Name="Pressed">
+
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootGrid" Storyboard.TargetProperty="Background">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource MdSurfaceContainerHighestBrush}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Content" Storyboard.TargetProperty="Foreground">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource MdOnSurfaceBrush}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                    <VisualState.Setters>
+                                        <Setter Target="Content.(controls:AnimatedIcon.State)" Value="Pressed" />
+
+                                    </VisualState.Setters>
+                                </VisualState>
+
+                                <VisualState x:Name="Disabled">
+
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="Content" Storyboard.TargetProperty="Foreground">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{ThemeResource MdOnSurfaceVariantBrush}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+
+                            </VisualStateGroup>
+
+                        </VisualStateManager.VisualStateGroups>
+                        <controls:AnimatedIcon
+                            x:Name="Content"
+                            xmlns:local="using:Microsoft.UI.Xaml.Controls"
+                            Width="16"
+                            Height="16"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            local:AnimatedIcon.State="Normal"
+                            AutomationProperties.AccessibilityView="Raw"
+                            MirroredWhenRightToLeft="True">
+                            <animatedvisuals:AnimatedBackVisualSource />
+                            <controls:AnimatedIcon.FallbackIconSource>
+                                <controls:FontIconSource
+                                    FontFamily="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=FontFamily}"
+                                    FontSize="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=FontSize}"
+                                    Glyph="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content}"
+                                    MirroredWhenRightToLeft="True" />
+                            </controls:AnimatedIcon.FallbackIconSource>
+                        </controls:AnimatedIcon>
+
+                    </Grid>
+
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style
+        x:Key="NavigationBackButtonSmallStyle"
+        TargetType="Button"
+        BasedOn="{StaticResource NavigationBackButtonNormalStyle}">
+        <Setter Property="Margin" Value="4,2,0,2" />
+    </Style>
+
+    <!--
+        Copy of the SDK's NavigationViewPaneSearchButtonStyle (Microsoft.WindowsAppSDK 1.7), with
+        Background/Foreground pointed at the Material palette instead of
+        NavigationViewItemBackground/NavigationViewItemForeground.
+    -->
+    <Style x:Key="NavigationViewPaneSearchButtonStyle" TargetType="Button">
+        <Setter Property="FontFamily" Value="{ThemeResource SymbolThemeFontFamily}" />
+        <Setter Property="BorderThickness" Value="{ThemeResource NavigationViewToggleBorderThickness}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{ThemeResource MdOnSurfaceVariantBrush}" />
+        <Setter Property="Content" Value="&#xE721;" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="FocusVisualMargin" Value="-4,0" />
+        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+        <Setter Property="IsTextScaleFactorEnabled" Value="False" />
     </Style>
 </ResourceDictionary>
