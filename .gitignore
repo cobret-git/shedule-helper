@@ -422,3 +422,4 @@ docs/
 
 # Local Claude Code instructions (not to be committed)
 /CLAUDE.md
+/.claude/
