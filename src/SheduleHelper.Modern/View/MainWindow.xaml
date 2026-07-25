@@ -22,11 +22,11 @@
             x:Name="titleBar"
             Title="SheduleHelper.Modern"
             Grid.Row="0"
+            BackRequested="TitleBar_BackRequested"
             FontFamily="{StaticResource InterVariableFont}"
             Foreground="{ThemeResource MdOnBackgroundBrush}"
             IsBackButtonVisible="False"
             IsPaneToggleButtonVisible="True"
-            BackRequested="TitleBar_BackRequested"
             PaneToggleRequested="TitleBar_PaneToggleRequested" />
 
         <BreadcrumbBar
@@ -47,28 +47,56 @@
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="Home" Tag="home">
                     <NavigationViewItem.Icon>
-                        <SymbolIcon Symbol="Home" />
+                        <FontIcon
+                            FontFamily="{StaticResource MaterialIconsRoundedFilledFont}"
+                            Glyph="&#xe88a;"
+                            RenderTransformOrigin="0.5 0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.6" ScaleY="1.6" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Content="Projects &amp; Tasks" Tag="projectsAndTasks">
                     <NavigationViewItem.Icon>
-                        <SymbolIcon Symbol="List" />
+                        <FontIcon
+                            FontFamily="{StaticResource MaterialIconsRoundedFilledFont}"
+                            Glyph="&#xe85d;"
+                            RenderTransformOrigin="0.5 0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.6" ScaleY="1.6" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Content="History &amp; Reports" Tag="historyAndReports">
                     <NavigationViewItem.Icon>
-                        <SymbolIcon Symbol="Calendar" />
+                        <FontIcon
+                            FontFamily="{StaticResource MaterialIconsRoundedFilledFont}"
+                            Glyph="&#xebcc;"
+                            RenderTransformOrigin="0.5 0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.6" ScaleY="1.6" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
             <NavigationView.FooterMenuItems>
                 <NavigationViewItem Content="Settings" Tag="settings">
                     <NavigationViewItem.Icon>
-                        <SymbolIcon Symbol="Setting" />
+                        <FontIcon
+                            FontFamily="{StaticResource MaterialIconsRoundedFilledFont}"
+                            Glyph="&#xe8b8;"
+                            RenderTransformOrigin="0.5 0.5">
+                            <FontIcon.RenderTransform>
+                                <ScaleTransform ScaleX="1.6" ScaleY="1.6" />
+                            </FontIcon.RenderTransform>
+                        </FontIcon>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.FooterMenuItems>
-            <Frame x:Name="ContentFrame"/>
+            <Frame x:Name="ContentFrame" Padding="0,9,10,0" />
         </NavigationView>
     </Grid>
 </Window>
