@@ -104,6 +104,16 @@
                             CornerRadius="{TemplateBinding CornerRadius}">
                             <Canvas x:Name="PART_Canvas" />
                         </Border>
+                        <!--
+                            Transparent overlay for the hover inspector - a Background is required
+                            for a Panel to be hit-testable across its empty space, not just where
+                            children are drawn. Sits above the Border so it owns pointer input for
+                            the bar without needing PART_Canvas itself to participate.
+                        -->
+                        <Canvas
+                            x:Name="PART_HoverCanvas"
+                            Grid.Row="1"
+                            Background="Transparent" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>

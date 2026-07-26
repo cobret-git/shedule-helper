@@ -1,5 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Shapes;
@@ -12,16 +13,21 @@ using System.Linq;
 using System.Text;
 using Windows.Foundation;
 using Windows.UI;
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace SheduleHelper.Modern.Controls
 {
     [TemplatePart(Name = CanvasPartName, Type = typeof(Canvas))]
     [TemplatePart(Name = TicksCanvasPartName, Type = typeof(Canvas))]
+    [TemplatePart(Name = HoverCanvasPartName, Type = typeof(Canvas))]
     public sealed class TimelineBar : Control
     {
         private const string CanvasPartName = "PART_Canvas";
         private const string TicksCanvasPartName = "PART_TicksCanvas";
+        private const string HoverCanvasPartName = "PART_HoverCanvas";
+        private const string TooltipBackgroundBrushKey = "MdInverseSurfaceBrush";
+        private const string TooltipForegroundBrushKey = "MdInverseOnSurfaceBrush";
 
         // Candidate hour-scale intervals (minutes), ascending. DrawTicks picks the smallest one
         // whose labels all fit the current width, so density adapts automatically on resize.
@@ -59,6 +65,11 @@ namespace SheduleHelper.Modern.Controls
 
         private Canvas? _canvas;
         private Canvas? _ticksCanvas;
+        private Canvas? _hoverCanvas;
+        private Line? _hoverLine;
+        private Border? _hoverTooltip;
+        private TextBlock? _hoverTooltipText;
+        private bool _cursorHidden;
         private DispatcherTimer _liveTimer;
         private readonly Dictionary<string, (Brush Background, Brush Foreground)> _assignedColors = new();
         private int _paletteIndex = 0;
@@ -75,6 +86,10 @@ namespace SheduleHelper.Modern.Controls
             // (see ThemeService.SwapPaletteDictionary) rather than via WinUI's built-in
             // light/dark resource switching, so brushes resolved here need an explicit redraw.
             this.ActualThemeChanged += (s, e) => DrawTimeline();
+
+            // Safety net: if this control is torn down while the pointer is still "inside" (e.g.
+            // navigating away from the page mid-hover), make sure the system cursor comes back.
+            this.Unloaded += (s, e) => SetCursorHidden(false);
         }
 
         protected override void OnApplyTemplate()
@@ -89,9 +104,20 @@ namespace SheduleHelper.Modern.Controls
             {
                 _ticksCanvas.SizeChanged -= OnCanvasSizeChanged;
             }
+            if (_hoverCanvas != null)
+            {
+                _hoverCanvas.PointerEntered -= OnHoverPointerEntered;
+                _hoverCanvas.PointerMoved -= OnHoverPointerMoved;
+                _hoverCanvas.PointerExited -= OnHoverPointerExited;
+                _hoverCanvas.PointerCaptureLost -= OnHoverPointerCaptureLost;
+            }
+
+            // Leaving hover-hidden state behind on a template swap would be a stuck-cursor bug.
+            SetCursorHidden(false);
 
             _canvas = GetTemplateChild(CanvasPartName) as Canvas;
             _ticksCanvas = GetTemplateChild(TicksCanvasPartName) as Canvas;
+            _hoverCanvas = GetTemplateChild(HoverCanvasPartName) as Canvas;
 
             if (_canvas != null)
             {
@@ -100,6 +126,14 @@ namespace SheduleHelper.Modern.Controls
             if (_ticksCanvas != null)
             {
                 _ticksCanvas.SizeChanged += OnCanvasSizeChanged;
+            }
+            if (_hoverCanvas != null)
+            {
+                _hoverCanvas.PointerEntered += OnHoverPointerEntered;
+                _hoverCanvas.PointerMoved += OnHoverPointerMoved;
+                _hoverCanvas.PointerExited += OnHoverPointerExited;
+                _hoverCanvas.PointerCaptureLost += OnHoverPointerCaptureLost;
+                BuildHoverElements();
             }
 
             if (_canvas != null)
@@ -264,6 +298,27 @@ namespace SheduleHelper.Modern.Controls
             return (Color)Application.Current.Resources[key];
         }
 
+        /// <summary>
+        /// Computes where <paramref name="segment"/> falls within <c>[DayStart, DayEnd]</c>, in
+        /// minutes from <see cref="DayStart"/>, clamped to that range - or <c>null</c> if it's
+        /// entirely outside it (so it shouldn't be drawn/hit-tested at all). An open-ended
+        /// (<c>EndTime == null</c>) segment is treated as running until <see cref="DateTime.Now"/>.
+        /// Shared by <see cref="DrawTimeline"/> and the hover hit-test (<see cref="FindSegmentAt"/>)
+        /// so the two can never disagree about what's actually at a given x position.
+        /// </summary>
+        private (double StartMinutes, double EndMinutes)? GetVisibleRange(TimelineSegment segment, double totalMinutes)
+        {
+            var startMinutes = (segment.StartTime.TimeOfDay - DayStart).TotalMinutes;
+
+            var endTimeToUse = segment.EndTime ?? DateTime.Now;
+            var endMinutes = (endTimeToUse.TimeOfDay - DayStart).TotalMinutes;
+
+            startMinutes = Math.Max(0, Math.Min(startMinutes, totalMinutes));
+            endMinutes = Math.Max(0, Math.Min(endMinutes, totalMinutes));
+
+            return endMinutes - startMinutes <= 0 ? null : (startMinutes, endMinutes);
+        }
+
         private void DrawTimeline()
         {
             if (_canvas == null || ItemsSource == null || ActualWidth == 0) return;
@@ -278,21 +333,11 @@ namespace SheduleHelper.Modern.Controls
 
             foreach (var segment in ItemsSource.OrderBy(s => s.StartTime))
             {
-                var startMinutes = (segment.StartTime.TimeOfDay - DayStart).TotalMinutes;
+                var range = GetVisibleRange(segment, totalMinutes);
+                if (range == null) continue;
 
-                // Calculate end time, defaulting to DateTime.Now if it's the active live task
-                var endTimeToUse = segment.EndTime ?? DateTime.Now;
-                var endMinutes = (endTimeToUse.TimeOfDay - DayStart).TotalMinutes;
-
-                // Clamp values to ensure we don't draw outside the bounds of the day
-                startMinutes = Math.Max(0, Math.Min(startMinutes, totalMinutes));
-                endMinutes = Math.Max(0, Math.Min(endMinutes, totalMinutes));
-
-                var widthMinutes = endMinutes - startMinutes;
-                if (widthMinutes <= 0) continue;
-
-                var xPosition = (startMinutes / totalMinutes) * _canvas.ActualWidth;
-                var width = (widthMinutes / totalMinutes) * _canvas.ActualWidth;
+                var xPosition = (range.Value.StartMinutes / totalMinutes) * _canvas.ActualWidth;
+                var width = ((range.Value.EndMinutes - range.Value.StartMinutes) / totalMinutes) * _canvas.ActualWidth;
 
                 (Brush Background, Brush Foreground) colors;
 
@@ -496,6 +541,167 @@ namespace SheduleHelper.Modern.Controls
             _canvas.Children.Add(indicatorLine);
         }
 
+        #endregion
+
+        #region Hover Inspector
+
+        /// <summary>
+        /// Creates the hover crosshair line and tooltip pill once per template application and
+        /// adds them to <see cref="_hoverCanvas"/>, initially hidden. Unlike segments/ticks, these
+        /// are never rebuilt by <see cref="DrawTimeline"/> - only repositioned/re-texted on pointer
+        /// events - so hovering never triggers a full redraw (see the plan's rationale).
+        /// </summary>
+        private void BuildHoverElements()
+        {
+            if (_hoverCanvas == null) return;
+
+            _hoverCanvas.Children.Clear();
+
+            _hoverLine = new Line
+            {
+                StrokeThickness = 2,
+                Visibility = Visibility.Collapsed,
+            };
+
+            _hoverTooltipText = new TextBlock
+            {
+                FontSize = 12,
+                TextWrapping = TextWrapping.NoWrap,
+            };
+
+            _hoverTooltip = new Border
+            {
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(8, 4, 8, 4),
+                Child = _hoverTooltipText,
+                Visibility = Visibility.Collapsed,
+            };
+
+            _hoverCanvas.Children.Add(_hoverLine);
+            _hoverCanvas.Children.Add(_hoverTooltip);
+        }
+
+        // Re-resolved at the start of each hover session (not every PointerMoved) rather than
+        // cached once, so a theme swap that happens between hovers is picked up correctly - the
+        // hover overlay isn't touched by DrawTimeline's own theme-change redraw.
+        private void UpdateHoverBrushes()
+        {
+            if (_hoverLine != null) _hoverLine.Stroke = IndicatorBrush;
+            if (_hoverTooltip != null) _hoverTooltip.Background = ResolveBrush(TooltipBackgroundBrushKey);
+            if (_hoverTooltipText != null) _hoverTooltipText.Foreground = ResolveBrush(TooltipForegroundBrushKey);
+        }
+
+        /// <summary>
+        /// Hides or restores the OS mouse cursor via the Win32 <c>ShowCursor</c> counter (see the
+        /// Native Methods region). Guarded by <see cref="_cursorHidden"/> so hide/show calls are
+        /// always paired 1:1 - <c>ShowCursor</c>'s counter would otherwise drift if, say, two
+        /// PointerEntered events fired without a PointerExited in between.
+        /// </summary>
+        private void SetCursorHidden(bool hidden)
+        {
+            if (hidden == _cursorHidden) return;
+
+            ShowCursor(!hidden);
+            _cursorHidden = hidden;
+        }
+
+        private void OnHoverPointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            SetCursorHidden(true);
+            UpdateHoverBrushes();
+            UpdateHoverIndicator(e);
+        }
+
+        private void OnHoverPointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            UpdateHoverIndicator(e);
+        }
+
+        private void OnHoverPointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            SetCursorHidden(false);
+            HideHoverIndicator();
+        }
+
+        private void OnHoverPointerCaptureLost(object sender, PointerRoutedEventArgs e)
+        {
+            SetCursorHidden(false);
+            HideHoverIndicator();
+        }
+
+        private void HideHoverIndicator()
+        {
+            if (_hoverLine != null) _hoverLine.Visibility = Visibility.Collapsed;
+            if (_hoverTooltip != null) _hoverTooltip.Visibility = Visibility.Collapsed;
+        }
+
+        private void UpdateHoverIndicator(PointerRoutedEventArgs e)
+        {
+            if (_hoverCanvas == null || _hoverLine == null || _hoverTooltip == null || ItemsSource == null) return;
+
+            var totalMinutes = (DayEnd - DayStart).TotalMinutes;
+            if (totalMinutes <= 0) return;
+
+            var canvasWidth = _hoverCanvas.ActualWidth;
+            var canvasHeight = _hoverCanvas.ActualHeight;
+            if (canvasWidth <= 0) return;
+
+            var x = Math.Clamp(e.GetCurrentPoint(_hoverCanvas).Position.X, 0, canvasWidth);
+            var timeOfDay = DayStart + TimeSpan.FromMinutes((x / canvasWidth) * totalMinutes);
+
+            var segment = FindSegmentAt(timeOfDay, totalMinutes);
+
+            _hoverLine.X1 = x;
+            _hoverLine.X2 = x;
+            _hoverLine.Y1 = 0;
+            _hoverLine.Y2 = canvasHeight;
+            _hoverLine.Visibility = Visibility.Visible;
+
+            _hoverTooltipText.Text = segment == null
+                ? FormatTick(timeOfDay)
+                : $"{FormatTick(timeOfDay)} • {segment.Value.Name}";
+
+            _hoverTooltip.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var tooltipWidth = _hoverTooltip.DesiredSize.Width;
+            var left = Math.Clamp(x - (tooltipWidth / 2), 0, Math.Max(0, canvasWidth - tooltipWidth));
+
+            Canvas.SetLeft(_hoverTooltip, left);
+            Canvas.SetTop(_hoverTooltip, 4);
+            _hoverTooltip.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Finds which segment (if any) covers <paramref name="timeOfDay"/>, using the same
+        /// clamped bounds <see cref="DrawTimeline"/> draws with (via <see cref="GetVisibleRange"/>)
+        /// so the tooltip can never disagree with what's visually under the cursor. Segments are
+        /// scanned in the same ascending-start-time order they're drawn in, keeping the last match
+        /// so ties resolve to whichever segment paints on top.
+        /// </summary>
+        private TimelineSegment? FindSegmentAt(TimeSpan timeOfDay, double totalMinutes)
+        {
+            if (ItemsSource == null) return null;
+
+            var minutes = (timeOfDay - DayStart).TotalMinutes;
+            TimelineSegment? match = null;
+
+            foreach (var segment in ItemsSource.OrderBy(s => s.StartTime))
+            {
+                var range = GetVisibleRange(segment, totalMinutes);
+                if (range == null) continue;
+
+                if (minutes >= range.Value.StartMinutes && minutes <= range.Value.EndMinutes)
+                {
+                    match = segment;
+                }
+            }
+
+            return match;
+        }
+
+        #endregion
+
+        #region Rendering Logic
+
         /// <summary>
         /// Generates an in-memory hatched pattern matched to the exact dimensions of the target rectangle.
         /// </summary>
@@ -537,6 +743,16 @@ namespace SheduleHelper.Modern.Controls
                 Stretch = Stretch.None // Prevent anti-aliasing blurring on the sharp lines
             };
         }
+        #endregion
+
+        #region Native Methods
+
+        // Only the plain Win32 show/hide is reliable for this on WinUI 3 desktop apps - see the
+        // "Hiding the system cursor while hovering" section of the plan for why the higher-level
+        // ProtectedCursor/InputSystemCursor API doesn't have a "hidden" option.
+        [DllImport("user32.dll")]
+        private static extern int ShowCursor(bool show);
+
         #endregion
     }
 }
