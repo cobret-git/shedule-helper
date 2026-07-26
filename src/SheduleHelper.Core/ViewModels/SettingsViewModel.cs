@@ -21,7 +21,6 @@ namespace SheduleHelper.Core.ViewModels
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IDispatcherService _dispatcherService;
         private readonly ISettingsService _settingsService;
-        private readonly IThemeApplier _themeApplier;
         private readonly IDialogService _dialogService;
         private readonly ILogger _logger = Serilog.Log.ForContext<SettingsViewModel>();
         private CancellationTokenSource? _cts;
@@ -46,14 +45,12 @@ namespace SheduleHelper.Core.ViewModels
             ICurrentUserContext currentUserContext,
             IDispatcherService dispatcherService,
             ISettingsService settingsService,
-            IThemeApplier themeApplier,
             IDialogService dialogService)
         {
             _localDbFactory = localDbFactory;
             _currentUserContext = currentUserContext;
             _dispatcherService = dispatcherService;
             _settingsService = settingsService;
-            _themeApplier = themeApplier;
             _dialogService = dialogService;
             _ = LoadSettingsAsync();
         }
@@ -79,16 +76,16 @@ namespace SheduleHelper.Core.ViewModels
 
                 // Theme/language are local app-instance preferences (ISettingsService, a small
                 // JSON file) - independent of the UserSetting/EF save below, so a failure in one
-                // shouldn't block the other. Only act when the value actually changed, so saving
-                // unrelated fields (e.g. shift hours) doesn't re-apply the theme or re-show the
-                // restart prompt every time.
+                // shouldn't block the other. Only act when something actually changed, so saving
+                // unrelated fields (e.g. shift hours) doesn't re-show the restart prompt every
+                // time. Saving here is enough to apply the theme too - ISettingsService raises
+                // SettingsChanged on Save(), and the host app's theme applier (e.g. WinUI's
+                // ThemeService) reacts to that on its own.
+                var themeChanged = _settingsService.Settings.Theme != Theme;
                 var cultureChanged = _settingsService.Settings.Culture != Culture;
-                if (_settingsService.Settings.Theme != Theme)
+                if (themeChanged || cultureChanged)
                 {
-                    _themeApplier.Apply(Theme);
-                }
-                if (cultureChanged)
-                {
+                    _settingsService.Settings.Theme = Theme;
                     _settingsService.Settings.Culture = Culture;
                     _settingsService.Save();
                 }

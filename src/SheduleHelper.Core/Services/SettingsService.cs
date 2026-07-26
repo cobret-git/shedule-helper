@@ -1,3 +1,4 @@
+using Microsoft.Win32;
 using Serilog;
 using SheduleHelper.Core.Components.Settings;
 using System;
@@ -75,7 +76,13 @@ namespace SheduleHelper.Core.Services
             {
                 if (!_fileSystem.File.Exists(_filePath))
                 {
-                    Settings = new AppSettingsData();
+                    // First run, nothing persisted yet - seed from the OS's own light/dark
+                    // setting instead of always defaulting to Light. Only done here; once a file
+                    // exists, the user's own choice always wins over whatever the OS is set to.
+                    Settings = new AppSettingsData {
+                        Theme = AppTheme.Light, 
+                        ThemeContrast = ThemeContrast.Default
+                    };
                     return;
                 }
 

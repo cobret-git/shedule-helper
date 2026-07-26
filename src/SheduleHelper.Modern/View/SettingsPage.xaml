@@ -115,9 +115,9 @@
                         Value="{x:Bind ViewModel.LunchDurationMinutes, Mode=TwoWay, Converter={StaticResource Int32ToDoubleConverter}}" />
                 </controls:SettingsCard>
                 <controls:SettingsCard Description="{x:Bind strings:Content.settings_theme_description}" Header="{x:Bind strings:Content.settings_theme_header}">
-                    <controls:SettingsCard.HeaderIcon>
-                        <SymbolIcon Symbol="Brightness" />
-                    </controls:SettingsCard.HeaderIcon>
+                    <!--<controls:SettingsCard.HeaderIcon>
+                        <SymbolIcon Symbol="Bri" />
+                    </controls:SettingsCard.HeaderIcon>-->
                     <ComboBox
                         Width="140"
                         ItemsSource="{x:Bind ViewModel.ThemeOptions}"

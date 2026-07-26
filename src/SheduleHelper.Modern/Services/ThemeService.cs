@@ -14,14 +14,14 @@ namespace SheduleHelper.Modern.Services
     /// Forces the app's theme independently of the OS setting. Swaps the active palette dictionary
     /// (<c>LightPalette.xaml</c>/<c>DarkPalette.xaml</c>) in <see cref="Application.Resources"/> and
     /// sets <see cref="FrameworkElement.RequestedTheme"/> on the hosting root so built-in control
-    /// theme dictionaries (e.g. <c>XamlControlsResources</c>) follow the same theme. Requires
-    /// one-time setup via <see cref="Initialize"/> with the window's root element, mirroring
-    /// <see cref="DialogService.Initialize"/>.
+    /// theme dictionaries (e.g. <c>XamlControlsResources</c>) follow the same theme. Subscribes to
+    /// <see cref="ISettingsService.SettingsChanged"/> and re-applies automatically - callers just
+    /// mutate <see cref="ISettingsService.Settings"/>'s <see cref="AppSettingsData.Theme"/> and call
+    /// <see cref="ISettingsService.Save"/>, they never need to talk to this class directly except
+    /// for the one-time <see cref="Initialize"/> call. Requires that one-time setup with the
+    /// window's root element, mirroring <see cref="DialogService.Initialize"/>.
     /// </summary>
-    // TODO#1: ElementTheme only covers Light/Dark - it doesn't cover the Medium/High contrast
-    // palettes already added (LightHighContrastPalette.xaml, DarkHighContrastPalette.xaml, etc.).
-    // We'll need our own extended theme enum (or a theme+contrast pair) once those are wired in.
-    public class ThemeService : IThemeApplier
+    public class ThemeService : IDisposable
     {
         #region Fields
 
@@ -36,27 +36,22 @@ namespace SheduleHelper.Modern.Services
 
         private FrameworkElement? _root;
         private Microsoft.UI.Windowing.AppWindow? _appWindow;
+        private ElementTheme _currentTheme = ElementTheme.Light;
         #endregion
 
         #region Constructors
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ThemeService"/> class.
+        /// Initializes a new instance of the <see cref="ThemeService"/> class and subscribes to
+        /// <see cref="ISettingsService.SettingsChanged"/> so later theme changes are applied
+        /// automatically. Call <see cref="Dispose"/> to unsubscribe.
         /// </summary>
-        /// <param name="settingsService">Persists the chosen theme across app restarts.</param>
+        /// <param name="settingsService">Persists the chosen theme across app restarts and notifies of changes.</param>
         public ThemeService(ISettingsService settingsService)
         {
             _settingsService = settingsService;
+            _settingsService.SettingsChanged += SettingsService_SettingsChanged;
         }
-
-        #endregion
-
-        #region Properties
-
-        /// <summary>
-        /// Gets the currently applied theme.
-        /// </summary>
-        public ElementTheme CurrentTheme { get; private set; } = ElementTheme.Light;
 
         #endregion
 
@@ -65,78 +60,98 @@ namespace SheduleHelper.Modern.Services
         /// <summary>
         /// Associates this service with the window's root element and applies whichever theme
         /// <see cref="ISettingsService"/> has persisted (defaulting to Light the very first run).
-        /// Must be called once, before any <see cref="SetTheme"/> call.
+        /// Must be called once, before any theme change can be applied.
         /// </summary>
         /// <param name="root">The root element whose <see cref="FrameworkElement.RequestedTheme"/> drives the window's theme.</param>
         public void Initialize(FrameworkElement root, AppWindow appWindow)
         {
             _root = root;
             _appWindow = appWindow;
-            SetTheme(ToElementTheme(_settingsService.Settings.Theme));
+            ApplyTheme(_settingsService.Settings.Theme, _settingsService.Settings.ThemeContrast);
         }
 
         /// <summary>
-        /// Applies <paramref name="theme"/> by swapping the active palette dictionary and updating
-        /// the root element's <see cref="FrameworkElement.RequestedTheme"/>, and persists the choice
-        /// via <see cref="ISettingsService"/> so it's restored on the next launch.
-        /// </summary>
-        public void SetTheme(ElementTheme theme)
-        {
-            if (_root is null)
-            {
-                throw new InvalidOperationException($"{nameof(ThemeService)} has not been initialized. Call {nameof(Initialize)} first.");
-            }
-
-            if (theme == ElementTheme.Default)
-            {
-                throw new ArgumentException($"{nameof(ElementTheme.Default)} is not supported - the app must not follow the OS theme.", nameof(theme));
-            }
-
-            SwapPaletteDictionary(theme);
-            _root.RequestedTheme = theme;
-            CurrentTheme = theme;
-            UpdateTitleBarColors();
-
-            _settingsService.Settings.Theme = ToAppTheme(theme);
-            _settingsService.Save();
-        }
-
-        /// <inheritdoc/>
-        public void Apply(AppTheme theme) => SetTheme(ToElementTheme(theme));
-
-        /// <summary>
-        /// Re-applies the caption-button colors for <see cref="CurrentTheme"/>. The WinUI
+        /// Re-applies the caption-button colors for <see cref="_currentTheme"/>. The WinUI
         /// <c>TitleBar</c> control re-syncs <see cref="AppWindow.TitleBar"/> to the OS theme once it
-        /// finishes loading, silently overwriting whatever <see cref="SetTheme"/> applied earlier -
-        /// call this again after that control (and the rest of the page) has loaded, e.g. from the
-        /// root element's <c>Loaded</c> event, so our colors are applied last and win.
+        /// finishes loading, silently overwriting whatever was applied earlier - call this again
+        /// after that control (and the rest of the page) has loaded, e.g. from the root element's
+        /// <c>Loaded</c> event, so our colors are applied last and win.
         /// </summary>
         public void ReapplyTitleBarColors()
         {
             UpdateTitleBarColors();
         }
 
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            _settingsService.SettingsChanged -= SettingsService_SettingsChanged;
+        }
+
+        #endregion
+
+        #region Handlers
+
+        private void SettingsService_SettingsChanged(object? sender, AppSettingsData settings)
+        {
+            // Not initialized yet - Initialize() will apply the current value itself once it runs.
+            if (_root is null)
+            {
+                return;
+            }
+
+            ApplyTheme(settings.Theme, settings.ThemeContrast);
+        }
+
         #endregion
 
         #region Helpers
 
+        private void ApplyTheme(AppTheme theme, ThemeContrast contrast)
+        {
+            if (_root is null)
+            {
+                throw new InvalidOperationException($"{nameof(ThemeService)} has not been initialized. Call {nameof(Initialize)} first.");
+            }
+
+            var elementTheme = ToElementTheme(theme);
+
+            SwapPaletteDictionary(theme, contrast);
+            _root.RequestedTheme = elementTheme;
+            _currentTheme = elementTheme;
+            UpdateTitleBarColors();
+        }
+
         private static ElementTheme ToElementTheme(AppTheme theme) => theme == AppTheme.Dark ? ElementTheme.Dark : ElementTheme.Light;
 
-        private static AppTheme ToAppTheme(ElementTheme theme) => theme == ElementTheme.Dark ? AppTheme.Dark : AppTheme.Light;
+        private static string PaletteSource(AppTheme theme, ThemeContrast contrast) => (theme, contrast) switch
+        {
+            (AppTheme.Dark, ThemeContrast.High) => DarkHighContrastPaletteSource,
+            (AppTheme.Dark, ThemeContrast.Medium) => DarkMediumContrastPaletteSource,
+            (AppTheme.Dark, _) => DarkPaletteSource,
+            (AppTheme.Light, ThemeContrast.High) => LightHighContrastPaletteSource,
+            (AppTheme.Light, ThemeContrast.Medium) => LightMediumContrastPaletteSource,
+            _ => LightPaletteSource,
+        };
 
         /// <summary>
-        /// Replaces the currently merged palette dictionary (light or dark) with the one matching
-        /// <paramref name="theme"/>.
+        /// Replaces the currently merged palette dictionary with the one matching
+        /// <paramref name="theme"/>/<paramref name="contrast"/>.
         /// </summary>
-        private static void SwapPaletteDictionary(ElementTheme theme)
+        private static void SwapPaletteDictionary(AppTheme theme, ThemeContrast contrast)
         {
-            var targetSource = theme == ElementTheme.Dark ? DarkPaletteSource : LightPaletteSource;
+            var targetSource = PaletteSource(theme, contrast);
+
+            var allPaletteSources = new[]
+            {
+                LightPaletteSource, LightMediumContrastPaletteSource, LightHighContrastPaletteSource,
+                DarkPaletteSource, DarkMediumContrastPaletteSource, DarkHighContrastPaletteSource,
+            };
 
             var mergedDictionaries = Application.Current.Resources.MergedDictionaries;
             var existingPalette = mergedDictionaries.FirstOrDefault(dictionary =>
                 dictionary.Source is { } source &&
-                (source.OriginalString.EndsWith(LightPaletteSource, StringComparison.OrdinalIgnoreCase) ||
-                 source.OriginalString.EndsWith(DarkPaletteSource, StringComparison.OrdinalIgnoreCase)));
+                allPaletteSources.Any(paletteSource => source.OriginalString.EndsWith(paletteSource, StringComparison.OrdinalIgnoreCase)));
 
             var paletteDictionary = new ResourceDictionary { Source = new Uri($"ms-appx:///{targetSource}") };
 
@@ -158,7 +173,7 @@ namespace SheduleHelper.Modern.Services
             var titleBar = _appWindow.TitleBar;
 
             // Determine if we're in dark mode
-            bool isDarkMode = (CurrentTheme == ElementTheme.Dark);
+            bool isDarkMode = (_currentTheme == ElementTheme.Dark);
 
             if (isDarkMode)
             {
