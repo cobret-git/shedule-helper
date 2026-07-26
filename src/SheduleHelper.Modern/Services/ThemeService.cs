@@ -25,8 +25,12 @@ namespace SheduleHelper.Modern.Services
     {
         #region Fields
 
+        private const string LightHighContrastPaletteSource = "Assets/Palettes/LightHighContrastPalette.xaml";
+        private const string LightMediumContrastPaletteSource = "Assets/Palettes/LightMediumContrastPalette.xaml";
         private const string LightPaletteSource = "Assets/Palettes/LightPalette.xaml";
         private const string DarkPaletteSource = "Assets/Palettes/DarkPalette.xaml";
+        private const string DarkHighContrastPaletteSource = "Assets/Palettes/DarkHighContrastPalette.xaml";
+        private const string DarkMediumContrastPaletteSource = "Assets/Palettes/DarkMediumContrastPalette.xaml";
 
         private readonly ISettingsService _settingsService;
 
@@ -68,7 +72,7 @@ namespace SheduleHelper.Modern.Services
         {
             _root = root;
             _appWindow = appWindow;
-            SetTheme(ToElementTheme(_settingsService.Theme));
+            SetTheme(ToElementTheme(_settingsService.Settings.Theme));
         }
 
         /// <summary>
@@ -93,7 +97,8 @@ namespace SheduleHelper.Modern.Services
             CurrentTheme = theme;
             UpdateTitleBarColors();
 
-            _settingsService.Theme = ToAppTheme(theme);
+            _settingsService.Settings.Theme = ToAppTheme(theme);
+            _settingsService.Save();
         }
 
         /// <inheritdoc/>

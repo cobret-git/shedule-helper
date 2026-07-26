@@ -82,14 +82,15 @@ namespace SheduleHelper.Core.ViewModels
                 // shouldn't block the other. Only act when the value actually changed, so saving
                 // unrelated fields (e.g. shift hours) doesn't re-apply the theme or re-show the
                 // restart prompt every time.
-                var cultureChanged = _settingsService.Culture != Culture;
-                if (_settingsService.Theme != Theme)
+                var cultureChanged = _settingsService.Settings.Culture != Culture;
+                if (_settingsService.Settings.Theme != Theme)
                 {
                     _themeApplier.Apply(Theme);
                 }
                 if (cultureChanged)
                 {
-                    _settingsService.Culture = Culture;
+                    _settingsService.Settings.Culture = Culture;
+                    _settingsService.Save();
                 }
 
                 _userSetting.TargetShiftHours = TargetShiftHours;
@@ -197,8 +198,8 @@ namespace SheduleHelper.Core.ViewModels
             LunchDurationMinutes = userSetting.LunchDurationMinutes;
             // Theme/language aren't part of UserSetting - they're local app-instance preferences
             // read straight from ISettingsService instead (see SaveChangesAsync).
-            Theme = _settingsService.Theme;
-            Culture = _settingsService.Culture;
+            Theme = _settingsService.Settings.Theme;
+            Culture = _settingsService.Settings.Culture;
             _isLoadingSettings = false;
             HasChanges = false;
         }

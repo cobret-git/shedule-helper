@@ -36,7 +36,7 @@ namespace SheduleHelper.Modern
             // Must happen before InitializeComponent() - every .resx lookup (Messages.*,
             // Content.*) from this point on resolves via CultureInfo.CurrentUICulture, so the
             // very first XAML parse needs it already set to render in the right language.
-            ApplyCulture(Services.GetRequiredService<ISettingsService>().Culture);
+            ApplyCulture(Services.GetRequiredService<ISettingsService>().Settings.Culture);
 
             InitializeComponent();
         }

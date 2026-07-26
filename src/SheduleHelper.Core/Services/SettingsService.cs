@@ -23,7 +23,7 @@ namespace SheduleHelper.Core.Services
         private readonly ILogger _logger = Log.ForContext<SettingsService>();
         private readonly IFileSystem _fileSystem;
         private readonly string _filePath;
-        private AppSettingsData _data;
+        private AppSettingsData _settings = new();
 
         #endregion
 
@@ -39,70 +39,74 @@ namespace SheduleHelper.Core.Services
         {
             _fileSystem = fileSystem;
             _filePath = pathProvider.SettingsFilePath;
-            _data = Load();
+            Load();
         }
+
+        #endregion
+
+        #region Events
+
+        /// <inheritdoc/>
+        public event EventHandler<AppSettingsData>? SettingsChanged;
 
         #endregion
 
         #region Properties
 
         /// <inheritdoc/>
-        public AppTheme Theme
+        public AppSettingsData Settings
         {
-            get => _data.Theme;
-            set
+            get => _settings;
+            private set
             {
-                _data.Theme = value;
-                Save();
-            }
-        }
-
-        /// <inheritdoc/>
-        public string Culture
-        {
-            get => _data.Culture;
-            set
-            {
-                _data.Culture = value;
-                Save();
+                _settings = value;
+                SettingsChanged?.Invoke(this, _settings);
             }
         }
 
         #endregion
 
-        #region Helpers
+        #region Methods
 
-        private AppSettingsData Load()
+        /// <inheritdoc/>
+        public void Load()
         {
             try
             {
                 if (!_fileSystem.File.Exists(_filePath))
                 {
-                    return new AppSettingsData();
+                    Settings = new AppSettingsData();
+                    return;
                 }
 
                 var json = _fileSystem.File.ReadAllText(_filePath);
-                return JsonSerializer.Deserialize<AppSettingsData>(json) ?? new AppSettingsData();
+                Settings = JsonSerializer.Deserialize<AppSettingsData>(json) ?? new AppSettingsData();
             }
             catch (Exception ex)
             {
                 // A missing/corrupt settings file shouldn't prevent the app from starting - fall
                 // back to defaults; the next Save() overwrites it with something valid.
                 _logger.Warning(ex, "Failed to load settings file at {FilePath}; falling back to defaults.", _filePath);
-                return new AppSettingsData();
+                Settings = new AppSettingsData();
             }
         }
 
-        private void Save()
+        /// <inheritdoc/>
+        public void Save()
         {
             try
             {
-                _fileSystem.File.WriteAllText(_filePath, JsonSerializer.Serialize(_data));
+                _fileSystem.File.WriteAllText(_filePath, JsonSerializer.Serialize(_settings));
             }
             catch (Exception ex)
             {
                 _logger.Warning(ex, "Failed to save settings file at {FilePath}.", _filePath);
             }
+
+            // Re-assign through the private setter so SettingsChanged fires for saves too, not
+            // just loads - the setter doesn't compare old/new, so this works even though the
+            // reference is unchanged.
+            Settings = _settings;
         }
 
         #endregion
