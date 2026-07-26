@@ -87,7 +87,18 @@ namespace SheduleHelper.Core.Services
                 }
 
                 var json = _fileSystem.File.ReadAllText(_filePath);
-                Settings = JsonSerializer.Deserialize<AppSettingsData>(json) ?? new AppSettingsData();
+                var settings = JsonSerializer.Deserialize<AppSettingsData>(json) ?? new AppSettingsData();
+
+                // The file may name a culture this build no longer ships (hand-edited, or left
+                // over from a build that supported more languages) - fall back to the default
+                // rather than let an unsupported tag reach CultureInfo/ResourceManager lookups.
+                if (!SupportedCultures.IsSupported(settings.Culture))
+                {
+                    _logger.Warning("Settings file names unsupported culture {Culture}; falling back to {Default}.", settings.Culture, SupportedCultures.Default);
+                    settings.Culture = SupportedCultures.Default;
+                }
+
+                Settings = settings;
             }
             catch (Exception ex)
             {

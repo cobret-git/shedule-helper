@@ -18,8 +18,8 @@ namespace SheduleHelper.Modern.Converters
             return value is string culture
                 ? culture switch
                 {
-                    "en-US" => "English",
-                    "cs-CZ" => "Čeština",
+                    "en" => "English",
+                    "uk" => "Українська",
                     _ => culture
                 }
                 : string.Empty;

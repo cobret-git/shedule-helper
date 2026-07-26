@@ -101,14 +101,6 @@
 		<value>Daily Timeline</value>
 		<comment>Header of the Daily Timeline card on the Home page.</comment>
 	</data>
-	<data name="restart_required_title" xml:space="preserve">
-		<value>Restart required</value>
-		<comment>Title of the dialog shown after changing the display language.</comment>
-	</data>
-	<data name="restart_required_message" xml:space="preserve">
-		<value>Restart the app for the language change to take effect.</value>
-		<comment>Body of the dialog shown after changing the display language.</comment>
-	</data>
 	<data name="settings_theme_header" xml:space="preserve">
 		<value>Theme</value>
 		<comment>Header of the theme picker card on the Settings page.</comment>
@@ -122,7 +114,79 @@
 		<comment>Header of the language picker card on the Settings page.</comment>
 	</data>
 	<data name="settings_language_description" xml:space="preserve">
-		<value>Choose the app's display language. Changing this requires a restart.</value>
+		<value>Choose the app's display language.</value>
 		<comment>Description of the language picker card on the Settings page.</comment>
+	</data>
+	<data name="settings_page_title" xml:space="preserve">
+		<value>Settings</value>
+		<comment>Title at the top of the Settings page.</comment>
+	</data>
+	<data name="settings_page_subtitle" xml:space="preserve">
+		<value>Configure your shift target, default clock times, and lunch break rules.</value>
+		<comment>Subtitle at the top of the Settings page.</comment>
+	</data>
+	<data name="settings_targetShiftHours_header" xml:space="preserve">
+		<value>Target shift hours</value>
+		<comment>Header of the target shift hours card on the Settings page.</comment>
+	</data>
+	<data name="settings_targetShiftHours_description" xml:space="preserve">
+		<value>How many hours count as a full workday.</value>
+		<comment>Description of the target shift hours card on the Settings page.</comment>
+	</data>
+	<data name="settings_defaultClockIn_header" xml:space="preserve">
+		<value>Default clock-in time</value>
+		<comment>Header of the default clock-in time card on the Settings page.</comment>
+	</data>
+	<data name="settings_defaultClockIn_description" xml:space="preserve">
+		<value>Suggested arrival time for one-click clock-in.</value>
+		<comment>Description of the default clock-in time card on the Settings page.</comment>
+	</data>
+	<data name="settings_defaultClockOut_header" xml:space="preserve">
+		<value>Default clock-out time</value>
+		<comment>Header of the default clock-out time card on the Settings page.</comment>
+	</data>
+	<data name="settings_defaultClockOut_description" xml:space="preserve">
+		<value>Suggested departure time for one-click clock-out.</value>
+		<comment>Description of the default clock-out time card on the Settings page.</comment>
+	</data>
+	<data name="settings_lunchStrategy_header" xml:space="preserve">
+		<value>Lunch break rule</value>
+		<comment>Header of the lunch break rule card on the Settings page.</comment>
+	</data>
+	<data name="settings_lunchStrategy_description" xml:space="preserve">
+		<value>How the app deducts your lunch break from attendance time.</value>
+		<comment>Description of the lunch break rule card on the Settings page.</comment>
+	</data>
+	<data name="settings_lunchWindowStart_header" xml:space="preserve">
+		<value>Lunch window start</value>
+		<comment>Header of the lunch window start card on the Settings page.</comment>
+	</data>
+	<data name="settings_lunchWindowStart_description" xml:space="preserve">
+		<value>Start of the fixed lunch window to deduct.</value>
+		<comment>Description of the lunch window start card on the Settings page.</comment>
+	</data>
+	<data name="settings_lunchWindowEnd_header" xml:space="preserve">
+		<value>Lunch window end</value>
+		<comment>Header of the lunch window end card on the Settings page.</comment>
+	</data>
+	<data name="settings_lunchWindowEnd_description" xml:space="preserve">
+		<value>End of the fixed lunch window to deduct.</value>
+		<comment>Description of the lunch window end card on the Settings page.</comment>
+	</data>
+	<data name="settings_lunchDuration_header" xml:space="preserve">
+		<value>Lunch duration</value>
+		<comment>Header of the lunch duration card on the Settings page.</comment>
+	</data>
+	<data name="settings_lunchDuration_description" xml:space="preserve">
+		<value>Minutes deducted once you've been clocked in past the threshold.</value>
+		<comment>Description of the lunch duration card on the Settings page.</comment>
+	</data>
+	<data name="settings_discard_button" xml:space="preserve">
+		<value>Discard</value>
+		<comment>Discard-changes button on the Settings page.</comment>
+	</data>
+	<data name="settings_save_button" xml:space="preserve">
+		<value>Save</value>
+		<comment>Save-changes button on the Settings page.</comment>
 	</data>
 </root>

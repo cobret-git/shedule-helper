@@ -41,6 +41,6 @@ namespace SheduleHelper.Core.Components.Settings
         public ThemeContrast ThemeContrast { get; set; } = ThemeContrast.Default;
 
         [JsonPropertyName("culture")]
-        public string Culture { get; set; } = "en-US";
+        public string Culture { get; set; } = SupportedCultures.Default;
     }
 }

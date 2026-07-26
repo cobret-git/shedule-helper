@@ -70,25 +70,52 @@ namespace SheduleHelper.Core.Resources.Strings {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Restart the app for the language change to take effect..
+        ///   Looks up a localized string similar to Suggested arrival time for one-click clock-in..
         /// </summary>
-        public static string restart_required_message {
+        public static string settings_defaultClockIn_description {
             get {
-                return ResourceManager.GetString("restart_required_message", resourceCulture);
+                return ResourceManager.GetString("settings_defaultClockIn_description", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Restart required.
+        ///   Looks up a localized string similar to Default clock-in time.
         /// </summary>
-        public static string restart_required_title {
+        public static string settings_defaultClockIn_header {
             get {
-                return ResourceManager.GetString("restart_required_title", resourceCulture);
+                return ResourceManager.GetString("settings_defaultClockIn_header", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Choose the app&apos;s display language. Changing this requires a restart..
+        ///   Looks up a localized string similar to Suggested departure time for one-click clock-out..
+        /// </summary>
+        public static string settings_defaultClockOut_description {
+            get {
+                return ResourceManager.GetString("settings_defaultClockOut_description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Default clock-out time.
+        /// </summary>
+        public static string settings_defaultClockOut_header {
+            get {
+                return ResourceManager.GetString("settings_defaultClockOut_header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Discard.
+        /// </summary>
+        public static string settings_discard_button {
+            get {
+                return ResourceManager.GetString("settings_discard_button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Choose the app&apos;s display language..
         /// </summary>
         public static string settings_language_description {
             get {
@@ -102,6 +129,123 @@ namespace SheduleHelper.Core.Resources.Strings {
         public static string settings_language_header {
             get {
                 return ResourceManager.GetString("settings_language_header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Minutes deducted once you&apos;ve been clocked in past the threshold..
+        /// </summary>
+        public static string settings_lunchDuration_description {
+            get {
+                return ResourceManager.GetString("settings_lunchDuration_description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lunch duration.
+        /// </summary>
+        public static string settings_lunchDuration_header {
+            get {
+                return ResourceManager.GetString("settings_lunchDuration_header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to How the app deducts your lunch break from attendance time..
+        /// </summary>
+        public static string settings_lunchStrategy_description {
+            get {
+                return ResourceManager.GetString("settings_lunchStrategy_description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lunch break rule.
+        /// </summary>
+        public static string settings_lunchStrategy_header {
+            get {
+                return ResourceManager.GetString("settings_lunchStrategy_header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to End of the fixed lunch window to deduct..
+        /// </summary>
+        public static string settings_lunchWindowEnd_description {
+            get {
+                return ResourceManager.GetString("settings_lunchWindowEnd_description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lunch window end.
+        /// </summary>
+        public static string settings_lunchWindowEnd_header {
+            get {
+                return ResourceManager.GetString("settings_lunchWindowEnd_header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Start of the fixed lunch window to deduct..
+        /// </summary>
+        public static string settings_lunchWindowStart_description {
+            get {
+                return ResourceManager.GetString("settings_lunchWindowStart_description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lunch window start.
+        /// </summary>
+        public static string settings_lunchWindowStart_header {
+            get {
+                return ResourceManager.GetString("settings_lunchWindowStart_header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configure your shift target, default clock times, and lunch break rules..
+        /// </summary>
+        public static string settings_page_subtitle {
+            get {
+                return ResourceManager.GetString("settings_page_subtitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Settings.
+        /// </summary>
+        public static string settings_page_title {
+            get {
+                return ResourceManager.GetString("settings_page_title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Save.
+        /// </summary>
+        public static string settings_save_button {
+            get {
+                return ResourceManager.GetString("settings_save_button", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to How many hours count as a full workday..
+        /// </summary>
+        public static string settings_targetShiftHours_description {
+            get {
+                return ResourceManager.GetString("settings_targetShiftHours_description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Target shift hours.
+        /// </summary>
+        public static string settings_targetShiftHours_header {
+            get {
+                return ResourceManager.GetString("settings_targetShiftHours_header", resourceCulture);
             }
         }
         

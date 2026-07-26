@@ -6,8 +6,8 @@
     xmlns:controls="using:SheduleHelper.Modern.Controls"
     xmlns:converters="using:SheduleHelper.Modern.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:SheduleHelper.Modern.Components.Helpers"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:strings="using:SheduleHelper.Core.Resources.Strings"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -28,11 +28,11 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Spacing="4">
-            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Settings" />
+            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="{local:LocalizedString Key=settings_page_title}" />
             <TextBlock
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                 Style="{StaticResource BodyTextBlockStyle}"
-                Text="Configure your shift target, default clock times, and lunch break rules." />
+                Text="{local:LocalizedString Key=settings_page_subtitle}" />
         </StackPanel>
 
         <InfoBar
@@ -44,7 +44,7 @@
 
         <ScrollViewer Grid.Row="2">
             <StackPanel Spacing="8">
-                <controls:SettingsCard Description="How many hours count as a full workday." Header="Target shift hours">
+                <controls:SettingsCard Description="{local:LocalizedString Key=settings_targetShiftHours_description}" Header="{local:LocalizedString Key=settings_targetShiftHours_header}">
                     <controls:SettingsCard.HeaderIcon>
                         <SymbolIcon Symbol="Clock" />
                     </controls:SettingsCard.HeaderIcon>
@@ -58,21 +58,21 @@
                         Value="{x:Bind ViewModel.TargetShiftHours, Mode=TwoWay, Converter={StaticResource DecimalToDoubleConverter}}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard Description="Suggested arrival time for one-click clock-in." Header="Default clock-in time">
+                <controls:SettingsCard Description="{local:LocalizedString Key=settings_defaultClockIn_description}" Header="{local:LocalizedString Key=settings_defaultClockIn_header}">
                     <controls:SettingsCard.HeaderIcon>
                         <SymbolIcon Symbol="Play" />
                     </controls:SettingsCard.HeaderIcon>
                     <TimePicker ClockIdentifier="24HourClock" Time="{x:Bind ViewModel.DefaultClockInTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard Description="Suggested departure time for one-click clock-out." Header="Default clock-out time">
+                <controls:SettingsCard Description="{local:LocalizedString Key=settings_defaultClockOut_description}" Header="{local:LocalizedString Key=settings_defaultClockOut_header}">
                     <controls:SettingsCard.HeaderIcon>
                         <SymbolIcon Symbol="Stop" />
                     </controls:SettingsCard.HeaderIcon>
                     <TimePicker ClockIdentifier="24HourClock" Time="{x:Bind ViewModel.DefaultClockOutTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard Description="How the app deducts your lunch break from attendance time." Header="Lunch break rule">
+                <controls:SettingsCard Description="{local:LocalizedString Key=settings_lunchStrategy_description}" Header="{local:LocalizedString Key=settings_lunchStrategy_header}">
                     <controls:SettingsCard.HeaderIcon>
                         <FontIcon Glyph="&#xE706;" />
                     </controls:SettingsCard.HeaderIcon>
@@ -89,22 +89,22 @@
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
-                    Description="Start of the fixed lunch window to deduct."
-                    Header="Lunch window start"
+                    Description="{local:LocalizedString Key=settings_lunchWindowStart_description}"
+                    Header="{local:LocalizedString Key=settings_lunchWindowStart_header}"
                     IsEnabled="{x:Bind ViewModel.LunchStrategy, Mode=OneWay, Converter={StaticResource LunchStrategyToBooleanConverter}, ConverterParameter=FixedWindow}">
                     <TimePicker ClockIdentifier="24HourClock" Time="{x:Bind ViewModel.LunchStartTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
-                    Description="End of the fixed lunch window to deduct."
-                    Header="Lunch window end"
+                    Description="{local:LocalizedString Key=settings_lunchWindowEnd_description}"
+                    Header="{local:LocalizedString Key=settings_lunchWindowEnd_header}"
                     IsEnabled="{x:Bind ViewModel.LunchStrategy, Mode=OneWay, Converter={StaticResource LunchStrategyToBooleanConverter}, ConverterParameter=FixedWindow}">
                     <TimePicker ClockIdentifier="24HourClock" Time="{x:Bind ViewModel.LunchEndTime, Mode=TwoWay, Converter={StaticResource TimeOnlyToTimeSpanConverter}}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
-                    Description="Minutes deducted once you've been clocked in past the threshold."
-                    Header="Lunch duration"
+                    Description="{local:LocalizedString Key=settings_lunchDuration_description}"
+                    Header="{local:LocalizedString Key=settings_lunchDuration_header}"
                     IsEnabled="{x:Bind ViewModel.LunchStrategy, Mode=OneWay, Converter={StaticResource LunchStrategyToBooleanConverter}, ConverterParameter=DurationBased}">
                     <NumberBox
                         Width="140"
@@ -114,7 +114,7 @@
                         SpinButtonPlacementMode="Compact"
                         Value="{x:Bind ViewModel.LunchDurationMinutes, Mode=TwoWay, Converter={StaticResource Int32ToDoubleConverter}}" />
                 </controls:SettingsCard>
-                <controls:SettingsCard Description="{x:Bind strings:Content.settings_theme_description}" Header="{x:Bind strings:Content.settings_theme_header}">
+                <controls:SettingsCard Description="{local:LocalizedString Key=settings_theme_description}" Header="{local:LocalizedString Key=settings_theme_header}">
                     <!--<controls:SettingsCard.HeaderIcon>
                         <SymbolIcon Symbol="Bri" />
                     </controls:SettingsCard.HeaderIcon>-->
@@ -124,7 +124,7 @@
                         SelectedItem="{x:Bind ViewModel.Theme, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard Description="{x:Bind strings:Content.settings_language_description}" Header="{x:Bind strings:Content.settings_language_header}">
+                <controls:SettingsCard Description="{local:LocalizedString Key=settings_language_description}" Header="{local:LocalizedString Key=settings_language_header}">
                     <controls:SettingsCard.HeaderIcon>
                         <FontIcon Glyph="&#xE12C;" />
                     </controls:SettingsCard.HeaderIcon>
@@ -157,10 +157,10 @@
                 Height="20"
                 Margin="0,0,8,0"
                 IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
-            <Button Command="{x:Bind ViewModel.DiscardChangesCommand}" Content="Discard" />
+            <Button Command="{x:Bind ViewModel.DiscardChangesCommand}" Content="{local:LocalizedString Key=settings_discard_button}" />
             <Button
                 Command="{x:Bind ViewModel.SaveChangesCommand}"
-                Content="Save"
+                Content="{local:LocalizedString Key=settings_save_button}"
                 Style="{StaticResource AccentButtonStyle}" />
         </StackPanel>
     </Grid>

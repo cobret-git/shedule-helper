@@ -7,7 +7,6 @@ using SheduleHelper.Core.Services;
 using System;
 using System.Collections.Generic;
 using MSG = SheduleHelper.Core.Resources.Strings.Messages;
-using CONTENT = SheduleHelper.Core.Resources.Strings.Content;
 
 namespace SheduleHelper.Core.ViewModels
 {
@@ -21,7 +20,6 @@ namespace SheduleHelper.Core.ViewModels
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IDispatcherService _dispatcherService;
         private readonly ISettingsService _settingsService;
-        private readonly IDialogService _dialogService;
         private readonly ILogger _logger = Serilog.Log.ForContext<SettingsViewModel>();
         private CancellationTokenSource? _cts;
         private UserSetting _userSetting = null!;
@@ -35,7 +33,7 @@ namespace SheduleHelper.Core.ViewModels
         [ObservableProperty] private TimeOnly _lunchEndTime;
         [ObservableProperty] private int _lunchDurationMinutes;
         [ObservableProperty] private AppTheme _theme;
-        [ObservableProperty] private string _culture = "en-US";
+        [ObservableProperty] private string _culture = SupportedCultures.Default;
         private string? _message;
         private bool _hasChanges;
         #endregion
@@ -44,14 +42,12 @@ namespace SheduleHelper.Core.ViewModels
         public SettingsViewModel(ILocalDbContextFactory localDbFactory,
             ICurrentUserContext currentUserContext,
             IDispatcherService dispatcherService,
-            ISettingsService settingsService,
-            IDialogService dialogService)
+            ISettingsService settingsService)
         {
             _localDbFactory = localDbFactory;
             _currentUserContext = currentUserContext;
             _dispatcherService = dispatcherService;
             _settingsService = settingsService;
-            _dialogService = dialogService;
             _ = LoadSettingsAsync();
         }
         #endregion
@@ -59,7 +55,7 @@ namespace SheduleHelper.Core.ViewModels
         #region Properties
         public IReadOnlyList<LunchStrategy> LunchStrategyOptions { get; } = Enum.GetValues<LunchStrategy>();
         public IReadOnlyList<AppTheme> ThemeOptions { get; } = Enum.GetValues<AppTheme>();
-        public IReadOnlyList<string> CultureOptions { get; } = new[] { "en-US", "cs-CZ" };
+        public IReadOnlyList<string> CultureOptions { get; } = SupportedCultures.All;
         public string? Message { get => _message; private set { if (SetProperty(ref _message, value)) OnPropertyChanged(nameof(MessageVisible)); } }
         public bool MessageVisible { get => !string.IsNullOrWhiteSpace(Message); }
         public bool IsBusy { get => _isBusy; private set { if (SetProperty(ref _isBusy, value)) NotifyCanExecuteChanged(); } }
@@ -77,13 +73,11 @@ namespace SheduleHelper.Core.ViewModels
                 // Theme/language are local app-instance preferences (ISettingsService, a small
                 // JSON file) - independent of the UserSetting/EF save below, so a failure in one
                 // shouldn't block the other. Only act when something actually changed, so saving
-                // unrelated fields (e.g. shift hours) doesn't re-show the restart prompt every
-                // time. Saving here is enough to apply the theme too - ISettingsService raises
-                // SettingsChanged on Save(), and the host app's theme applier (e.g. WinUI's
-                // ThemeService) reacts to that on its own.
-                var themeChanged = _settingsService.Settings.Theme != Theme;
-                var cultureChanged = _settingsService.Settings.Culture != Culture;
-                if (themeChanged || cultureChanged)
+                // unrelated fields (e.g. shift hours) doesn't fire SettingsChanged needlessly.
+                // Saving here is enough to apply both live - ISettingsService raises
+                // SettingsChanged on Save(), and the host app's ThemeService/CultureService react
+                // to that on their own, no restart required.
+                if (_settingsService.Settings.Theme != Theme || _settingsService.Settings.Culture != Culture)
                 {
                     _settingsService.Settings.Theme = Theme;
                     _settingsService.Settings.Culture = Culture;
@@ -101,11 +95,6 @@ namespace SheduleHelper.Core.ViewModels
                 await using var dbContext = _localDbFactory.CreateDbContext();
                 _userSetting = await dbContext.UpdateUserSettingAsync(_userSetting, ct);
                 HasChanges = false;
-
-                if (cultureChanged)
-                {
-                    await _dialogService.ShowMessageDialogAsync(CONTENT.restart_required_title, CONTENT.restart_required_message);
-                }
             }
             catch (Exception ex)
             {
