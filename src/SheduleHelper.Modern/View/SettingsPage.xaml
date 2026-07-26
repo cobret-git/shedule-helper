@@ -7,6 +7,7 @@
     xmlns:converters="using:SheduleHelper.Modern.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:strings="using:SheduleHelper.Core.Resources.Strings"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -15,6 +16,7 @@
         <converters:TimeOnlyToTimeSpanConverter x:Key="TimeOnlyToTimeSpanConverter" />
         <converters:LunchStrategyDisplayConverter x:Key="LunchStrategyDisplayConverter" />
         <converters:LunchStrategyToBooleanConverter x:Key="LunchStrategyToBooleanConverter" />
+        <converters:CultureDisplayConverter x:Key="CultureDisplayConverter" />
     </Page.Resources>
 
     <Grid Padding="24" RowSpacing="16">
@@ -112,6 +114,32 @@
                         SpinButtonPlacementMode="Compact"
                         Value="{x:Bind ViewModel.LunchDurationMinutes, Mode=TwoWay, Converter={StaticResource Int32ToDoubleConverter}}" />
                 </controls:SettingsCard>
+                <controls:SettingsCard Description="{x:Bind strings:Content.settings_theme_description}" Header="{x:Bind strings:Content.settings_theme_header}">
+                    <controls:SettingsCard.HeaderIcon>
+                        <SymbolIcon Symbol="Brightness" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <ComboBox
+                        Width="140"
+                        ItemsSource="{x:Bind ViewModel.ThemeOptions}"
+                        SelectedItem="{x:Bind ViewModel.Theme, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Description="{x:Bind strings:Content.settings_language_description}" Header="{x:Bind strings:Content.settings_language_header}">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE12C;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <ComboBox
+                        Width="180"
+                        ItemsSource="{x:Bind ViewModel.CultureOptions}"
+                        SelectedItem="{x:Bind ViewModel.Culture, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource CultureDisplayConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </controls:SettingsCard>
+
                 <TextBlock
                     FontFamily="{StaticResource MaterialIconsRoundedFont}"
                     FontSize="72"

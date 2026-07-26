@@ -7,7 +7,7 @@ namespace SheduleHelper.Core.Models
     /// tooling (e.g. <c>dotnet ef migrations add</c>, <c>Add-Migration</c>). Takes precedence over
     /// any other design-time discovery pattern, so <see cref="LocalDbContext"/> itself never needs
     /// a parameterless constructor - the real database file path, resolved by
-    /// <see cref="Services.IDatabasePathProvider"/>, is only known at runtime and is irrelevant here.
+    /// <see cref="Services.IPathProvider"/>, is only known at runtime and is irrelevant here.
     /// </summary>
     public class LocalDbContextFactory : IDesignTimeDbContextFactory<LocalDbContext>
     {

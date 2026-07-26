@@ -6,6 +6,9 @@ using SheduleHelper.Core.ViewModels;
 using SheduleHelper.Modern.Services;
 using SheduleHelper.Modern.View;
 using System;
+using System.Globalization;
+using System.IO.Abstractions;
+using Windows.Globalization;
 
 namespace SheduleHelper.Modern
 {
@@ -29,6 +32,12 @@ namespace SheduleHelper.Modern
         public App()
         {
             Services = ConfigureServices();
+
+            // Must happen before InitializeComponent() - every .resx lookup (Messages.*,
+            // Content.*) from this point on resolves via CultureInfo.CurrentUICulture, so the
+            // very first XAML parse needs it already set to render in the right language.
+            ApplyCulture(Services.GetRequiredService<ISettingsService>().Culture);
+
             InitializeComponent();
         }
 
@@ -79,6 +88,37 @@ namespace SheduleHelper.Modern
         #region Helpers
 
         /// <summary>
+        /// Sets the process's active culture from the persisted setting, so every <c>.resx</c>
+        /// lookup (<c>Messages.*</c>, <c>Content.*</c>) resolves in the right language from the
+        /// very first XAML parse onward.
+        /// </summary>
+        private static void ApplyCulture(string culture)
+        {
+            var cultureInfo = new CultureInfo(culture);
+
+            // Both CurrentCulture/CurrentUICulture (this thread, i.e. the UI thread) and the
+            // DefaultThreadCurrent* pair (every thread spun up afterward, e.g. ThreadPool
+            // continuations after an await) - a ViewModel's resx lookup shouldn't depend on which
+            // thread happens to run it.
+            CultureInfo.CurrentCulture = cultureInfo;
+            CultureInfo.CurrentUICulture = cultureInfo;
+            CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+            CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
+            try
+            {
+                // Best-effort: lets WinRT-native controls (e.g. TimePicker/DatePicker) format
+                // with the same culture. Requires package identity, so this throws when running
+                // unpackaged (e.g. local Debug builds) - CultureInfo above already covers every
+                // .resx lookup, which is what actually matters, so failure here is harmless.
+                ApplicationLanguages.PrimaryLanguageOverride = culture;
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        /// <summary>
         /// Configures the services and ViewModels for the application.
         /// </summary>
         private static IServiceProvider ConfigureServices()
@@ -87,10 +127,12 @@ namespace SheduleHelper.Modern
 
             services.AddSingleton(Log.Logger);
 
-            services.AddSingleton<IDatabasePathProvider, DatabasePathProvider>();
+            services.AddSingleton<IPathProvider, PathProvider>();
+            services.AddSingleton<IFileSystem, FileSystem>();
             services.AddSingleton<ILocalDbContextFactory, LocalDbContextFactory>();
             services.AddSingleton<DatabaseMigrationService>();
             services.AddSingleton<ICurrentUserContext, CurrentUserContext>();
+            services.AddSingleton<ISettingsService, SettingsService>();
 
             services.AddSingleton<NavigationService>();
             services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
@@ -102,6 +144,7 @@ namespace SheduleHelper.Modern
             services.AddSingleton<IDispatcherService>(sp => sp.GetRequiredService<DispatcherService>());
 
             services.AddSingleton<ThemeService>();
+            services.AddSingleton<IThemeApplier>(sp => sp.GetRequiredService<ThemeService>());
 
             services.AddTransient<HomeViewModel>();
             services.AddTransient<ProjectsAndTasksViewModel>();

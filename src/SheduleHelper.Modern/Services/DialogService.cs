@@ -65,6 +65,27 @@ namespace SheduleHelper.Modern.Services
         }
 
         /// <inheritdoc/>
+        public async Task ShowMessageDialogAsync(string title, string message)
+        {
+            if (_xamlRoot is null)
+            {
+                throw new InvalidOperationException($"{nameof(DialogService)} has not been initialized. Call {nameof(Initialize)} first.");
+            }
+
+            var dialog = new ContentDialog
+            {
+                XamlRoot = _xamlRoot,
+                Title = title,
+                Content = message,
+                CloseButtonText = "OK",
+            };
+
+            _currentDialog = dialog;
+            await dialog.ShowAsync();
+            _currentDialog = null;
+        }
+
+        /// <inheritdoc/>
         public void CloseDialog()
         {
             _currentDialog?.Hide();

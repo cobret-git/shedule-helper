@@ -7,6 +7,7 @@
     xmlns:converters="using:SheduleHelper.Modern.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:strings="using:SheduleHelper.Core.Resources.Strings"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -137,7 +138,7 @@
                     <TextBlock
                         FontSize="20"
                         FontWeight="SemiBold"
-                        Text="Daily Timeline" />
+                        Text="{x:Bind strings:Content.daily_timeline_header}" />
                     <controls:TimelineBar ItemsSource="{x:Bind ViewModel.TodaysTimeline, Mode=OneWay}" />
                 </StackPanel>
             </Border>

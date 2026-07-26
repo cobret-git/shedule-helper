@@ -2,6 +2,8 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using SheduleHelper.Core.Components.Settings;
+using SheduleHelper.Core.Services;
 using System;
 using System.Linq;
 using Windows.UI;
@@ -19,14 +21,14 @@ namespace SheduleHelper.Modern.Services
     // TODO#1: ElementTheme only covers Light/Dark - it doesn't cover the Medium/High contrast
     // palettes already added (LightHighContrastPalette.xaml, DarkHighContrastPalette.xaml, etc.).
     // We'll need our own extended theme enum (or a theme+contrast pair) once those are wired in.
-    // TODO#2: Persist the selected theme/contrast option in user settings and have Initialize load
-    // and apply the saved option instead of always defaulting to ElementTheme.Light.
-    public class ThemeService
+    public class ThemeService : IThemeApplier
     {
         #region Fields
 
         private const string LightPaletteSource = "Assets/Palettes/LightPalette.xaml";
         private const string DarkPaletteSource = "Assets/Palettes/DarkPalette.xaml";
+
+        private readonly ISettingsService _settingsService;
 
         private FrameworkElement? _root;
         private Microsoft.UI.Windowing.AppWindow? _appWindow;
@@ -37,8 +39,10 @@ namespace SheduleHelper.Modern.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="ThemeService"/> class.
         /// </summary>
-        public ThemeService()
+        /// <param name="settingsService">Persists the chosen theme across app restarts.</param>
+        public ThemeService(ISettingsService settingsService)
         {
+            _settingsService = settingsService;
         }
 
         #endregion
@@ -55,21 +59,22 @@ namespace SheduleHelper.Modern.Services
         #region Methods
 
         /// <summary>
-        /// Associates this service with the window's root element and applies <paramref name="theme"/>.
+        /// Associates this service with the window's root element and applies whichever theme
+        /// <see cref="ISettingsService"/> has persisted (defaulting to Light the very first run).
         /// Must be called once, before any <see cref="SetTheme"/> call.
         /// </summary>
         /// <param name="root">The root element whose <see cref="FrameworkElement.RequestedTheme"/> drives the window's theme.</param>
-        /// <param name="theme">The theme to apply on startup. Defaults to <see cref="ElementTheme.Light"/> rather than following the OS.</param>
-        public void Initialize(FrameworkElement root, AppWindow appWindow, ElementTheme theme = ElementTheme.Light)
+        public void Initialize(FrameworkElement root, AppWindow appWindow)
         {
             _root = root;
             _appWindow = appWindow;
-            SetTheme(theme);
+            SetTheme(ToElementTheme(_settingsService.Theme));
         }
 
         /// <summary>
         /// Applies <paramref name="theme"/> by swapping the active palette dictionary and updating
-        /// the root element's <see cref="FrameworkElement.RequestedTheme"/>.
+        /// the root element's <see cref="FrameworkElement.RequestedTheme"/>, and persists the choice
+        /// via <see cref="ISettingsService"/> so it's restored on the next launch.
         /// </summary>
         public void SetTheme(ElementTheme theme)
         {
@@ -87,7 +92,12 @@ namespace SheduleHelper.Modern.Services
             _root.RequestedTheme = theme;
             CurrentTheme = theme;
             UpdateTitleBarColors();
+
+            _settingsService.Theme = ToAppTheme(theme);
         }
+
+        /// <inheritdoc/>
+        public void Apply(AppTheme theme) => SetTheme(ToElementTheme(theme));
 
         /// <summary>
         /// Re-applies the caption-button colors for <see cref="CurrentTheme"/>. The WinUI
@@ -104,6 +114,10 @@ namespace SheduleHelper.Modern.Services
         #endregion
 
         #region Helpers
+
+        private static ElementTheme ToElementTheme(AppTheme theme) => theme == AppTheme.Dark ? ElementTheme.Dark : ElementTheme.Light;
+
+        private static AppTheme ToAppTheme(ElementTheme theme) => theme == ElementTheme.Dark ? AppTheme.Dark : AppTheme.Light;
 
         /// <summary>
         /// Replaces the currently merged palette dictionary (light or dark) with the one matching

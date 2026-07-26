@@ -2,10 +2,12 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using SheduleHelper.Core.Components.Entities;
+using SheduleHelper.Core.Components.Settings;
 using SheduleHelper.Core.Services;
 using System;
 using System.Collections.Generic;
 using MSG = SheduleHelper.Core.Resources.Strings.Messages;
+using CONTENT = SheduleHelper.Core.Resources.Strings.Content;
 
 namespace SheduleHelper.Core.ViewModels
 {
@@ -18,6 +20,9 @@ namespace SheduleHelper.Core.ViewModels
         private readonly ILocalDbContextFactory _localDbFactory;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IDispatcherService _dispatcherService;
+        private readonly ISettingsService _settingsService;
+        private readonly IThemeApplier _themeApplier;
+        private readonly IDialogService _dialogService;
         private readonly ILogger _logger = Serilog.Log.ForContext<SettingsViewModel>();
         private CancellationTokenSource? _cts;
         private UserSetting _userSetting = null!;
@@ -30,6 +35,8 @@ namespace SheduleHelper.Core.ViewModels
         [ObservableProperty] private TimeOnly _lunchStartTime;
         [ObservableProperty] private TimeOnly _lunchEndTime;
         [ObservableProperty] private int _lunchDurationMinutes;
+        [ObservableProperty] private AppTheme _theme;
+        [ObservableProperty] private string _culture = "en-US";
         private string? _message;
         private bool _hasChanges;
         #endregion
@@ -37,17 +44,25 @@ namespace SheduleHelper.Core.ViewModels
         #region Constructors
         public SettingsViewModel(ILocalDbContextFactory localDbFactory,
             ICurrentUserContext currentUserContext,
-            IDispatcherService dispatcherService)
+            IDispatcherService dispatcherService,
+            ISettingsService settingsService,
+            IThemeApplier themeApplier,
+            IDialogService dialogService)
         {
             _localDbFactory = localDbFactory;
             _currentUserContext = currentUserContext;
             _dispatcherService = dispatcherService;
+            _settingsService = settingsService;
+            _themeApplier = themeApplier;
+            _dialogService = dialogService;
             _ = LoadSettingsAsync();
         }
         #endregion
 
         #region Properties
         public IReadOnlyList<LunchStrategy> LunchStrategyOptions { get; } = Enum.GetValues<LunchStrategy>();
+        public IReadOnlyList<AppTheme> ThemeOptions { get; } = Enum.GetValues<AppTheme>();
+        public IReadOnlyList<string> CultureOptions { get; } = new[] { "en-US", "cs-CZ" };
         public string? Message { get => _message; private set { if (SetProperty(ref _message, value)) OnPropertyChanged(nameof(MessageVisible)); } }
         public bool MessageVisible { get => !string.IsNullOrWhiteSpace(Message); }
         public bool IsBusy { get => _isBusy; private set { if (SetProperty(ref _isBusy, value)) NotifyCanExecuteChanged(); } }
@@ -61,6 +76,22 @@ namespace SheduleHelper.Core.ViewModels
             {
                 IsBusy = true;
                 var ct = CreateCancellationToken();
+
+                // Theme/language are local app-instance preferences (ISettingsService, a small
+                // JSON file) - independent of the UserSetting/EF save below, so a failure in one
+                // shouldn't block the other. Only act when the value actually changed, so saving
+                // unrelated fields (e.g. shift hours) doesn't re-apply the theme or re-show the
+                // restart prompt every time.
+                var cultureChanged = _settingsService.Culture != Culture;
+                if (_settingsService.Theme != Theme)
+                {
+                    _themeApplier.Apply(Theme);
+                }
+                if (cultureChanged)
+                {
+                    _settingsService.Culture = Culture;
+                }
+
                 _userSetting.TargetShiftHours = TargetShiftHours;
                 _userSetting.DefaultClockInTime = DefaultClockInTime;
                 _userSetting.DefaultClockOutTime = DefaultClockOutTime;
@@ -72,6 +103,11 @@ namespace SheduleHelper.Core.ViewModels
                 await using var dbContext = _localDbFactory.CreateDbContext();
                 _userSetting = await dbContext.UpdateUserSettingAsync(_userSetting, ct);
                 HasChanges = false;
+
+                if (cultureChanged)
+                {
+                    await _dialogService.ShowMessageDialogAsync(CONTENT.restart_required_title, CONTENT.restart_required_message);
+                }
             }
             catch (Exception ex)
             {
@@ -110,6 +146,8 @@ namespace SheduleHelper.Core.ViewModels
         partial void OnLunchStartTimeChanged(TimeOnly value) => OnSettingChanged();
         partial void OnLunchEndTimeChanged(TimeOnly value) => OnSettingChanged();
         partial void OnLunchDurationMinutesChanged(int value) => OnSettingChanged();
+        partial void OnThemeChanged(AppTheme value) => OnSettingChanged();
+        partial void OnCultureChanged(string value) => OnSettingChanged();
         #endregion
 
         #region CanExecute
@@ -157,6 +195,10 @@ namespace SheduleHelper.Core.ViewModels
             LunchStartTime = userSetting.LunchStartTime;
             LunchEndTime = userSetting.LunchEndTime;
             LunchDurationMinutes = userSetting.LunchDurationMinutes;
+            // Theme/language aren't part of UserSetting - they're local app-instance preferences
+            // read straight from ISettingsService instead (see SaveChangesAsync).
+            Theme = _settingsService.Theme;
+            Culture = _settingsService.Culture;
             _isLoadingSettings = false;
             HasChanges = false;
         }

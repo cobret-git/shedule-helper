@@ -25,6 +25,7 @@
     </PackageReference>
     <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="System.IO.Abstractions" Version="22.2.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,12 +34,26 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Messages.resx</DependentUpon>
     </Compile>
+    <Compile Update="Resources\Strings\Content.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Content.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Update="Resources\Strings\Messages.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Messages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <!--
+      PublicResXFileCodeGenerator (not the plain ResXFileCodeGenerator used above for
+      Messages.resx) so the generated Content class/properties are public - needed for
+      SheduleHelper.Modern's XAML to x:Bind to them directly across the assembly boundary.
+    -->
+    <EmbeddedResource Update="Resources\Strings\Content.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Content.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 

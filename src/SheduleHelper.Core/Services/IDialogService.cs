@@ -29,6 +29,14 @@ namespace SheduleHelper.Core.Services
         Task<TaskItem?> ShowEditTaskItemDialogAsync(EditTaskItemDialogContext context);
 
         /// <summary>
+        /// Shows a simple informational dialog with a single close button - e.g. to tell the user a
+        /// setting (like the display language) needs an app restart to take effect.
+        /// </summary>
+        /// <param name="title">The dialog's title.</param>
+        /// <param name="message">The dialog's body text.</param>
+        Task ShowMessageDialogAsync(string title, string message);
+
+        /// <summary>
         /// Closes the dialog currently being shown, if any.
         /// </summary>
         void CloseDialog();
