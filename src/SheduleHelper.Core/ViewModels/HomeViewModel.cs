@@ -6,6 +6,7 @@ using SheduleHelper.Core.Components.Entities;
 using SheduleHelper.Core.Models;
 using SheduleHelper.Core.Services;
 using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using MSG = SheduleHelper.Core.Resources.Strings.Messages;
 
@@ -40,6 +41,9 @@ namespace SheduleHelper.Core.ViewModels
         [ObservableProperty] private TimeSpan _workedToday;
         [ObservableProperty] private TimeSpan _targetShiftDuration;
         [ObservableProperty] private TimeSpan _rollingMonthlyBalance;
+        // TODO: placeholder data for the Daily Timeline card until real segments (attendance
+        // logs + project switches for today) are wired up.
+        [ObservableProperty] private ObservableCollection<TimelineSegment> _todaysTimeline = CreateDummyTimeline();
         private string? _message;
         #endregion
 
@@ -256,6 +260,18 @@ namespace SheduleHelper.Core.ViewModels
             _cts?.Dispose();
             _cts = new();
             return _cts.Token;
+        }
+
+        private static ObservableCollection<TimelineSegment> CreateDummyTimeline()
+        {
+            var today = DateTime.Today;
+            return new ObservableCollection<TimelineSegment>
+            {
+                new("Project A", today.AddHours(8).AddMinutes(45), today.AddHours(11).AddMinutes(15), SegmentDisplayStyle.Solid),
+                new("Project B", today.AddHours(11).AddMinutes(15), today.AddHours(12).AddMinutes(45), SegmentDisplayStyle.Solid),
+                new("Lunch", today.AddHours(12).AddMinutes(45), today.AddHours(13).AddMinutes(45), SegmentDisplayStyle.Hatched),
+                new("Project A", today.AddHours(13).AddMinutes(45), null, SegmentDisplayStyle.Solid),
+            };
         }
         #endregion
     }

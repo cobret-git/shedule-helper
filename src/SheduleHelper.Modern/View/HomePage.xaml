@@ -3,6 +3,7 @@
     x:Class="SheduleHelper.Modern.View.HomePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:SheduleHelper.Modern.Controls"
     xmlns:converters="using:SheduleHelper.Modern.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -17,6 +18,14 @@
             <converters:AttendanceDayStateToVisibilityConverter x:Key="DayStateToVisibility" />
             <converters:TimeOnlyToTimeSpanConverter x:Key="TimeOnlyToTimeSpanConverter" />
             <converters:TimeSpanToMinutesConverter x:Key="TimeSpanToMinutesConverter" />
+
+            <Style x:Key="CardBorderStyle" TargetType="Border">
+                <Setter Property="Padding" Value="24" />
+                <Setter Property="Background" Value="{ThemeResource MdSurfaceContainerLowBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource MdOutlineVariantBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="6" />
+            </Style>
         </ResourceDictionary>
     </Page.Resources>
 
@@ -25,6 +34,7 @@
         Padding="0"
         RowSpacing="16">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
@@ -42,11 +52,7 @@
             <Border
                 Grid.Column="0"
                 MinHeight="130"
-                Padding="24"
-                Background="{ThemeResource MdSurfaceContainerLowBrush}"
-                BorderBrush="{ThemeResource MdOutlineVariantBrush}"
-                BorderThickness="1"
-                CornerRadius="6">
+                Style="{StaticResource CardBorderStyle}">
                 <StackPanel Orientation="Vertical">
                     <TextBlock
                         FontSize="14"
@@ -76,13 +82,7 @@
                         TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
-            <Border
-                Grid.Column="1"
-                Padding="24"
-                Background="{ThemeResource MdSurfaceContainerLowBrush}"
-                BorderBrush="{ThemeResource MdOutlineVariantBrush}"
-                BorderThickness="1"
-                CornerRadius="6">
+            <Border Grid.Column="1" Style="{StaticResource CardBorderStyle}">
                 <StackPanel Orientation="Vertical">
                     <TextBlock
                         FontSize="14"
@@ -126,14 +126,20 @@
                     </Grid>
                 </StackPanel>
             </Border>
-            <Border
-                Grid.Column="2"
-                Padding="24"
-                Background="{ThemeResource MdSurfaceContainerLowBrush}"
-                BorderBrush="{ThemeResource MdOutlineVariantBrush}"
-                BorderThickness="1"
-                CornerRadius="6">
+            <Border Grid.Column="2" Style="{StaticResource CardBorderStyle}">
                 <StackPanel Orientation="Vertical" />
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="1">
+            <Border Style="{StaticResource CardBorderStyle}">
+                <StackPanel Spacing="16">
+                    <TextBlock
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Text="Daily Timeline" />
+                    <controls:TimelineBar ItemsSource="{x:Bind ViewModel.TodaysTimeline, Mode=OneWay}" />
+                </StackPanel>
             </Border>
         </Grid>
 
