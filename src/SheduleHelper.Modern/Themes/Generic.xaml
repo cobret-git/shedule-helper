@@ -82,7 +82,6 @@
     </Style>
 
     <Style TargetType="controls:TimelineBar">
-        <Setter Property="Height" Value="48" />
         <Setter Property="Background" Value="{ThemeResource MdSurfaceVariantBrush}" />
         <Setter Property="BorderBrush" Value="{ThemeResource MdOutlineVariantBrush}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -91,13 +90,21 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="controls:TimelineBar">
-                    <Border
-                        Background="{TemplateBinding Background}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="{TemplateBinding CornerRadius}">
-                        <Canvas x:Name="PART_Canvas" />
-                    </Border>
+                    <Grid RowSpacing="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="20" />
+                            <RowDefinition Height="48" />
+                        </Grid.RowDefinitions>
+                        <Canvas x:Name="PART_TicksCanvas" Grid.Row="0" />
+                        <Border
+                            Grid.Row="1"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}">
+                            <Canvas x:Name="PART_Canvas" />
+                        </Border>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

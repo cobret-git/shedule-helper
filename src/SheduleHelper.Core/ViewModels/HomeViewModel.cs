@@ -267,6 +267,8 @@ namespace SheduleHelper.Core.ViewModels
             var today = DateTime.Today;
             return new ObservableCollection<TimelineSegment>
             {
+                // Deliberately narrow (10 min) to exercise the "label doesn't fit -> hide it" path.
+                new("Standup", today.AddHours(8).AddMinutes(15), today.AddHours(8).AddMinutes(25), SegmentDisplayStyle.Solid),
                 new("Project A", today.AddHours(8).AddMinutes(45), today.AddHours(11).AddMinutes(15), SegmentDisplayStyle.Solid),
                 new("Project B", today.AddHours(11).AddMinutes(15), today.AddHours(12).AddMinutes(45), SegmentDisplayStyle.Solid),
                 new("Lunch", today.AddHours(12).AddMinutes(45), today.AddHours(13).AddMinutes(45), SegmentDisplayStyle.Hatched),

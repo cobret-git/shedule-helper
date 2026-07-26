@@ -10,41 +10,57 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Windows.Foundation;
 using Windows.UI;
 using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace SheduleHelper.Modern.Controls
 {
     [TemplatePart(Name = CanvasPartName, Type = typeof(Canvas))]
+    [TemplatePart(Name = TicksCanvasPartName, Type = typeof(Canvas))]
     public sealed class TimelineBar : Control
     {
         private const string CanvasPartName = "PART_Canvas";
+        private const string TicksCanvasPartName = "PART_TicksCanvas";
 
-        // Reserve of categorical colors for segments, drawn from the app's Material palette
-        // (Assets/Palettes/*.xaml) so it always matches the active theme. Used only when the
-        // caller hasn't supplied an explicit Palette. Ordered for maximum perceptual distance
-        // first; libraries like D3/Chart.js do the same thing with a fixed-size categorical
-        // array and cycle through it (see GetBrushForSegment) once callers exceed its length.
-        private static readonly string[] DefaultPaletteBrushKeys =
+        // Candidate hour-scale intervals (minutes), ascending. DrawTicks picks the smallest one
+        // whose labels all fit the current width, so density adapts automatically on resize.
+        private static readonly int[] TickIntervalCandidatesMinutes = { 15, 30, 60, 120, 180, 240, 360, 480, 720 };
+        private const double TickMinGap = 8;
+
+        // Reserve of categorical (background, foreground) color pairs for segments, drawn from
+        // the app's Material palette (Assets/Palettes/*.xaml) so it always matches the active
+        // theme. Used only when the caller hasn't supplied an explicit Palette. Each pair reuses
+        // Material's own contrast-checked "on-color" companion, so labels drawn on top (see
+        // AddSegmentLabelIfFits) are always readable without inventing new brushes. Ordered for
+        // maximum perceptual distance first; libraries like D3/Chart.js do the same thing with a
+        // fixed-size categorical array and cycle through it (see GetSegmentColors) once callers
+        // exceed its length.
+        private static readonly (string Background, string Foreground)[] DefaultPaletteKeys =
         {
-            "MdPrimaryBrush",
-            "MdTertiaryContainerBrush",
-            "MdSecondaryContainerBrush",
-            "MdPrimaryContainerBrush",
-            "MdTertiaryBrush",
-            "MdSecondaryBrush",
-            "MdPrimaryFixedDimBrush",
-            "MdTertiaryFixedDimBrush",
-            "MdSecondaryFixedDimBrush",
-            "MdInversePrimaryBrush",
+            ("MdPrimaryBrush", "MdOnPrimaryBrush"),
+            ("MdTertiaryContainerBrush", "MdOnTertiaryContainerBrush"),
+            ("MdSecondaryContainerBrush", "MdOnSecondaryContainerBrush"),
+            ("MdPrimaryContainerBrush", "MdOnPrimaryContainerBrush"),
+            ("MdTertiaryBrush", "MdOnTertiaryBrush"),
+            ("MdSecondaryBrush", "MdOnSecondaryBrush"),
+            ("MdPrimaryFixedDimBrush", "MdOnPrimaryFixedVariantBrush"),
+            ("MdTertiaryFixedDimBrush", "MdOnTertiaryFixedVariantBrush"),
+            ("MdSecondaryFixedDimBrush", "MdOnSecondaryFixedVariantBrush"),
+            ("MdPrimaryFixedBrush", "MdOnPrimaryFixedBrush"),
+            ("MdTertiaryFixedBrush", "MdOnTertiaryFixedBrush"),
+            ("MdSecondaryFixedBrush", "MdOnSecondaryFixedBrush"),
         };
 
         private const string HatchBackgroundColorKey = "MdSurfaceVariantColor";
         private const string HatchLineColorKey = "MdOutlineVariantColor";
+        private const string DefaultForegroundBrushKey = "MdOnSurfaceVariantBrush";
+        private const double LabelHorizontalPadding = 8;
 
         private Canvas? _canvas;
+        private Canvas? _ticksCanvas;
         private DispatcherTimer _liveTimer;
-        private readonly Dictionary<string, Brush> _assignedBrushes = new();
+        private readonly Dictionary<string, (Brush Background, Brush Foreground)> _assignedColors = new();
         private int _paletteIndex = 0;
 
         public TimelineBar()
@@ -69,12 +85,25 @@ namespace SheduleHelper.Modern.Controls
             {
                 _canvas.SizeChanged -= OnCanvasSizeChanged;
             }
+            if (_ticksCanvas != null)
+            {
+                _ticksCanvas.SizeChanged -= OnCanvasSizeChanged;
+            }
 
             _canvas = GetTemplateChild(CanvasPartName) as Canvas;
+            _ticksCanvas = GetTemplateChild(TicksCanvasPartName) as Canvas;
 
             if (_canvas != null)
             {
                 _canvas.SizeChanged += OnCanvasSizeChanged;
+            }
+            if (_ticksCanvas != null)
+            {
+                _ticksCanvas.SizeChanged += OnCanvasSizeChanged;
+            }
+
+            if (_canvas != null)
+            {
                 DrawTimeline();
             }
         }
@@ -124,6 +153,18 @@ namespace SheduleHelper.Modern.Controls
             set => SetValue(PaletteProperty, value);
         }
 
+        // Uniform label color used only when Palette is overridden with plain backgrounds; falls
+        // back to DefaultForegroundBrushKey. Callers overriding Palette are responsible for
+        // picking backgrounds that this single foreground reads well against.
+        public static readonly DependencyProperty SegmentForegroundProperty =
+            DependencyProperty.Register(nameof(SegmentForeground), typeof(Brush), typeof(TimelineBar), new PropertyMetadata(null, OnPropertyChanged));
+
+        public Brush SegmentForeground
+        {
+            get => (Brush)GetValue(SegmentForegroundProperty);
+            set => SetValue(SegmentForegroundProperty, value);
+        }
+
         public static readonly DependencyProperty IndicatorBrushProperty =
             DependencyProperty.Register(nameof(IndicatorBrush), typeof(Brush), typeof(TimelineBar), new PropertyMetadata(null, OnPropertyChanged));
 
@@ -131,6 +172,17 @@ namespace SheduleHelper.Modern.Controls
         {
             get => (Brush)GetValue(IndicatorBrushProperty);
             set => SetValue(IndicatorBrushProperty, value);
+        }
+
+        // Off by default until the planned hover-driven "inspect the graph" interaction
+        // replaces this always-on version with something driven by pointer position.
+        public static readonly DependencyProperty ShowCurrentTimeIndicatorProperty =
+            DependencyProperty.Register(nameof(ShowCurrentTimeIndicator), typeof(bool), typeof(TimelineBar), new PropertyMetadata(false, OnPropertyChanged));
+
+        public bool ShowCurrentTimeIndicator
+        {
+            get => (bool)GetValue(ShowCurrentTimeIndicatorProperty);
+            set => SetValue(ShowCurrentTimeIndicatorProperty, value);
         }
 
         private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -163,46 +215,48 @@ namespace SheduleHelper.Modern.Controls
 
         private void ResetPaletteAssignments()
         {
-            _assignedBrushes.Clear();
+            _assignedColors.Clear();
             _paletteIndex = 0;
         }
 
-        private Brush GetBrushForSegment(TimelineSegment segment)
+        private (Brush Background, Brush Foreground) GetSegmentColors(TimelineSegment segment)
         {
-            // Return previously assigned color for this specific task name
-            if (_assignedBrushes.TryGetValue(segment.Name, out var brush))
+            // Return the previously assigned colors for this specific task name
+            if (_assignedColors.TryGetValue(segment.Name, out var colors))
             {
-                return brush;
+                return colors;
             }
 
-            // Assign a new color from the palette (falling back to the default categorical
+            // Assign the next colors from the palette (falling back to the default categorical
             // reserve when the caller hasn't supplied one), cycling once segments outnumber it.
-            var palette = Palette != null && Palette.Count > 0 ? Palette : ResolveDefaultPalette();
+            var palette = ResolveActivePalette();
             if (palette.Count > 0)
             {
-                var newBrush = palette[_paletteIndex % palette.Count];
-                _assignedBrushes[segment.Name] = newBrush;
+                var newColors = palette[_paletteIndex % palette.Count];
+                _assignedColors[segment.Name] = newColors;
                 _paletteIndex++;
-                return newBrush;
+                return newColors;
             }
 
-            return null; // Fallback handled by DataTemplate or default styling
+            return (null, null); // Fallback handled by DataTemplate or default styling
         }
 
-        private static IList<Brush> ResolveDefaultPalette()
+        private IList<(Brush Background, Brush Foreground)> ResolveActivePalette()
         {
-            var resources = Application.Current.Resources;
-            var brushes = new List<Brush>(DefaultPaletteBrushKeys.Length);
-
-            foreach (var key in DefaultPaletteBrushKeys)
+            if (Palette != null && Palette.Count > 0)
             {
-                if (resources.TryGetValue(key, out var value) && value is Brush brush)
-                {
-                    brushes.Add(brush);
-                }
+                var foreground = SegmentForeground ?? ResolveBrush(DefaultForegroundBrushKey);
+                return Palette.Select(background => (Background: background, Foreground: foreground)).ToList();
             }
 
-            return brushes;
+            return DefaultPaletteKeys
+                .Select(keys => (Background: ResolveBrush(keys.Background), Foreground: ResolveBrush(keys.Foreground)))
+                .ToList();
+        }
+
+        private static Brush ResolveBrush(string key)
+        {
+            return (Brush)Application.Current.Resources[key];
         }
 
         private static Color ResolveColor(string key)
@@ -219,6 +273,8 @@ namespace SheduleHelper.Modern.Controls
 
             var totalMinutes = (DayEnd - DayStart).TotalMinutes;
             if (totalMinutes <= 0) return;
+
+            DrawTicks(totalMinutes);
 
             foreach (var segment in ItemsSource.OrderBy(s => s.StartTime))
             {
@@ -238,7 +294,7 @@ namespace SheduleHelper.Modern.Controls
                 var xPosition = (startMinutes / totalMinutes) * _canvas.ActualWidth;
                 var width = (widthMinutes / totalMinutes) * _canvas.ActualWidth;
 
-                Brush segmentBrush;
+                (Brush Background, Brush Foreground) colors;
 
                 // Check if this segment requires the hatched pattern
                 if (segment.DisplayStyle == SegmentDisplayStyle.Hatched)
@@ -246,18 +302,18 @@ namespace SheduleHelper.Modern.Controls
                     var bgColor = ResolveColor(HatchBackgroundColorKey);
                     var lineColor = ResolveColor(HatchLineColorKey);
 
-                    segmentBrush = CreateHatchedBrush(width, _canvas.ActualHeight, bgColor, lineColor);
+                    colors = (CreateHatchedBrush(width, _canvas.ActualHeight, bgColor, lineColor), ResolveBrush(DefaultForegroundBrushKey));
                 }
                 else
                 {
-                    segmentBrush = GetBrushForSegment(segment);
+                    colors = GetSegmentColors(segment);
                 }
 
                 var rect = new Rectangle
                 {
                     Width = width,
                     Height = _canvas.ActualHeight,
-                    Fill = segmentBrush,
+                    Fill = colors.Background,
                     StrokeThickness = 0
                 };
 
@@ -265,10 +321,15 @@ namespace SheduleHelper.Modern.Controls
                 Canvas.SetTop(rect, 0);
                 _canvas.Children.Add(rect);
 
+                AddSegmentLabelIfFits(segment.Name, colors.Foreground, xPosition, width, _canvas.ActualHeight);
+
                 if (segment.IsActive) hasLiveTask = true;
             }
 
-            DrawCurrentTimeIndicator(totalMinutes);
+            if (ShowCurrentTimeIndicator)
+            {
+                DrawCurrentTimeIndicator(totalMinutes);
+            }
 
             // Only run the timer if there is an active task or the current time indicator needs moving
             if (hasLiveTask || (DateTime.Now.TimeOfDay >= DayStart && DateTime.Now.TimeOfDay <= DayEnd))
@@ -280,6 +341,138 @@ namespace SheduleHelper.Modern.Controls
                 _liveTimer.Stop();
             }
         }
+
+        /// <summary>
+        /// Draws <paramref name="text"/> centered over a segment, but only when it fits without
+        /// wrapping or clipping - otherwise the segment is left as a plain colored block.
+        /// </summary>
+        private void AddSegmentLabelIfFits(string text, Brush foreground, double segmentX, double segmentWidth, double canvasHeight)
+        {
+            if (string.IsNullOrEmpty(text) || foreground == null) return;
+
+            var label = new TextBlock
+            {
+                Text = text,
+                Foreground = foreground,
+                TextWrapping = TextWrapping.NoWrap,
+            };
+
+            label.Measure(new Size(double.PositiveInfinity, canvasHeight));
+
+            if (label.DesiredSize.Width + (LabelHorizontalPadding * 2) > segmentWidth) return;
+
+            Canvas.SetLeft(label, segmentX + ((segmentWidth - label.DesiredSize.Width) / 2));
+            Canvas.SetTop(label, (canvasHeight - label.DesiredSize.Height) / 2);
+            _canvas.Children.Add(label);
+        }
+
+        /// <summary>
+        /// Draws the hour scale above the bar, picking the coarsest interval from
+        /// <see cref="TickIntervalCandidatesMinutes"/> whose *actual, clamped* label positions
+        /// don't collide - so density adapts on resize instead of ever overlapping. Boundary
+        /// labels (day start/end) get clamped fully inside the canvas rather than centered on
+        /// their timestamp, which shifts them further toward the middle than an unclamped tick -
+        /// simulating real positions (rather than a spacing-formula estimate) is what catches that.
+        /// </summary>
+        private void DrawTicks(double totalMinutes)
+        {
+            if (_ticksCanvas == null) return;
+
+            _ticksCanvas.Children.Clear();
+
+            var availableWidth = _ticksCanvas.ActualWidth;
+            if (availableWidth <= 0) return;
+
+            var labelWidth = MeasureTickLabelWidth();
+
+            var positions = TickIntervalCandidatesMinutes
+                .Select(interval => BuildTickPositions(interval, totalMinutes, availableWidth, labelWidth))
+                .FirstOrDefault(candidate => !HasAdjacentOverlap(candidate, labelWidth));
+
+            if (positions == null)
+            {
+                // Even the coarsest candidate collided - fall back to just the day boundaries
+                // (and if the canvas is so narrow those two collide too, show nothing rather than
+                // an unreadable jumble).
+                var boundaries = new List<(TimeSpan TimeOfDay, double Left)>
+                {
+                    (DayStart, ClampLabelLeft(0, availableWidth, labelWidth)),
+                    (DayEnd, ClampLabelLeft(availableWidth, availableWidth, labelWidth)),
+                };
+                positions = HasAdjacentOverlap(boundaries, labelWidth) ? new List<(TimeSpan TimeOfDay, double Left)>() : boundaries;
+            }
+
+            foreach (var (timeOfDay, left) in positions)
+            {
+                AddTickLabel(timeOfDay, left);
+            }
+        }
+
+        private List<(TimeSpan TimeOfDay, double Left)> BuildTickPositions(int intervalMinutes, double totalMinutes, double availableWidth, double labelWidth)
+        {
+            var positions = new List<(TimeSpan TimeOfDay, double Left)>();
+
+            for (var minutes = 0.0; minutes <= totalMinutes; minutes += intervalMinutes)
+            {
+                var x = (minutes / totalMinutes) * availableWidth;
+                positions.Add((DayStart + TimeSpan.FromMinutes(minutes), ClampLabelLeft(x, availableWidth, labelWidth)));
+            }
+
+            // A candidate interval that doesn't evenly divide the day range otherwise never lands
+            // on DayEnd, silently dropping the last label. Append it explicitly - if it then sits
+            // too close to the previous tick, HasAdjacentOverlap rejects this candidate exactly
+            // like any other collision, falling through to a coarser interval instead.
+            if (positions[^1].TimeOfDay != DayEnd)
+            {
+                positions.Add((DayEnd, ClampLabelLeft(availableWidth, availableWidth, labelWidth)));
+            }
+
+            return positions;
+        }
+
+        // Positions are generated in ascending time (=> ascending x) order and clamping is
+        // monotonic, so checking each pair of neighbors catches every possible collision.
+        private bool HasAdjacentOverlap(List<(TimeSpan TimeOfDay, double Left)> positions, double labelWidth)
+        {
+            for (var i = 1; i < positions.Count; i++)
+            {
+                if (positions[i].Left < positions[i - 1].Left + labelWidth + TickMinGap)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static double ClampLabelLeft(double center, double availableWidth, double labelWidth)
+        {
+            return Math.Clamp(center - (labelWidth / 2), 0, Math.Max(0, availableWidth - labelWidth));
+        }
+
+        private void AddTickLabel(TimeSpan timeOfDay, double left)
+        {
+            var label = new TextBlock
+            {
+                Text = FormatTick(timeOfDay),
+                Foreground = ResolveBrush(DefaultForegroundBrushKey),
+                TextWrapping = TextWrapping.NoWrap,
+                FontSize = 11,
+            };
+
+            Canvas.SetLeft(label, left);
+            Canvas.SetTop(label, 0);
+            _ticksCanvas.Children.Add(label);
+        }
+
+        private static double MeasureTickLabelWidth()
+        {
+            var probe = new TextBlock { Text = FormatTick(TimeSpan.FromHours(23) + TimeSpan.FromMinutes(59)), FontSize = 11, TextWrapping = TextWrapping.NoWrap };
+            probe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            return probe.DesiredSize.Width;
+        }
+
+        private static string FormatTick(TimeSpan timeOfDay) => DateTime.Today.Add(timeOfDay).ToString("HH:mm");
 
         private void DrawCurrentTimeIndicator(double totalDayMinutes)
         {
