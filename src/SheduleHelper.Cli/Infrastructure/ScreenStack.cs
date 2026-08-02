@@ -27,17 +27,21 @@ namespace SheduleHelper.Cli.Infrastructure
         /// <summary>
         /// Pushes a new screen on top of the stack, activating it.
         /// </summary>
-        public void Push(IScreen screen)
+        public async Task Push(IScreen screen)
         {
-            Current?.OnLeave();
+            if (Current is { } current)
+            {
+                await current.OnLeave();
+            }
+
             _stack.Add(screen);
-            screen.OnEnter();
+            await screen.OnEnter();
         }
 
         /// <summary>
         /// Pops the active screen, re-activating the one underneath (if any).
         /// </summary>
-        public void Pop()
+        public async Task Pop()
         {
             if (_stack.Count == 0)
             {
@@ -46,8 +50,12 @@ namespace SheduleHelper.Cli.Infrastructure
 
             var leaving = _stack[^1];
             _stack.RemoveAt(_stack.Count - 1);
-            leaving.OnLeave();
-            Current?.OnEnter();
+            await leaving.OnLeave();
+
+            if (Current is { } current)
+            {
+                await current.OnEnter();
+            }
         }
 
         /// <summary>
@@ -55,33 +63,33 @@ namespace SheduleHelper.Cli.Infrastructure
         /// root-level navigation (e.g. Home to Reports), as opposed to <see cref="Push"/>, which is
         /// for screens the user expects to back out of.
         /// </summary>
-        public void Replace(IScreen screen)
+        public async Task Replace(IScreen screen)
         {
             if (_stack.Count > 0)
             {
                 var leaving = _stack[^1];
                 _stack[^1] = screen;
-                leaving.OnLeave();
+                await leaving.OnLeave();
             }
             else
             {
                 _stack.Add(screen);
             }
 
-            screen.OnEnter();
+            await screen.OnEnter();
         }
 
         /// <summary>
         /// Clears the stack, ending the app - <see cref="ConsoleApp"/>'s loop exits once
         /// <see cref="Current"/> becomes <see langword="null"/>.
         /// </summary>
-        public void Quit()
+        public async Task Quit()
         {
             while (_stack.Count > 0)
             {
                 var leaving = _stack[^1];
                 _stack.RemoveAt(_stack.Count - 1);
-                leaving.OnLeave();
+                await leaving.OnLeave();
             }
         }
 

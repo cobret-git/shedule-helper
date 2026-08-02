@@ -29,7 +29,7 @@ namespace SheduleHelper.Cli.Infrastructure
 
             try
             {
-                _screens.Push(initialScreen);
+                await _screens.Push(initialScreen);
 
                 var keys = Channel.CreateUnbounded<ConsoleKeyInfo>();
                 _ = ReadKeysAsync(keys.Writer, cancellationToken);
@@ -44,7 +44,10 @@ namespace SheduleHelper.Cli.Infrastructure
                     try
                     {
                         var key = await keys.Reader.ReadAsync(tickCts.Token);
-                        _screens.Current?.HandleKey(key, _screens);
+                        if (_screens.Current is { } activeScreen)
+                        {
+                            await activeScreen.HandleKey(key, _screens);
+                        }
                     }
                     catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                     {

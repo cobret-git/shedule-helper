@@ -25,6 +25,7 @@ services.AddSingleton<ILocalDbContextFactory, LocalDbContextFactory>();
 services.AddSingleton<DatabaseMigrationService>();
 services.AddSingleton<ICurrentUserContext, CurrentUserContext>();
 services.AddSingleton<ISettingsService, SettingsService>();
+services.AddSingleton<IAttendanceService, AttendanceService>();
 
 services.AddTransient<HomeScreen>();
 

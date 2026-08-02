@@ -31,12 +31,9 @@ namespace SheduleHelper.Cli.Screens
         }
 
         /// <inheritdoc/>
-        public void HandleKey(ConsoleKeyInfo key, ScreenStack screens)
+        public Task HandleKey(ConsoleKeyInfo key, ScreenStack screens)
         {
-            if (key.Key == ConsoleKey.Escape)
-            {
-                screens.Pop();
-            }
+            return key.Key == ConsoleKey.Escape ? screens.Pop() : Task.CompletedTask;
         }
 
         #endregion

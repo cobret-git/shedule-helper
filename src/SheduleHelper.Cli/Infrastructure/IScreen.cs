@@ -18,21 +18,26 @@ namespace SheduleHelper.Cli.Infrastructure
 
         /// <summary>
         /// Handles a single key press. Implementations that navigate call back into
-        /// <paramref name="screens"/> (e.g. <c>Push</c>, <c>Pop</c>) rather than owning navigation themselves.
+        /// <paramref name="screens"/> (e.g. <c>Push</c>, <c>Pop</c>) rather than owning navigation
+        /// themselves. Returns a <see cref="Task"/> - and <see cref="ConsoleApp"/> awaits it fully
+        /// before rendering the next frame - so a screen's own async work (a DB call) never runs
+        /// concurrently with <see cref="Render"/> reading its state. A console app has no
+        /// dispatcher to marshal continuations back to a UI thread the way WPF/WinUI do, so
+        /// "always await before redrawing" is what keeps this safe instead.
         /// </summary>
-        void HandleKey(ConsoleKeyInfo key, ScreenStack screens);
+        Task HandleKey(ConsoleKeyInfo key, ScreenStack screens);
 
         /// <summary>
         /// Called once this screen becomes the active one - either just pushed, or re-exposed after
         /// the screen above it was popped. Default no-op; override to (re)load state.
         /// </summary>
-        void OnEnter() { }
+        Task OnEnter() => Task.CompletedTask;
 
         /// <summary>
         /// Called once this screen stops being the active one - either popped/replaced, or another
         /// screen was just pushed above it. Default no-op; override to release resources.
         /// </summary>
-        void OnLeave() { }
+        Task OnLeave() => Task.CompletedTask;
 
         #endregion
     }
