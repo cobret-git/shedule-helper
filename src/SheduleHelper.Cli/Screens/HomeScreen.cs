@@ -121,6 +121,18 @@ namespace SheduleHelper.Cli.Screens
                 case ConsoleKey.D when snapshot.DayState == AttendanceDayState.NotClockedIn:
                     await ClockInAsync(DateTime.Today + snapshot.UserSetting.DefaultClockInTime.ToTimeSpan());
                     break;
+                case ConsoleKey.M when snapshot.DayState == AttendanceDayState.NotClockedIn:
+                    await screens.Push(new TimeEntryScreen("CLOCK IN", "Clock in at", TimeOnly.FromDateTime(DateTime.Now), async (time, s) =>
+                    {
+                        var error = await TryClockInAsync(DateTime.Today + time.ToTimeSpan());
+                        if (error is null)
+                        {
+                            await s.Pop();
+                        }
+
+                        return error;
+                    }));
+                    break;
                 case ConsoleKey.O when snapshot.DayState == AttendanceDayState.ClockedIn:
                     await screens.Push(new ClockOutScreen(_attendanceService, _currentUserContext, snapshot));
                     break;
@@ -180,8 +192,9 @@ namespace SheduleHelper.Cli.Screens
             frame.Write(1, 6, "Good day. Ready when you are.");
             frame.Write(3, 8, $"I   Clock in now                     {Formatting.Time(DateTime.Now)}");
             frame.Write(3, 9, $"D   Clock in at default              {Formatting.Time(snapshot.UserSetting.DefaultClockInTime)}");
+            frame.Write(3, 10, "M   Clock in at custom time...");
 
-            KeyBar.Draw(frame, ("I", "Clock in now"), ("D", "Clock in at default"), ("P", "Projects"), ("F1", "Help"), ("F10", "Settings"), ("Q", "Quit"));
+            KeyBar.Draw(frame, ("I", "Now"), ("D", "Default"), ("M", "Custom"), ("P", "Projects"), ("F1", "Help"), ("F10", "Settings"), ("Q", "Quit"));
         }
 
         private static void RenderDayComplete(Frame frame, AttendanceDaySnapshot snapshot)
@@ -205,19 +218,36 @@ namespace SheduleHelper.Cli.Screens
 
         private async Task ClockInAsync(DateTime time)
         {
+            var error = await TryClockInAsync(time);
+            if (error is not null)
+            {
+                _message = error;
+            }
+        }
+
+        /// <summary>
+        /// Clocks in and returns an error message on failure instead of setting <see cref="_message"/>
+        /// directly - shared by the direct <c>I</c>/<c>D</c> key handlers above (which do want it on
+        /// <see cref="_message"/>) and <see cref="TimeEntryScreen"/>'s callback (which shows the
+        /// error on itself so the user can correct the time and retry, rather than losing that
+        /// context by bouncing back to Home).
+        /// </summary>
+        private async Task<string?> TryClockInAsync(DateTime time)
+        {
             try
             {
                 _snapshot = await _attendanceService.ClockInAsync(_currentUserContext.UserId, time, CancellationToken.None);
                 _message = null;
+                return null;
             }
             catch (AttendanceOperationException ex)
             {
-                _message = ex.Message;
+                return ex.Message;
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "Failed to clock in user {UserId}.", _currentUserContext.UserId);
-                _message = "Something went wrong clocking in.";
+                return "Something went wrong clocking in.";
             }
         }
 
