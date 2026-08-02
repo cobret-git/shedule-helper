@@ -33,8 +33,8 @@ namespace SheduleHelper.Cli.Screens
             frame.Write(3, 17, "P  projects browser");
 
             frame.Write(1, 19, "Editors", ColorToken.Accent);
-            frame.Write(3, 20, "Enter  edit the selected field    left/right  toggle / change");
-            frame.Write(3, 21, "Ctrl+S save                       Esc         cancel");
+            frame.Write(3, 20, "up/down  move fields - the selected one is always editable");
+            frame.Write(3, 21, "left/right  cursor / toggle      Enter or F10  save      Esc  cancel");
 
             KeyBar.Draw(frame, ("Esc", "Close"));
         }

@@ -24,7 +24,6 @@ namespace SheduleHelper.Cli.Screens
         private readonly TextField _description;
         private readonly SelectList _rows = new(3);
         private TaskItemStatus _status;
-        private bool _editing;
         private string? _message;
 
         #endregion
@@ -56,10 +55,10 @@ namespace SheduleHelper.Cli.Screens
             Header.Draw(frame, _existingTask is null ? "NEW TASK" : "EDIT TASK", "Esc Cancel");
 
             DrawLabel(frame, 3, 0, "Title");
-            _title.Draw(frame, 16, 3, 50, _editing && _rows.SelectedIndex == 0);
+            _title.Draw(frame, 16, 3, 50, _rows.SelectedIndex == 0);
 
             DrawLabel(frame, 4, 1, "Description");
-            _description.Draw(frame, 16, 4, 50, _editing && _rows.SelectedIndex == 1);
+            _description.Draw(frame, 16, 4, 50, _rows.SelectedIndex == 1);
 
             DrawLabel(frame, 5, 2, "Status");
             frame.Write(16, 5, $"< {StatusLabel(_status)} >");
@@ -69,23 +68,21 @@ namespace SheduleHelper.Cli.Screens
                 frame.Write(1, frame.Height - 4, _message, ColorToken.Negative);
             }
 
-            KeyBar.Draw(frame, ("up/down", "Field"), ("Enter", "Edit"), ("left/right", "Change"), ("Ctrl+S", "Save"), ("Esc", "Cancel"));
+            KeyBar.Draw(frame, ("up/down", "Field"), ("left/right", "Move/Change"), ("Enter", "Save"), ("F10", "Save"), ("Esc", "Cancel"));
         }
 
         /// <inheritdoc/>
         public async Task HandleKey(ConsoleKeyInfo key, ScreenStack screens)
         {
-            if (_editing)
+            switch (key.Key)
             {
-                var field = _rows.SelectedIndex == 0 ? _title : _description;
-                if (key.Key is ConsoleKey.Enter or ConsoleKey.Escape)
-                {
-                    _editing = false;
+                case ConsoleKey.Escape:
+                    await screens.Pop();
                     return;
-                }
-
-                field.HandleKey(key);
-                return;
+                case ConsoleKey.Enter:
+                case ConsoleKey.F10:
+                    await SaveAsync(screens);
+                    return;
             }
 
             if (_rows.HandleKey(key))
@@ -93,21 +90,18 @@ namespace SheduleHelper.Cli.Screens
                 return;
             }
 
-            switch (key.Key)
+            if (_rows.SelectedIndex == 2)
             {
-                case ConsoleKey.Escape:
-                    await screens.Pop();
-                    break;
-                case ConsoleKey.Enter when _rows.SelectedIndex is 0 or 1:
-                    _editing = true;
-                    break;
-                case ConsoleKey.LeftArrow or ConsoleKey.RightArrow when _rows.SelectedIndex == 2:
+                if (key.Key is ConsoleKey.LeftArrow or ConsoleKey.RightArrow)
+                {
                     _status = CycleStatus(_status, key.Key == ConsoleKey.RightArrow);
-                    break;
-                case ConsoleKey.S when key.Modifiers.HasFlag(ConsoleModifiers.Control):
-                    await SaveAsync(screens);
-                    break;
+                }
+
+                return;
             }
+
+            var field = _rows.SelectedIndex == 0 ? _title : _description;
+            field.HandleKey(key);
         }
 
         #endregion
