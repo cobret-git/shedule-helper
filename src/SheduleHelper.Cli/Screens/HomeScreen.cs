@@ -106,6 +106,9 @@ namespace SheduleHelper.Cli.Screens
                 case ConsoleKey.Q:
                     await screens.Quit();
                     break;
+                case ConsoleKey.P:
+                    await screens.Push(new ProjectsScreen(_dbContextFactory, _currentUserContext));
+                    break;
                 case ConsoleKey.I when snapshot.DayState == AttendanceDayState.NotClockedIn:
                     await ClockInAsync(DateTime.Now);
                     break;
@@ -158,7 +161,7 @@ namespace SheduleHelper.Cli.Screens
                 TimelineStrip.Draw(frame, 1, 10, stripWidth, openLog.ClockIn, DateTime.Now, blocks);
             }
 
-            KeyBar.Draw(frame, ("S", "Switch"), ("O", "Clock out"), ("F1", "Help"), ("Q", "Quit"));
+            KeyBar.Draw(frame, ("S", "Switch"), ("O", "Clock out"), ("P", "Projects"), ("F1", "Help"), ("Q", "Quit"));
         }
 
         private static void RenderNotClockedIn(Frame frame, AttendanceDaySnapshot snapshot)
@@ -172,7 +175,7 @@ namespace SheduleHelper.Cli.Screens
             frame.Write(3, 8, $"I   Clock in now                     {Formatting.Time(DateTime.Now)}");
             frame.Write(3, 9, $"D   Clock in at default              {Formatting.Time(snapshot.UserSetting.DefaultClockInTime)}");
 
-            KeyBar.Draw(frame, ("I", "Clock in now"), ("D", "Clock in at default"), ("F1", "Help"), ("Q", "Quit"));
+            KeyBar.Draw(frame, ("I", "Clock in now"), ("D", "Clock in at default"), ("P", "Projects"), ("F1", "Help"), ("Q", "Quit"));
         }
 
         private static void RenderDayComplete(Frame frame, AttendanceDaySnapshot snapshot)
@@ -181,7 +184,7 @@ namespace SheduleHelper.Cli.Screens
             frame.Write(1, 3, "✓ DAY COMPLETE", ColorToken.Dim);
             frame.Write(1, 5, $"{Formatting.Time(log.ClockIn)} -> {Formatting.Time(log.ClockOut!.Value)}    worked {Formatting.Duration(snapshot.WorkedToday)}");
 
-            KeyBar.Draw(frame, ("F1", "Help"), ("Q", "Quit"));
+            KeyBar.Draw(frame, ("P", "Projects"), ("F1", "Help"), ("Q", "Quit"));
         }
 
         private static void RenderForgottenSession(Frame frame, AttendanceDaySnapshot snapshot)
