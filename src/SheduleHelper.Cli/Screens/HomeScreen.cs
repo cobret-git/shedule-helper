@@ -9,17 +9,22 @@ namespace SheduleHelper.Cli.Screens
 {
     /// <summary>
     /// The Home screen (The Daily Control Center) - the app's landing screen. Shows today's
-    /// attendance state and the rolling monthly balance, and is where clock-in/out starts.
+    /// attendance state, the currently tracked project, and the rolling monthly balance; clock
+    /// in/out and project switching all start here.
     /// </summary>
     public sealed class HomeScreen : IScreen
     {
         #region Fields
 
         private readonly IAttendanceService _attendanceService;
+        private readonly ITrackingService _trackingService;
+        private readonly ILocalDbContextFactory _dbContextFactory;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly ILogger _logger = Log.ForContext<HomeScreen>();
 
         private AttendanceDaySnapshot? _snapshot;
+        private ProjectTimeLog? _activeTracking;
+        private List<ProjectTimeLog> _todaysLogs = new();
         private string? _message;
 
         #endregion
@@ -29,9 +34,15 @@ namespace SheduleHelper.Cli.Screens
         /// <summary>
         /// Initializes a new instance of the <see cref="HomeScreen"/> class.
         /// </summary>
-        public HomeScreen(IAttendanceService attendanceService, ICurrentUserContext currentUserContext)
+        public HomeScreen(
+            IAttendanceService attendanceService,
+            ITrackingService trackingService,
+            ILocalDbContextFactory dbContextFactory,
+            ICurrentUserContext currentUserContext)
         {
             _attendanceService = attendanceService;
+            _trackingService = trackingService;
+            _dbContextFactory = dbContextFactory;
             _currentUserContext = currentUserContext;
         }
 
@@ -104,6 +115,9 @@ namespace SheduleHelper.Cli.Screens
                 case ConsoleKey.O when snapshot.DayState == AttendanceDayState.ClockedIn:
                     await screens.Push(new ClockOutScreen(_attendanceService, _currentUserContext, snapshot));
                     break;
+                case ConsoleKey.S when snapshot.DayState == AttendanceDayState.ClockedIn:
+                    await screens.Push(new SwitchScreen(_trackingService, _dbContextFactory, _currentUserContext, snapshot.OpenAttendanceLog!.Id));
+                    break;
                 case ConsoleKey.R when snapshot.DayState == AttendanceDayState.ForgottenSession:
                     await screens.Push(new ResolveForgottenScreen(_attendanceService, _currentUserContext, snapshot));
                     break;
@@ -114,7 +128,7 @@ namespace SheduleHelper.Cli.Screens
 
         #region Helpers
 
-        private static void RenderClockedIn(Frame frame, AttendanceDaySnapshot snapshot)
+        private void RenderClockedIn(Frame frame, AttendanceDaySnapshot snapshot)
         {
             var openLog = snapshot.OpenAttendanceLog!;
             frame.Write(1, 3, "● CLOCKED IN", ColorToken.Positive);
@@ -124,7 +138,27 @@ namespace SheduleHelper.Cli.Screens
             var ratio = target > TimeSpan.Zero ? snapshot.WorkedToday.TotalSeconds / target.TotalSeconds : 0;
             ProgressBar.Draw(frame, 1, 4, 40, ratio, $"{Formatting.Duration(snapshot.WorkedToday)} / {Formatting.Duration(target)}");
 
-            KeyBar.Draw(frame, ("O", "Clock out"), ("F1", "Help"), ("Q", "Quit"));
+            if (_activeTracking is { } tracking)
+            {
+                var label = tracking.Task is not null ? $"{tracking.Project.Name} / {tracking.Task.Title}" : tracking.Project.Name;
+                frame.Write(1, 6, $"Active   ▶ {label}");
+                frame.WriteRight(frame.Width - 1, 6, Formatting.Duration(DateTime.Now - tracking.StartTime));
+                frame.Write(3, 7, $"started {Formatting.Time(tracking.StartTime)}", ColorToken.Dim);
+            }
+            else
+            {
+                frame.Write(1, 6, "Active   no project - press S to start tracking", ColorToken.Dim);
+            }
+
+            if (_todaysLogs.Count > 0)
+            {
+                frame.Write(1, 9, "Today", ColorToken.Accent);
+                var stripWidth = Math.Min(60, frame.Width - 2);
+                var blocks = _todaysLogs.Select(l => new TimelineBlock(l.StartTime, l.EndTime)).ToList();
+                TimelineStrip.Draw(frame, 1, 10, stripWidth, openLog.ClockIn, DateTime.Now, blocks);
+            }
+
+            KeyBar.Draw(frame, ("S", "Switch"), ("O", "Clock out"), ("F1", "Help"), ("Q", "Quit"));
         }
 
         private static void RenderNotClockedIn(Frame frame, AttendanceDaySnapshot snapshot)
@@ -182,7 +216,22 @@ namespace SheduleHelper.Cli.Screens
         {
             try
             {
-                _snapshot = await _attendanceService.GetDaySnapshotAsync(_currentUserContext.UserId, CancellationToken.None);
+                var snapshot = await _attendanceService.GetDaySnapshotAsync(_currentUserContext.UserId, CancellationToken.None);
+                _snapshot = snapshot;
+
+                if (snapshot.DayState == AttendanceDayState.ClockedIn)
+                {
+                    var openLogId = snapshot.OpenAttendanceLog!.Id;
+                    _activeTracking = await _trackingService.GetActiveTrackingAsync(openLogId, CancellationToken.None);
+
+                    await using var db = _dbContextFactory.CreateDbContext();
+                    _todaysLogs = await db.GetProjectTimeLogsAsync(_currentUserContext.UserId, DateTime.Today, DateTime.Now, CancellationToken.None);
+                }
+                else
+                {
+                    _activeTracking = null;
+                    _todaysLogs = new List<ProjectTimeLog>();
+                }
             }
             catch (Exception ex)
             {

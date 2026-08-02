@@ -422,6 +422,25 @@ namespace SheduleHelper.Core.Models
         }
 
         /// <summary>
+        /// Retrieves the currently open project time log segment for the specified attendance
+        /// session, with its <see cref="ProjectTimeLog.Project"/> and <see cref="ProjectTimeLog.Task"/>
+        /// eagerly loaded - unlike the private open-segment lookup <see cref="StartProjectTimeLogAsync"/>
+        /// and <see cref="EndProjectTimeLogAsync"/> use internally, which only need the segment's id.
+        /// </summary>
+        /// <param name="attendanceLogId">The identifier of the attendance session whose active tracking should be retrieved.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns>The open <see cref="ProjectTimeLog"/> entity, or <see langword="null"/> if nothing is currently being tracked.</returns>
+        public async Task<ProjectTimeLog?> GetActiveProjectTimeLogAsync(int attendanceLogId, CancellationToken cancellationToken)
+        {
+            return await ProjectTimeLogs
+                .Include(l => l.Project)
+                .Include(l => l.Task)
+                .Where(l => l.AttendanceLogId == attendanceLogId && l.EndTime == null)
+                .OrderByDescending(l => l.StartTime)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        /// <summary>
         /// Retrieves the settings belonging to the specified user.
         /// </summary>
         /// <param name="userId">The identifier of the user whose settings should be retrieved.</param>

@@ -26,6 +26,7 @@ services.AddSingleton<DatabaseMigrationService>();
 services.AddSingleton<ICurrentUserContext, CurrentUserContext>();
 services.AddSingleton<ISettingsService, SettingsService>();
 services.AddSingleton<IAttendanceService, AttendanceService>();
+services.AddSingleton<ITrackingService, TrackingService>();
 
 services.AddTransient<HomeScreen>();
 

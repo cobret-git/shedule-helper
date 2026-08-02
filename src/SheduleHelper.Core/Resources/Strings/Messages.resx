@@ -154,4 +154,16 @@
 		<value>Something went wrong while loading your dashboard. Please try again.</value>
 		<comment>Shown when loading the Home page's attendance state fails for any unexpected reason.</comment>
 	</data>
+	<data name="error_trackingStartTimeInFuture" xml:space="preserve">
+		<value>Can't start tracking in the future.</value>
+		<comment>Shown when switching or starting project tracking with a start time later than now.</comment>
+	</data>
+	<data name="error_trackingNotActive" xml:space="preserve">
+		<value>You're not currently tracking a project.</value>
+		<comment>Shown when stopping project tracking fails because nothing is currently being tracked.</comment>
+	</data>
+	<data name="error_trackingUnexpected" xml:space="preserve">
+		<value>Something went wrong while switching projects. Please try again.</value>
+		<comment>Shown when switching or stopping project tracking fails for any unexpected reason.</comment>
+	</data>
 </root>
