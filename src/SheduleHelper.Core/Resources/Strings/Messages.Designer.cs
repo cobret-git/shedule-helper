@@ -22,7 +22,7 @@ namespace SheduleHelper.Core.Resources.Strings {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Messages {
+    public class Messages {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -36,7 +36,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager {
+        public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SheduleHelper.Core.Resources.Strings.Messages", typeof(Messages).Assembly);
@@ -51,7 +51,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         ///   resource lookups using this strongly typed resource class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture {
+        public static global::System.Globalization.CultureInfo Culture {
             get {
                 return resourceCulture;
             }
@@ -63,7 +63,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to You&apos;re already clocked in for today..
         /// </summary>
-        internal static string error_alreadyClockedInToday {
+        public static string error_alreadyClockedInToday {
             get {
                 return ResourceManager.GetString("error_alreadyClockedInToday", resourceCulture);
             }
@@ -72,7 +72,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Clock-in time can&apos;t be in the future..
         /// </summary>
-        internal static string error_clockInTimeInFuture {
+        public static string error_clockInTimeInFuture {
             get {
                 return ResourceManager.GetString("error_clockInTimeInFuture", resourceCulture);
             }
@@ -81,7 +81,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Something went wrong while clocking in. Please try again..
         /// </summary>
-        internal static string error_clockInUnexpected {
+        public static string error_clockInUnexpected {
             get {
                 return ResourceManager.GetString("error_clockInUnexpected", resourceCulture);
             }
@@ -90,7 +90,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Clock-out time must be after your clock-in time..
         /// </summary>
-        internal static string error_clockOutBeforeClockIn {
+        public static string error_clockOutBeforeClockIn {
             get {
                 return ResourceManager.GetString("error_clockOutBeforeClockIn", resourceCulture);
             }
@@ -99,7 +99,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Clock-out time can&apos;t be in the future..
         /// </summary>
-        internal static string error_clockOutTimeInFuture {
+        public static string error_clockOutTimeInFuture {
             get {
                 return ResourceManager.GetString("error_clockOutTimeInFuture", resourceCulture);
             }
@@ -108,7 +108,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Something went wrong while clocking out. Please try again..
         /// </summary>
-        internal static string error_clockOutUnexpected {
+        public static string error_clockOutUnexpected {
             get {
                 return ResourceManager.GetString("error_clockOutUnexpected", resourceCulture);
             }
@@ -117,7 +117,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Something went wrong while loading your dashboard. Please try again..
         /// </summary>
-        internal static string error_homeLoadUnexpected {
+        public static string error_homeLoadUnexpected {
             get {
                 return ResourceManager.GetString("error_homeLoadUnexpected", resourceCulture);
             }
@@ -126,7 +126,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to You&apos;re not currently clocked in..
         /// </summary>
-        internal static string error_notClockedIn {
+        public static string error_notClockedIn {
             get {
                 return ResourceManager.GetString("error_notClockedIn", resourceCulture);
             }
@@ -135,7 +135,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Please enter a name for the project..
         /// </summary>
-        internal static string error_projectNameEmpty {
+        public static string error_projectNameEmpty {
             get {
                 return ResourceManager.GetString("error_projectNameEmpty", resourceCulture);
             }
@@ -144,7 +144,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Something went wrong while saving your project. Please try again..
         /// </summary>
-        internal static string error_projectSaveUnexpected {
+        public static string error_projectSaveUnexpected {
             get {
                 return ResourceManager.GetString("error_projectSaveUnexpected", resourceCulture);
             }
@@ -153,7 +153,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Something went wrong while loading your settings. Please try again..
         /// </summary>
-        internal static string error_settingsLoadUnexpected {
+        public static string error_settingsLoadUnexpected {
             get {
                 return ResourceManager.GetString("error_settingsLoadUnexpected", resourceCulture);
             }
@@ -162,7 +162,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Something went wrong while saving your settings. Please try again..
         /// </summary>
-        internal static string error_settingsSaveUnexpected {
+        public static string error_settingsSaveUnexpected {
             get {
                 return ResourceManager.GetString("error_settingsSaveUnexpected", resourceCulture);
             }
@@ -171,7 +171,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Something went wrong while saving your task. Please try again..
         /// </summary>
-        internal static string error_taskSaveUnexpected {
+        public static string error_taskSaveUnexpected {
             get {
                 return ResourceManager.GetString("error_taskSaveUnexpected", resourceCulture);
             }
@@ -180,7 +180,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Please enter a title for the task..
         /// </summary>
-        internal static string error_taskTitleEmpty {
+        public static string error_taskTitleEmpty {
             get {
                 return ResourceManager.GetString("error_taskTitleEmpty", resourceCulture);
             }
@@ -189,7 +189,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to You&apos;re not currently tracking a project..
         /// </summary>
-        internal static string error_trackingNotActive {
+        public static string error_trackingNotActive {
             get {
                 return ResourceManager.GetString("error_trackingNotActive", resourceCulture);
             }
@@ -198,7 +198,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Can&apos;t start tracking in the future..
         /// </summary>
-        internal static string error_trackingStartTimeInFuture {
+        public static string error_trackingStartTimeInFuture {
             get {
                 return ResourceManager.GetString("error_trackingStartTimeInFuture", resourceCulture);
             }
@@ -207,7 +207,7 @@ namespace SheduleHelper.Core.Resources.Strings {
         /// <summary>
         ///   Looks up a localized string similar to Something went wrong while switching projects. Please try again..
         /// </summary>
-        internal static string error_trackingUnexpected {
+        public static string error_trackingUnexpected {
             get {
                 return ResourceManager.GetString("error_trackingUnexpected", resourceCulture);
             }
