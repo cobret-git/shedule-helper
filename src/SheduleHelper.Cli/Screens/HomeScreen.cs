@@ -20,6 +20,7 @@ namespace SheduleHelper.Cli.Screens
         private readonly ITrackingService _trackingService;
         private readonly ILocalDbContextFactory _dbContextFactory;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly IPathProvider _pathProvider;
         private readonly ILogger _logger = Log.ForContext<HomeScreen>();
 
         private AttendanceDaySnapshot? _snapshot;
@@ -38,12 +39,14 @@ namespace SheduleHelper.Cli.Screens
             IAttendanceService attendanceService,
             ITrackingService trackingService,
             ILocalDbContextFactory dbContextFactory,
-            ICurrentUserContext currentUserContext)
+            ICurrentUserContext currentUserContext,
+            IPathProvider pathProvider)
         {
             _attendanceService = attendanceService;
             _trackingService = trackingService;
             _dbContextFactory = dbContextFactory;
             _currentUserContext = currentUserContext;
+            _pathProvider = pathProvider;
         }
 
         #endregion
@@ -110,7 +113,7 @@ namespace SheduleHelper.Cli.Screens
                     await screens.Push(new ProjectsScreen(_dbContextFactory, _currentUserContext));
                     break;
                 case ConsoleKey.F10:
-                    await screens.Push(new SettingsScreen(_dbContextFactory, _currentUserContext));
+                    await screens.Push(new SettingsScreen(_dbContextFactory, _currentUserContext, _pathProvider));
                     break;
                 case ConsoleKey.I when snapshot.DayState == AttendanceDayState.NotClockedIn:
                     await ClockInAsync(DateTime.Now);

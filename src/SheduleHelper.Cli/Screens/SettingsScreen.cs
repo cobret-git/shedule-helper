@@ -15,6 +15,8 @@ namespace SheduleHelper.Cli.Screens
     /// Culture are deliberately not shown - the CLI doesn't yet route its own UI text through them
     /// (colour capability is auto-detected, see <see cref="Theme"/>; no screen is localized), so
     /// exposing them here would be a setting that visibly does nothing.
+    /// Also shows the local database file's path, with <c>C</c> to copy it to the clipboard - the
+    /// one thing here that isn't itself a <see cref="UserSetting"/> value.
     /// </summary>
     public sealed class SettingsScreen : IScreen
     {
@@ -22,11 +24,13 @@ namespace SheduleHelper.Cli.Screens
 
         private readonly ILocalDbContextFactory _dbContextFactory;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly IPathProvider _pathProvider;
         private readonly ILogger _logger = Log.ForContext<SettingsScreen>();
 
         private readonly SelectList _rows = new(7);
         private UserSetting? _userSetting;
         private string? _message;
+        private bool _messageIsError;
 
         private decimal _targetShiftHours;
         private TimeOnly _defaultClockIn;
@@ -43,10 +47,11 @@ namespace SheduleHelper.Cli.Screens
         /// <summary>
         /// Initializes a new instance of the <see cref="SettingsScreen"/> class.
         /// </summary>
-        public SettingsScreen(ILocalDbContextFactory dbContextFactory, ICurrentUserContext currentUserContext)
+        public SettingsScreen(ILocalDbContextFactory dbContextFactory, ICurrentUserContext currentUserContext, IPathProvider pathProvider)
         {
             _dbContextFactory = dbContextFactory;
             _currentUserContext = currentUserContext;
+            _pathProvider = pathProvider;
         }
 
         #endregion
@@ -78,12 +83,15 @@ namespace SheduleHelper.Cli.Screens
             DrawRow(frame, 11, 5, "Lunch end time", $"[ {Formatting.Time(_lunchEnd)} ]", enabled: _lunchStrategy == LunchStrategy.FixedWindow);
             DrawRow(frame, 12, 6, "Lunch duration", $"[ {_lunchDurationMinutes} min ]", enabled: _lunchStrategy == LunchStrategy.DurationBased);
 
+            frame.Write(1, 14, "Database", ColorToken.Accent);
+            frame.Write(3, 15, _pathProvider.DatabaseFilePath, ColorToken.Dim);
+
             if (!string.IsNullOrWhiteSpace(_message))
             {
-                frame.Write(1, frame.Height - 4, _message, ColorToken.Negative);
+                frame.Write(1, frame.Height - 4, _message, _messageIsError ? ColorToken.Negative : ColorToken.Positive);
             }
 
-            KeyBar.Draw(frame, ("up/down", "Select"), ("left/right", "Change"), ("Enter", "Save"), ("F10", "Save"), ("Esc", "Back"));
+            KeyBar.Draw(frame, ("up/down", "Move"), ("left/right", "Change"), ("Enter/F10", "Save"), ("C", "Copy path"), ("Esc", "Back"));
         }
 
         /// <inheritdoc/>
@@ -107,6 +115,9 @@ namespace SheduleHelper.Cli.Screens
                 case ConsoleKey.Enter:
                 case ConsoleKey.F10:
                     await SaveAsync(screens);
+                    return;
+                case ConsoleKey.C:
+                    CopyDatabasePath();
                     return;
             }
 
@@ -180,6 +191,20 @@ namespace SheduleHelper.Cli.Screens
 
         private static int ClampInt(int value, int min, int max) => Math.Max(min, Math.Min(max, value));
 
+        private void CopyDatabasePath()
+        {
+            if (Clipboard.TrySetText(_pathProvider.DatabaseFilePath))
+            {
+                _message = "Database path copied to clipboard.";
+                _messageIsError = false;
+            }
+            else
+            {
+                _message = "Failed to copy the database path.";
+                _messageIsError = true;
+            }
+        }
+
         private async Task LoadAsync()
         {
             try
@@ -202,6 +227,7 @@ namespace SheduleHelper.Cli.Screens
             {
                 _logger.Error(ex, "Failed to load settings for user {UserId}.", _currentUserContext.UserId);
                 _message = MSG.error_settingsLoadUnexpected;
+                _messageIsError = true;
             }
         }
 
@@ -231,6 +257,7 @@ namespace SheduleHelper.Cli.Screens
             {
                 _logger.Error(ex, "Failed to save settings for user {UserId}.", _currentUserContext.UserId);
                 _message = MSG.error_settingsSaveUnexpected;
+                _messageIsError = true;
             }
         }
 
