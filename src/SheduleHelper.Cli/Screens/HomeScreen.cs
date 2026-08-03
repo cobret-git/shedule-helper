@@ -18,6 +18,7 @@ namespace SheduleHelper.Cli.Screens
 
         private readonly IAttendanceService _attendanceService;
         private readonly ITrackingService _trackingService;
+        private readonly IReportingService _reportingService;
         private readonly ILocalDbContextFactory _dbContextFactory;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IPathProvider _pathProvider;
@@ -38,12 +39,14 @@ namespace SheduleHelper.Cli.Screens
         public HomeScreen(
             IAttendanceService attendanceService,
             ITrackingService trackingService,
+            IReportingService reportingService,
             ILocalDbContextFactory dbContextFactory,
             ICurrentUserContext currentUserContext,
             IPathProvider pathProvider)
         {
             _attendanceService = attendanceService;
             _trackingService = trackingService;
+            _reportingService = reportingService;
             _dbContextFactory = dbContextFactory;
             _currentUserContext = currentUserContext;
             _pathProvider = pathProvider;
@@ -142,6 +145,9 @@ namespace SheduleHelper.Cli.Screens
                 case ConsoleKey.R when snapshot.DayState == AttendanceDayState.ForgottenSession:
                     await screens.Push(new ResolveForgottenScreen(_attendanceService, _currentUserContext, snapshot));
                     break;
+                case ConsoleKey.R:
+                    await screens.Push(new ReportsScreen(_reportingService, _currentUserContext));
+                    break;
             }
         }
 
@@ -179,7 +185,7 @@ namespace SheduleHelper.Cli.Screens
                 TimelineStrip.Draw(frame, 1, 10, stripWidth, openLog.ClockIn, DateTime.Now, blocks);
             }
 
-            KeyBar.Draw(frame, ("S", "Switch"), ("O", "Clock out"), ("P", "Projects"), ("F1", "Help"), ("F10", "Settings"), ("Q", "Quit"));
+            KeyBar.Draw(frame, ("S", "Switch"), ("O", "Clock out"), ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
         }
 
         private static void RenderNotClockedIn(Frame frame, AttendanceDaySnapshot snapshot)
@@ -194,7 +200,7 @@ namespace SheduleHelper.Cli.Screens
             frame.Write(3, 9, $"D   Clock in at default              {Formatting.Time(snapshot.UserSetting.DefaultClockInTime)}");
             frame.Write(3, 10, "M   Clock in at custom time...");
 
-            KeyBar.Draw(frame, ("I", "Now"), ("D", "Default"), ("M", "Custom"), ("P", "Projects"), ("F1", "Help"), ("F10", "Settings"), ("Q", "Quit"));
+            KeyBar.Draw(frame, ("I", "Now"), ("D", "Default"), ("M", "Custom"), ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
         }
 
         private static void RenderDayComplete(Frame frame, AttendanceDaySnapshot snapshot)
@@ -203,7 +209,7 @@ namespace SheduleHelper.Cli.Screens
             frame.Write(1, 3, "✓ DAY COMPLETE", ColorToken.Dim);
             frame.Write(1, 5, $"{Formatting.Time(log.ClockIn)} -> {Formatting.Time(log.ClockOut!.Value)}    worked {Formatting.Duration(snapshot.WorkedToday)}");
 
-            KeyBar.Draw(frame, ("P", "Projects"), ("F1", "Help"), ("F10", "Settings"), ("Q", "Quit"));
+            KeyBar.Draw(frame, ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
         }
 
         private static void RenderForgottenSession(Frame frame, AttendanceDaySnapshot snapshot)

@@ -29,8 +29,8 @@ namespace SheduleHelper.Cli.Screens
 
             frame.Write(1, 14, "Home", ColorToken.Accent);
             frame.Write(3, 15, "I  clock in           O  clock out (both offer a custom time too)");
-            frame.Write(3, 16, "S  switch project     R  resolve unfinished day");
-            frame.Write(3, 17, "P  projects browser");
+            frame.Write(3, 16, "S  switch project     P  projects browser");
+            frame.Write(3, 17, "R  reports (or resolve an unfinished day, if there is one)");
 
             frame.Write(1, 19, "Editors", ColorToken.Accent);
             frame.Write(3, 20, "up/down  move fields - the selected one is always editable");

@@ -27,6 +27,7 @@ services.AddSingleton<ICurrentUserContext, CurrentUserContext>();
 services.AddSingleton<ISettingsService, SettingsService>();
 services.AddSingleton<IAttendanceService, AttendanceService>();
 services.AddSingleton<ITrackingService, TrackingService>();
+services.AddSingleton<IReportingService, ReportingService>();
 
 services.AddTransient<HomeScreen>();
 
