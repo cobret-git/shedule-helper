@@ -60,6 +60,16 @@ namespace SheduleHelper.Cli.Infrastructure
                         break;
                     }
 
+                    await current.OnTick();
+
+                    // OnTick can navigate (a date rollover re-resolves the day), so re-read the
+                    // active screen rather than rendering the one that was current before it ran.
+                    current = _screens.Current;
+                    if (current is null)
+                    {
+                        break;
+                    }
+
                     var frame = new Frame(Terminal.Width, Terminal.Height);
                     current.Render(frame);
                     FrameRenderer.Flush(frame, previous);

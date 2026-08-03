@@ -45,6 +45,22 @@ namespace SheduleHelper.Core.Services
         /// <exception cref="AttendanceOperationException">There is no open session, the time is before its clock-in, or the time is in the future.</exception>
         Task<AttendanceDaySnapshot> ClockOutAsync(int userId, DateTime clockOutTime, CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Applies the user's <see cref="DayStartAutomation"/> setting: closes a previous day left
+        /// open, clocks today in at the default time, and continues the previously tracked project -
+        /// the sequence a user would otherwise repeat by hand every morning. Meant to be called once
+        /// at startup before the first frame, and again whenever the date rolls over under a running
+        /// app, and is safe to call in any state: with automation off, or with nothing to do, it
+        /// resolves to a plain <see cref="GetDaySnapshotAsync"/>.
+        /// Never throws for a state it declines to act on - the returned
+        /// <see cref="DayStartResolution"/> reports what happened instead, because "didn't clock in
+        /// because it's Sunday" is information, not an error.
+        /// </summary>
+        /// <param name="userId">The user whose day is being resolved.</param>
+        /// <param name="now">The instant to treat as the present - the clock-in written when <see cref="UserSetting.DefaultClockInTime"/> is still in the future, and the definition of "today".</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        Task<DayStartResolution> ResolveDayStartAsync(int userId, DateTime now, CancellationToken cancellationToken);
+
         #endregion
     }
 }

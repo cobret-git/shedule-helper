@@ -63,6 +63,23 @@ namespace SheduleHelper.Core.Components.Entities
         public int LunchDurationMinutes { get; set; } = 30;
 
         /// <summary>
+        /// How much of the start-of-day clock-in/clock-out ritual the app resolves by itself.
+        /// Defaults to <see cref="Entities.DayStartAutomation.Off"/> so an existing database keeps
+        /// behaving exactly as before until the user opts in. Maps to 'DayStartAutomation'.
+        /// </summary>
+        [Column("DayStartAutomation")]
+        public DayStartAutomation DayStartAutomation { get; set; } = DayStartAutomation.Off;
+
+        /// <summary>
+        /// Whether clocking in should pick the previously tracked project/task back up, so work
+        /// that spans several days doesn't have to be re-selected each morning. Applies to manual
+        /// clock-ins as well as those made by <see cref="DayStartAutomation"/>. Maps to
+        /// 'ResumeTrackingOnClockIn'.
+        /// </summary>
+        [Column("ResumeTrackingOnClockIn")]
+        public bool ResumeTrackingOnClockIn { get; set; } = true;
+
+        /// <summary>
         /// Navigation property to the User who owns these settings.
         /// </summary>
         [ForeignKey(nameof(UserId))]

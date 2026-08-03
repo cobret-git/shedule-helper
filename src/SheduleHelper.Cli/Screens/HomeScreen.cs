@@ -11,6 +11,11 @@ namespace SheduleHelper.Cli.Screens
     /// The Home screen (The Daily Control Center) - the app's landing screen. Shows today's
     /// attendance state, the currently tracked project, and the rolling monthly balance; clock
     /// in/out and project switching all start here.
+    /// Owns the start-of-day resolution (<see cref="IAttendanceService.ResolveDayStartAsync"/>):
+    /// it runs on the first <see cref="OnEnter"/>, before the first frame is drawn, and again from
+    /// <see cref="OnTick"/> if the date rolls over while the app is left running - so "open the app
+    /// in the morning" and "never close the app" behave the same way. Whatever it changed is
+    /// reported in a banner rather than applied silently.
     /// </summary>
     public sealed class HomeScreen : IScreen
     {
@@ -28,6 +33,10 @@ namespace SheduleHelper.Cli.Screens
         private ProjectTimeLog? _activeTracking;
         private List<ProjectTimeLog> _todaysLogs = new();
         private string? _message;
+
+        private DateTime _resolvedDate = DateTime.MinValue;
+        private DayStartResolution? _resolution;
+        private bool _bannerDismissed;
 
         #endregion
 
@@ -57,7 +66,18 @@ namespace SheduleHelper.Cli.Screens
         #region Methods
 
         /// <inheritdoc/>
-        public Task OnEnter() => RefreshAsync();
+        public Task OnEnter()
+        {
+            // Popping back from another screen re-enters Home, so the day is resolved per calendar
+            // date rather than per activation - otherwise a trip to Settings would re-run it.
+            return _resolvedDate == DateTime.Today ? RefreshAsync() : ResolveDayStartAsync();
+        }
+
+        /// <inheritdoc/>
+        public Task OnTick()
+        {
+            return _resolvedDate == DateTime.Today ? Task.CompletedTask : ResolveDayStartAsync();
+        }
 
         /// <inheritdoc/>
         public void Render(Frame frame)
@@ -71,8 +91,7 @@ namespace SheduleHelper.Cli.Screens
             }
 
             var snapshot = _snapshot;
-            var balanceColor = snapshot.RollingMonthlyBalance >= TimeSpan.Zero ? ColorToken.Positive : ColorToken.Negative;
-            frame.WriteRight(frame.Width - 1, 3, $"Balance  {Formatting.Balance(snapshot.RollingMonthlyBalance)}", balanceColor);
+            RenderBalance(frame, snapshot);
 
             switch (snapshot.DayState)
             {
@@ -89,6 +108,8 @@ namespace SheduleHelper.Cli.Screens
                     RenderForgottenSession(frame, snapshot);
                     break;
             }
+
+            RenderBanner(frame);
 
             if (!string.IsNullOrWhiteSpace(_message))
             {
@@ -148,6 +169,9 @@ namespace SheduleHelper.Cli.Screens
                 case ConsoleKey.R:
                     await screens.Push(new ReportsScreen(_reportingService, _currentUserContext));
                     break;
+                case ConsoleKey.Escape when _resolution is not null && !_bannerDismissed:
+                    _bannerDismissed = true;
+                    break;
             }
         }
 
@@ -155,15 +179,43 @@ namespace SheduleHelper.Cli.Screens
 
         #region Helpers
 
+        /// <summary>
+        /// Draws the monthly balance, plus today's still-moving contribution to it as a separate
+        /// figure. The two are kept apart rather than summed because they answer different
+        /// questions - the first is banked, the second is a projection that a late clock-out will
+        /// still change - and because <see cref="AttendanceDaySnapshot.RollingMonthlyBalance"/>
+        /// counts completed days only, so on its own it looks frozen all day.
+        /// </summary>
+        private static void RenderBalance(Frame frame, AttendanceDaySnapshot snapshot)
+        {
+            var balanceColor = snapshot.RollingMonthlyBalance >= TimeSpan.Zero ? ColorToken.Positive : ColorToken.Negative;
+            var openDayBalance = snapshot.OpenDayBalanceAsOf(DateTime.Now);
+
+            if (openDayBalance is not { } today)
+            {
+                frame.WriteRight(frame.Width - 1, 3, $"Balance  {Formatting.Balance(snapshot.RollingMonthlyBalance)}", balanceColor);
+                return;
+            }
+
+            var todayText = $" · today {Formatting.Balance(today)}";
+            frame.WriteRight(frame.Width - 1, 3, todayText, ColorToken.Dim);
+            frame.WriteRight(frame.Width - 1 - todayText.Length, 3, $"Balance  {Formatting.Balance(snapshot.RollingMonthlyBalance)}", balanceColor);
+        }
+
         private void RenderClockedIn(Frame frame, AttendanceDaySnapshot snapshot)
         {
             var openLog = snapshot.OpenAttendanceLog!;
             frame.Write(1, 3, "● CLOCKED IN", ColorToken.Positive);
             frame.Write(14, 3, $"since {Formatting.Time(openLog.ClockIn)}", ColorToken.Dim);
 
-            var target = TimeSpan.FromHours((double)snapshot.UserSetting.TargetShiftHours);
-            var ratio = target > TimeSpan.Zero ? snapshot.WorkedToday.TotalSeconds / target.TotalSeconds : 0;
-            ProgressBar.Draw(frame, 1, 4, 40, ratio, $"{Formatting.Duration(snapshot.WorkedToday)} / {Formatting.Duration(target)}");
+            // Recomputed per frame rather than read off the snapshot: the loop redraws every second,
+            // so this is what makes the bar and the worked figure tick along with the clock instead
+            // of freezing at whatever they were when the screen was last loaded. Pure arithmetic
+            // over data already in hand - no database access from a render.
+            var target = snapshot.DailyTarget;
+            var worked = snapshot.WorkedAsOf(DateTime.Now);
+            var ratio = target > TimeSpan.Zero ? worked.TotalSeconds / target.TotalSeconds : 0;
+            ProgressBar.Draw(frame, 1, 4, 40, ratio, $"{Formatting.Duration(worked)} / {Formatting.Duration(target)}");
 
             if (_activeTracking is { } tracking)
             {
@@ -186,8 +238,7 @@ namespace SheduleHelper.Cli.Screens
         {
             frame.Write(1, 3, "○ NOT CLOCKED IN", ColorToken.Dim);
 
-            var target = TimeSpan.FromHours((double)snapshot.UserSetting.TargetShiftHours);
-            ProgressBar.Draw(frame, 1, 4, 40, 0, $"0h 00m / {Formatting.Duration(target)}");
+            ProgressBar.Draw(frame, 1, 4, 40, 0, $"0h 00m / {Formatting.Duration(snapshot.DailyTarget)}");
 
             frame.Write(1, 6, "Good day. Ready when you are.");
             frame.Write(3, 8, $"I   Clock in now                     {Formatting.Time(DateTime.Now)}");
@@ -220,6 +271,56 @@ namespace SheduleHelper.Cli.Screens
             KeyBar.Draw(frame, ("R", "Resolve"), ("F1", "Help"), ("Q", "Quit"));
         }
 
+        /// <summary>
+        /// Draws what the start-of-day resolution changed, so automation is never invisible - the
+        /// user sees which timestamps were written on their behalf and can correct any of them with
+        /// the ordinary clock-out and switch commands. Dismissed with <c>Esc</c>, and gone by the
+        /// next launch regardless.
+        /// </summary>
+        private void RenderBanner(Frame frame)
+        {
+            if (_bannerDismissed || _resolution is not { DidSomething: true } resolution)
+            {
+                return;
+            }
+
+            // Two lines rather than one: the attendance edits and the tracking change are separate
+            // facts, and a project/task pair is long enough that joining all three overruns 80
+            // columns and collides with the dismiss hint.
+            var attendance = new List<string>();
+
+            if (resolution.ClosedForgottenDay is { } closed)
+            {
+                attendance.Add($"closed {closed:ddd d MMM} at {Formatting.Time(closed)}");
+            }
+
+            if (resolution.ClockedIn is { } clockedIn)
+            {
+                attendance.Add($"clocked in {Formatting.Time(clockedIn)}");
+            }
+
+            var tracking = resolution.Resume?.Outcome switch
+            {
+                TrackingResumeOutcome.Resumed when resolution.Resume.TaskTitle is not null => $"resumed {resolution.Resume.ProjectName} / {resolution.Resume.TaskTitle}",
+                TrackingResumeOutcome.Resumed => $"resumed {resolution.Resume.ProjectName}",
+                TrackingResumeOutcome.ResumedWithoutTask => $"resumed {resolution.Resume.ProjectName} - its task is done, pick the next with S",
+                TrackingResumeOutcome.ProjectUnavailable => $"{resolution.Resume.ProjectName} is archived, nothing resumed",
+                _ => null,
+            };
+
+            const string dismiss = "Esc dismiss";
+            var firstRow = frame.Height - 5;
+            var available = frame.Width - 2 - dismiss.Length - 2;
+
+            frame.Write(1, firstRow, Formatting.Truncate($"⚙ Auto · {string.Join(" · ", attendance)}", available), ColorToken.Accent);
+            frame.WriteRight(frame.Width - 1, firstRow, dismiss, ColorToken.Dim);
+
+            if (tracking is not null)
+            {
+                frame.Write(9, firstRow + 1, Formatting.Truncate(tracking, frame.Width - 10), ColorToken.Accent);
+            }
+        }
+
         private async Task ClockInAsync(DateTime time)
         {
             var error = await TryClockInAsync(time);
@@ -240,8 +341,18 @@ namespace SheduleHelper.Cli.Screens
         {
             try
             {
-                _snapshot = await _attendanceService.ClockInAsync(_currentUserContext.UserId, time, CancellationToken.None);
+                var snapshot = await _attendanceService.ClockInAsync(_currentUserContext.UserId, time, CancellationToken.None);
+                _snapshot = snapshot;
                 _message = null;
+
+                // Resuming is tied to the clock-in itself, not to how it was triggered, so a manual
+                // clock-in continues yesterday's work exactly as an automatic one does.
+                if (snapshot.UserSetting.ResumeTrackingOnClockIn && snapshot.OpenAttendanceLog is { } openLog)
+                {
+                    await ResumeTrackingAsync(openLog.Id, time);
+                }
+
+                await RefreshAsync();
                 return null;
             }
             catch (AttendanceOperationException ex)
@@ -253,6 +364,68 @@ namespace SheduleHelper.Cli.Screens
                 _logger.Error(ex, "Failed to clock in user {UserId}.", _currentUserContext.UserId);
                 return "Something went wrong clocking in.";
             }
+        }
+
+        /// <summary>
+        /// Continues the previously tracked project after a manual clock-in, reusing the banner to
+        /// report it. A failure here is deliberately not surfaced as a clock-in error: the clock-in
+        /// itself succeeded, and the user can always pick a project with <c>S</c>.
+        /// </summary>
+        private async Task ResumeTrackingAsync(int attendanceLogId, DateTime startTime)
+        {
+            try
+            {
+                var resume = await _trackingService.ResumeLastAsync(_currentUserContext.UserId, attendanceLogId, startTime, CancellationToken.None);
+                if (resume.Outcome is TrackingResumeOutcome.Resumed or TrackingResumeOutcome.ResumedWithoutTask or TrackingResumeOutcome.ProjectUnavailable)
+                {
+                    _resolution = new DayStartResolution(_snapshot!, _snapshot!.UserSetting.DayStartAutomation, null, startTime, resume, false);
+                    _bannerDismissed = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to resume tracking for user {UserId}.", _currentUserContext.UserId);
+            }
+        }
+
+        /// <summary>
+        /// Applies the user's day-start automation, then loads the rest of Home's state. Records the
+        /// date it ran for so re-entering Home doesn't repeat it, and so a date rollover under a
+        /// running app does - the date is stamped before the work, so a failure surfaces as a
+        /// message rather than retrying every tick.
+        /// </summary>
+        private async Task ResolveDayStartAsync()
+        {
+            _resolvedDate = DateTime.Today;
+
+            try
+            {
+                var resolution = await _attendanceService.ResolveDayStartAsync(_currentUserContext.UserId, DateTime.Now, CancellationToken.None);
+                _snapshot = resolution.Snapshot;
+
+                if (resolution.DidSomething)
+                {
+                    _resolution = resolution;
+                    _bannerDismissed = false;
+                    _logger.Information(
+                        "Day-start automation for user {UserId}: closed {ClosedForgottenDay}, clocked in {ClockedIn}, resume {ResumeOutcome}.",
+                        _currentUserContext.UserId,
+                        resolution.ClosedForgottenDay,
+                        resolution.ClockedIn,
+                        resolution.Resume?.Outcome);
+                }
+            }
+            catch (AttendanceOperationException ex)
+            {
+                _message = ex.Message;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to resolve the day start for user {UserId}.", _currentUserContext.UserId);
+                _message = "Failed to resolve today's state automatically.";
+            }
+
+            await RefreshAsync();
         }
 
         private async Task RefreshAsync()

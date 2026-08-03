@@ -15,6 +15,7 @@ namespace SheduleHelper.Core.Services
         #region Fields
 
         private readonly ILocalDbContextFactory _dbContextFactory;
+        private readonly ITrackingService _trackingService;
 
         #endregion
 
@@ -24,9 +25,11 @@ namespace SheduleHelper.Core.Services
         /// Initializes a new instance of the <see cref="AttendanceService"/> class.
         /// </summary>
         /// <param name="dbContextFactory">Creates the <see cref="LocalDbContext"/> used for every operation.</param>
-        public AttendanceService(ILocalDbContextFactory dbContextFactory)
+        /// <param name="trackingService">Continues the previously tracked project once <see cref="ResolveDayStartAsync"/> has clocked the day in. Attendance depends on tracking and not the other way round, so there is no cycle here.</param>
+        public AttendanceService(ILocalDbContextFactory dbContextFactory, ITrackingService trackingService)
         {
             _dbContextFactory = dbContextFactory;
+            _trackingService = trackingService;
         }
 
         #endregion
@@ -99,9 +102,71 @@ namespace SheduleHelper.Core.Services
             return await BuildSnapshotAsync(db, userId, userSetting, cancellationToken);
         }
 
+        /// <inheritdoc/>
+        public async Task<DayStartResolution> ResolveDayStartAsync(int userId, DateTime now, CancellationToken cancellationToken)
+        {
+            var snapshot = await GetDaySnapshotAsync(userId, cancellationToken);
+            var userSetting = snapshot.UserSetting;
+            var automation = userSetting.DayStartAutomation;
+
+            if (automation == DayStartAutomation.Off)
+            {
+                return new DayStartResolution(snapshot, automation, null, null, null, false);
+            }
+
+            DateTime? closedForgottenDay = null;
+            if (snapshot.DayState == AttendanceDayState.ForgottenSession
+                && ResolveForgottenClockOut(snapshot.OpenAttendanceLog!, userSetting, now) is { } clockOutTime)
+            {
+                snapshot = await ClockOutAsync(userId, clockOutTime, cancellationToken);
+                closedForgottenDay = clockOutTime;
+            }
+
+            if (automation != DayStartAutomation.CloseAndClockIn || snapshot.DayState != AttendanceDayState.NotClockedIn)
+            {
+                return new DayStartResolution(snapshot, automation, closedForgottenDay, null, null, false);
+            }
+
+            // Opening the app on a Saturday to read a report shouldn't start a shift. Weekend work is
+            // still available, it just has to be asked for explicitly.
+            if (now.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            {
+                return new DayStartResolution(snapshot, automation, closedForgottenDay, null, null, true);
+            }
+
+            // The default clock-in is the point of the setting, but it can't be written before it has
+            // happened - an early arrival is clocked in at the moment the app opened instead.
+            var defaultClockIn = now.Date + userSetting.DefaultClockInTime.ToTimeSpan();
+            var clockInTime = defaultClockIn > now ? now : defaultClockIn;
+
+            snapshot = await ClockInAsync(userId, clockInTime, cancellationToken);
+
+            TrackingResumeResult? resume = null;
+            if (userSetting.ResumeTrackingOnClockIn && snapshot.OpenAttendanceLog is { } openLog)
+            {
+                resume = await _trackingService.ResumeLastAsync(userId, openLog.Id, clockInTime, cancellationToken);
+            }
+
+            return new DayStartResolution(snapshot, automation, closedForgottenDay, clockInTime, resume, false);
+        }
+
         #endregion
 
         #region Helpers
+
+        /// <summary>
+        /// Picks the timestamp to close a forgotten day at: that day's
+        /// <see cref="UserSetting.DefaultClockOutTime"/>. Returns <see langword="null"/> when that
+        /// would be rejected as a clock-out - before the day's own clock-in (a late shift started
+        /// after the default), or still in the future (a same-day rollover). Both are odd enough
+        /// days that leaving the warning up for the user to resolve by hand beats guessing.
+        /// </summary>
+        private static DateTime? ResolveForgottenClockOut(AttendanceLog openLog, UserSetting userSetting, DateTime now)
+        {
+            var clockOut = openLog.ClockIn.Date + userSetting.DefaultClockOutTime.ToTimeSpan();
+
+            return clockOut > openLog.ClockIn && clockOut <= now ? clockOut : null;
+        }
 
         private static async Task<UserSetting> GetOrCreateUserSettingAsync(LocalDbContext db, int userId, CancellationToken cancellationToken)
         {

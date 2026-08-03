@@ -27,7 +27,7 @@ namespace SheduleHelper.Cli.Screens
         private readonly IPathProvider _pathProvider;
         private readonly ILogger _logger = Log.ForContext<SettingsScreen>();
 
-        private readonly SelectList _rows = new(7);
+        private readonly SelectList _rows = new(9);
         private UserSetting? _userSetting;
         private string? _message;
         private bool _messageIsError;
@@ -39,6 +39,8 @@ namespace SheduleHelper.Cli.Screens
         private TimeOnly _lunchStart;
         private TimeOnly _lunchEnd;
         private int _lunchDurationMinutes;
+        private DayStartAutomation _dayStartAutomation;
+        private bool _resumeTrackingOnClockIn;
 
         #endregion
 
@@ -83,12 +85,21 @@ namespace SheduleHelper.Cli.Screens
             DrawRow(frame, 11, 5, "Lunch end time", $"[ {Formatting.Time(_lunchEnd)} ]", enabled: _lunchStrategy == LunchStrategy.FixedWindow);
             DrawRow(frame, 12, 6, "Lunch duration", $"[ {_lunchDurationMinutes} min ]", enabled: _lunchStrategy == LunchStrategy.DurationBased);
 
-            frame.Write(1, 14, "Database", ColorToken.Accent);
-            frame.Write(3, 15, _pathProvider.DatabaseFilePath, ColorToken.Dim);
+            frame.Write(1, 14, "Automation", ColorToken.Accent);
+            DrawRow(frame, 15, 7, "Day start", AutomationDisplay(_dayStartAutomation));
+            DrawRow(frame, 16, 8, "Resume last project", _resumeTrackingOnClockIn ? "[ YES ]" : "[ NO ]");
+            frame.Write(3, 17, DayStartHint(_dayStartAutomation), ColorToken.Dim);
+            frame.Write(3, 18, ResumeHint(_resumeTrackingOnClockIn), ColorToken.Dim);
+
+            // No blank row before this heading, unlike the sections above: with nine rows plus two
+            // hint lines, one more would push the path onto the message row at 80x24. The dim hints
+            // against an accent heading separate them well enough.
+            frame.Write(1, 19, "Database", ColorToken.Accent);
+            frame.Write(3, 20, _pathProvider.DatabaseFilePath, ColorToken.Dim);
 
             if (!string.IsNullOrWhiteSpace(_message))
             {
-                frame.Write(1, frame.Height - 4, _message, _messageIsError ? ColorToken.Negative : ColorToken.Positive);
+                frame.Write(1, frame.Height - 3, _message, _messageIsError ? ColorToken.Negative : ColorToken.Positive);
             }
 
             KeyBar.Draw(frame, ("up/down", "Move"), ("left/right", "Change"), ("Enter/F10", "Save"), ("C", "Copy path"), ("Esc", "Back"));
@@ -155,6 +166,12 @@ namespace SheduleHelper.Cli.Screens
                 case 6 when _lunchStrategy == LunchStrategy.DurationBased:
                     _lunchDurationMinutes = ClampInt(_lunchDurationMinutes + (forward ? 5 : -5), 0, 180);
                     break;
+                case 7:
+                    _dayStartAutomation = CycleAutomation(_dayStartAutomation, forward);
+                    break;
+                case 8:
+                    _resumeTrackingOnClockIn = !_resumeTrackingOnClockIn;
+                    break;
             }
         }
 
@@ -182,6 +199,42 @@ namespace SheduleHelper.Cli.Screens
         private static LunchStrategy CycleStrategy(LunchStrategy current, bool forward)
         {
             var values = Enum.GetValues<LunchStrategy>();
+            var index = Array.IndexOf(values, current);
+            var nextIndex = forward ? (index + 1) % values.Length : (index - 1 + values.Length) % values.Length;
+            return values[nextIndex];
+        }
+
+        private static string AutomationDisplay(DayStartAutomation automation) => automation switch
+        {
+            DayStartAutomation.Off => "‹ [ Off ] · Close day · Close + clock in ›",
+            DayStartAutomation.CloseForgottenDays => "‹ Off · [ Close day ] · Close + clock in ›",
+            DayStartAutomation.CloseAndClockIn => "‹ Off · Close day · [ Close + clock in ] ›",
+            _ => automation.ToString(),
+        };
+
+        /// <summary>
+        /// Spells out what the day-start row will actually do on the next launch. The option names
+        /// have to stay short enough to fit one row at 80 columns, which leaves them too terse to be
+        /// self-explanatory - and these are the only settings here that write to the timesheet on
+        /// their own, so being vague about them is the wrong trade. One line per row, each kept well
+        /// inside 76 columns: <see cref="Frame"/> clips silently, so a sentence that outgrows the
+        /// width would lose its ending without saying so.
+        /// </summary>
+        private static string DayStartHint(DayStartAutomation automation) => automation switch
+        {
+            DayStartAutomation.Off => "On launch: nothing happens on its own.",
+            DayStartAutomation.CloseForgottenDays => "On launch: closes a day you forgot to clock out of, at its default time.",
+            DayStartAutomation.CloseAndClockIn => "On launch: closes a forgotten day, then clocks today in. Weekdays only.",
+            _ => string.Empty,
+        };
+
+        private static string ResumeHint(bool resume) => resume
+            ? "Clocking in continues the project you last tracked, until you switch it."
+            : "Clocking in leaves the project unset - press S to pick one.";
+
+        private static DayStartAutomation CycleAutomation(DayStartAutomation current, bool forward)
+        {
+            var values = Enum.GetValues<DayStartAutomation>();
             var index = Array.IndexOf(values, current);
             var nextIndex = forward ? (index + 1) % values.Length : (index - 1 + values.Length) % values.Length;
             return values[nextIndex];
@@ -222,6 +275,8 @@ namespace SheduleHelper.Cli.Screens
                 _lunchStart = userSetting.LunchStartTime;
                 _lunchEnd = userSetting.LunchEndTime;
                 _lunchDurationMinutes = userSetting.LunchDurationMinutes;
+                _dayStartAutomation = userSetting.DayStartAutomation;
+                _resumeTrackingOnClockIn = userSetting.ResumeTrackingOnClockIn;
             }
             catch (Exception ex)
             {
@@ -249,6 +304,8 @@ namespace SheduleHelper.Cli.Screens
                 _userSetting.LunchStartTime = _lunchStart;
                 _userSetting.LunchEndTime = _lunchEnd;
                 _userSetting.LunchDurationMinutes = _lunchDurationMinutes;
+                _userSetting.DayStartAutomation = _dayStartAutomation;
+                _userSetting.ResumeTrackingOnClockIn = _resumeTrackingOnClockIn;
 
                 await db.UpdateUserSettingAsync(_userSetting, CancellationToken.None);
                 await screens.Pop();

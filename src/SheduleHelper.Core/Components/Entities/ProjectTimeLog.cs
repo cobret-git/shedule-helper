@@ -53,6 +53,15 @@ namespace SheduleHelper.Core.Components.Entities
         public DateTime? EndTime { get; set; }
 
         /// <summary>
+        /// Why this segment stopped - <see langword="null"/> while it is still open, set alongside
+        /// <see cref="EndTime"/> when it closes. Read by
+        /// <see cref="Services.ITrackingService.ResumeLastAsync"/> to tell work that merely ran out
+        /// of day from work the user deliberately stopped. Maps to 'ClosedReason'.
+        /// </summary>
+        [Column("ClosedReason")]
+        public TimeLogCloseReason? ClosedReason { get; set; }
+
+        /// <summary>
         /// Navigation property for the parent daily attendance log.
         /// </summary>
         [ForeignKey(nameof(AttendanceLogId))]

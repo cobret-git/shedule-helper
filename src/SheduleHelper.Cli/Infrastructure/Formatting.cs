@@ -39,6 +39,22 @@ namespace SheduleHelper.Cli.Infrastructure
         /// </summary>
         public static string Time(DateTime time) => time.ToString(@"HH\:mm");
 
+        /// <summary>
+        /// Shortens <paramref name="text"/> to at most <paramref name="width"/> columns, marking the
+        /// cut with an ellipsis. <see cref="Frame"/> clips silently, which is right for a value that
+        /// merely runs to the edge but wrong for a sentence - a clipped sentence reads as a complete
+        /// one that happens to end oddly, so the reader never learns anything was lost.
+        /// </summary>
+        public static string Truncate(string text, int width)
+        {
+            if (width <= 0)
+            {
+                return string.Empty;
+            }
+
+            return text.Length <= width ? text : $"{text[..(width - 1)].TrimEnd()}…";
+        }
+
         #endregion
     }
 }

@@ -16,25 +16,29 @@ namespace SheduleHelper.Cli.Screens
         {
             Header.Draw(frame, "HELP", "Esc Close");
 
+            // Section name in a left gutter with its bindings alongside, per the plan's §5.4 sketch -
+            // a heading-per-block layout runs past row 21 and gets clipped by the key bar at 80x24.
             frame.Write(1, 3, "Global", ColorToken.Accent);
-            frame.Write(3, 4, "F1    this help");
-            frame.Write(3, 5, "F10   settings");
-            frame.Write(3, 6, "Esc   back / cancel");
-            frame.Write(3, 7, "Q     quit (from Home)");
+            frame.Write(14, 3, "F1   this help            F10  settings");
+            frame.Write(14, 4, "Esc  back / cancel        Q    quit (from Home)");
 
-            frame.Write(1, 9, "Lists", ColorToken.Accent);
-            frame.Write(3, 10, "up/down move");
-            frame.Write(3, 11, "Enter   open");
-            frame.Write(3, 12, "1..9    jump to numbered row");
+            frame.Write(1, 6, "Lists", ColorToken.Accent);
+            frame.Write(14, 6, "up/down  move             Enter  open");
+            frame.Write(14, 7, "1..9  jump to numbered row");
 
-            frame.Write(1, 14, "Home", ColorToken.Accent);
-            frame.Write(3, 15, "I  clock in           O  clock out (both offer a custom time too)");
-            frame.Write(3, 16, "S  switch project     P  projects browser");
-            frame.Write(3, 17, "R  reports (or resolve an unfinished day, if there is one)");
+            frame.Write(1, 9, "Home", ColorToken.Accent);
+            frame.Write(14, 9, "I  clock in    O  clock out    S  switch project");
+            frame.Write(14, 10, "P  projects    R  reports, or resolve an unfinished day");
+            frame.Write(14, 11, "Clock in and out both offer a custom time too.", ColorToken.Dim);
 
-            frame.Write(1, 19, "Editors", ColorToken.Accent);
-            frame.Write(3, 20, "up/down  move fields - the selected one is always editable");
-            frame.Write(3, 21, "left/right  cursor / toggle      Enter or F10  save      Esc  cancel");
+            frame.Write(1, 13, "Editors", ColorToken.Accent);
+            frame.Write(14, 13, "up/down  move fields - the selected one is always editable");
+            frame.Write(14, 14, "left/right  cursor / toggle    Enter or F10  save    Esc  cancel");
+
+            frame.Write(1, 16, "Automation", ColorToken.Accent);
+            frame.Write(14, 16, "F10 chooses whether launching closes an unfinished day,");
+            frame.Write(14, 17, "clocks today in, and continues the project you last tracked.");
+            frame.Write(14, 18, "Whatever it did shows on Home: Esc dismisses, O and S correct it.", ColorToken.Dim);
 
             KeyBar.Draw(frame, ("Esc", "Close"));
         }

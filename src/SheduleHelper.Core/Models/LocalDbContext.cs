@@ -110,9 +110,19 @@ namespace SheduleHelper.Core.Models
                 .Property(s => s.LunchStrategy)
                 .HasConversion<string>();
 
+            // UserSetting: store DayStartAutomation enum as its string name
+            modelBuilder.Entity<UserSetting>()
+                .Property(s => s.DayStartAutomation)
+                .HasConversion<string>();
+
             // TaskItem: store TaskItemStatus enum as its string name
             modelBuilder.Entity<TaskItem>()
                 .Property(t => t.Status)
+                .HasConversion<string>();
+
+            // ProjectTimeLog: store TimeLogCloseReason enum as its string name, nullable while open
+            modelBuilder.Entity<ProjectTimeLog>()
+                .Property(l => l.ClosedReason)
                 .HasConversion<string>();
 
             // User: unique email
@@ -329,6 +339,7 @@ namespace SheduleHelper.Core.Models
             if (openProjectTimeLog is not null)
             {
                 openProjectTimeLog.EndTime = startTime;
+                openProjectTimeLog.ClosedReason = TimeLogCloseReason.Switched;
             }
 
             var projectTimeLog = new ProjectTimeLog
@@ -485,6 +496,27 @@ namespace SheduleHelper.Core.Models
                 .ToListAsync(cancellationToken);
         }
 
+        /// <summary>
+        /// Retrieves the specified user's most recently started project time log segment across every
+        /// attendance session, with its <see cref="ProjectTimeLog.Project"/> and
+        /// <see cref="ProjectTimeLog.Task"/> eagerly loaded. This is the "what was I last working on"
+        /// lookup behind <see cref="Services.ITrackingService.ResumeLastAsync"/>; unlike
+        /// <see cref="GetActiveProjectTimeLogAsync"/> it deliberately crosses session boundaries, since
+        /// the segment being resumed belongs to a day that is already closed.
+        /// </summary>
+        /// <param name="userId">The identifier of the user whose last tracked segment should be retrieved.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        /// <returns>The most recent <see cref="ProjectTimeLog"/> entity, or <see langword="null"/> if the user has never tracked anything.</returns>
+        public async Task<ProjectTimeLog?> GetLastProjectTimeLogAsync(int userId, CancellationToken cancellationToken)
+        {
+            return await ProjectTimeLogs
+                .Include(l => l.Project)
+                .Include(l => l.Task)
+                .Where(l => l.AttendanceLog.UserId == userId)
+                .OrderByDescending(l => l.StartTime)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         #endregion
 
         #region Update Methods
@@ -556,6 +588,10 @@ namespace SheduleHelper.Core.Models
         /// <summary>
         /// Closes the specified user's currently open attendance session by recording the clock-out time.
         /// The open session is resolved automatically as the most recent <see cref="AttendanceLog"/> for the user with a null <see cref="AttendanceLog.ClockOut"/>.
+        /// A project time log segment still running at that moment is closed too, at the same timestamp and
+        /// with <see cref="TimeLogCloseReason.ClockedOut"/> - a segment left open outlives the session it
+        /// belongs to and is then skipped by every <see cref="TimeBudgetCalculator"/> summary, so its time
+        /// would be silently lost.
         /// </summary>
         /// <param name="userId">The identifier of the user clocking out.</param>
         /// <param name="clockOut">The clock-out timestamp.</param>
@@ -571,6 +607,18 @@ namespace SheduleHelper.Core.Models
             }
 
             openAttendanceLog.ClockOut = clockOut;
+
+            var openProjectTimeLog = await GetOpenProjectTimeLogAsync(openAttendanceLog.Id, cancellationToken);
+            if (openProjectTimeLog is not null)
+            {
+                // A retro clock-out can land before a segment that was started after it (worked late,
+                // then closed the day at the default time). Clamping to StartTime yields an empty
+                // segment rather than a negative one; the time past the clock-out is outside the
+                // attendance wrapper either way.
+                openProjectTimeLog.EndTime = clockOut < openProjectTimeLog.StartTime ? openProjectTimeLog.StartTime : clockOut;
+                openProjectTimeLog.ClosedReason = TimeLogCloseReason.ClockedOut;
+            }
+
             await SaveChangesAsync(cancellationToken);
 
             return openAttendanceLog;
@@ -581,10 +629,11 @@ namespace SheduleHelper.Core.Models
         /// </summary>
         /// <param name="attendanceLogId">The identifier of the attendance session whose open segment should be closed.</param>
         /// <param name="endTime">The timestamp this segment ends at.</param>
+        /// <param name="reason">Why the segment is being closed - see <see cref="TimeLogCloseReason"/>.</param>
         /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
         /// <returns>The updated <see cref="ProjectTimeLog"/> entity.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the attendance session has no open project time log segment.</exception>
-        public async Task<ProjectTimeLog> EndProjectTimeLogAsync(int attendanceLogId, DateTime endTime, CancellationToken cancellationToken)
+        public async Task<ProjectTimeLog> EndProjectTimeLogAsync(int attendanceLogId, DateTime endTime, TimeLogCloseReason reason, CancellationToken cancellationToken)
         {
             var openProjectTimeLog = await GetOpenProjectTimeLogAsync(attendanceLogId, cancellationToken);
             if (openProjectTimeLog is null)
@@ -593,6 +642,7 @@ namespace SheduleHelper.Core.Models
             }
 
             openProjectTimeLog.EndTime = endTime;
+            openProjectTimeLog.ClosedReason = reason;
             await SaveChangesAsync(cancellationToken);
 
             return openProjectTimeLog;

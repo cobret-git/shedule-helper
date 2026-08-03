@@ -34,6 +34,19 @@ namespace SheduleHelper.Cli.Infrastructure
         Task OnEnter() => Task.CompletedTask;
 
         /// <summary>
+        /// Called once per loop iteration, before <see cref="Render"/> and after any key has been
+        /// handled - the place for state that has to change without the user doing anything.
+        /// Awaited on the loop thread just like <see cref="HandleKey"/>, so the same "never runs
+        /// concurrently with <see cref="Render"/>" guarantee holds; equally, it runs on every tick,
+        /// so an implementation that does real work must decide for itself when it is worth doing.
+        /// Most live values need nothing here - anything derivable from the current clock and
+        /// already-loaded state belongs in <see cref="Render"/>, which is called just as often and
+        /// costs nothing. This is for the rarer case of state that genuinely has to be re-read.
+        /// Default no-op.
+        /// </summary>
+        Task OnTick() => Task.CompletedTask;
+
+        /// <summary>
         /// Called once this screen stops being the active one - either popped/replaced, or another
         /// screen was just pushed above it. Default no-op; override to release resources.
         /// </summary>

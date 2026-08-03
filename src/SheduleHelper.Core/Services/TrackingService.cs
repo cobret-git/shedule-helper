@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SheduleHelper.Core.Components.Entities;
+using SheduleHelper.Core.Models;
 using MSG = SheduleHelper.Core.Resources.Strings.Messages;
 
 namespace SheduleHelper.Core.Services
@@ -64,12 +65,56 @@ namespace SheduleHelper.Core.Services
 
             try
             {
-                await db.EndProjectTimeLogAsync(attendanceLogId, endTime, cancellationToken);
+                await db.EndProjectTimeLogAsync(attendanceLogId, endTime, TimeLogCloseReason.Stopped, cancellationToken);
             }
             catch (InvalidOperationException)
             {
                 throw new TrackingOperationException(MSG.error_trackingNotActive);
             }
+        }
+
+        /// <inheritdoc/>
+        public async Task<TrackingResumeResult> ResumeLastAsync(int userId, int attendanceLogId, DateTime startTime, CancellationToken cancellationToken)
+        {
+            await using var db = _dbContextFactory.CreateDbContext();
+
+            if (await db.GetActiveProjectTimeLogAsync(attendanceLogId, cancellationToken) is not null)
+            {
+                return new TrackingResumeResult(TrackingResumeOutcome.AlreadyTracking, null, null, null);
+            }
+
+            var last = await db.GetLastProjectTimeLogAsync(userId, cancellationToken);
+            if (last is null)
+            {
+                return new TrackingResumeResult(TrackingResumeOutcome.NothingToResume, null, null, null);
+            }
+
+            // A null ClosedReason on a segment from an earlier session means it was left open by a
+            // clock-out that predates ClockOutAsync closing them - the same "ran out of day" case as
+            // ClockedOut, so it stays resumable rather than being treated as unknown.
+            if (last.ClosedReason == TimeLogCloseReason.Stopped)
+            {
+                return new TrackingResumeResult(TrackingResumeOutcome.StoppedDeliberately, null, last.Project.Name, last.Task?.Title);
+            }
+
+            // Project is always loaded: deleting one cascades to its segments, so a segment that
+            // still exists still has its project. Archiving is the case that has to be handled.
+            if (!last.Project.IsActive)
+            {
+                return new TrackingResumeResult(TrackingResumeOutcome.ProjectUnavailable, null, last.Project.Name, last.Task?.Title);
+            }
+
+            // Task may be null either because none was tracked or because it was deleted (the
+            // cascade nulls TaskId); a Done task is dropped for the same reason - neither should
+            // quietly accumulate more time.
+            var carryTask = last.Task is { } task && task.Status != TaskItemStatus.Done;
+            var segment = await SwitchAsync(attendanceLogId, last.ProjectId, carryTask ? last.TaskId : null, startTime, cancellationToken);
+
+            var outcome = last.Task is not null && !carryTask
+                ? TrackingResumeOutcome.ResumedWithoutTask
+                : TrackingResumeOutcome.Resumed;
+
+            return new TrackingResumeResult(outcome, segment, last.Project.Name, carryTask ? last.Task!.Title : null);
         }
 
         #endregion
