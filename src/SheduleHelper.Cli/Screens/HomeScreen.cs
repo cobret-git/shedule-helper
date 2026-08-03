@@ -177,18 +177,12 @@ namespace SheduleHelper.Cli.Screens
                 frame.Write(1, 6, "Active   no project - press S to start tracking", ColorToken.Dim);
             }
 
-            if (_todaysLogs.Count > 0)
-            {
-                frame.Write(1, 9, "Today", ColorToken.Accent);
-                var stripWidth = Math.Min(60, frame.Width - 2);
-                var blocks = _todaysLogs.Select(l => new TimelineBlock(l.StartTime, l.EndTime)).ToList();
-                TimelineStrip.Draw(frame, 1, 10, stripWidth, openLog.ClockIn, DateTime.Now, blocks);
-            }
+            RenderToday(frame, 9);
 
             KeyBar.Draw(frame, ("S", "Switch"), ("O", "Clock out"), ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
         }
 
-        private static void RenderNotClockedIn(Frame frame, AttendanceDaySnapshot snapshot)
+        private void RenderNotClockedIn(Frame frame, AttendanceDaySnapshot snapshot)
         {
             frame.Write(1, 3, "○ NOT CLOCKED IN", ColorToken.Dim);
 
@@ -200,14 +194,18 @@ namespace SheduleHelper.Cli.Screens
             frame.Write(3, 9, $"D   Clock in at default              {Formatting.Time(snapshot.UserSetting.DefaultClockInTime)}");
             frame.Write(3, 10, "M   Clock in at custom time...");
 
+            RenderToday(frame, 12);
+
             KeyBar.Draw(frame, ("I", "Now"), ("D", "Default"), ("M", "Custom"), ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
         }
 
-        private static void RenderDayComplete(Frame frame, AttendanceDaySnapshot snapshot)
+        private void RenderDayComplete(Frame frame, AttendanceDaySnapshot snapshot)
         {
             var log = snapshot.TodayClosedAttendanceLog!;
             frame.Write(1, 3, "✓ DAY COMPLETE", ColorToken.Dim);
             frame.Write(1, 5, $"{Formatting.Time(log.ClockIn)} -> {Formatting.Time(log.ClockOut!.Value)}    worked {Formatting.Duration(snapshot.WorkedToday)}");
+
+            RenderToday(frame, 7);
 
             KeyBar.Draw(frame, ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
         }
@@ -264,24 +262,51 @@ namespace SheduleHelper.Cli.Screens
                 var snapshot = await _attendanceService.GetDaySnapshotAsync(_currentUserContext.UserId, CancellationToken.None);
                 _snapshot = snapshot;
 
+                await using var db = _dbContextFactory.CreateDbContext();
+
                 if (snapshot.DayState == AttendanceDayState.ClockedIn)
                 {
                     var openLogId = snapshot.OpenAttendanceLog!.Id;
                     _activeTracking = await _trackingService.GetActiveTrackingAsync(openLogId, CancellationToken.None);
-
-                    await using var db = _dbContextFactory.CreateDbContext();
-                    _todaysLogs = await db.GetProjectTimeLogsAsync(_currentUserContext.UserId, DateTime.Today, DateTime.Now, CancellationToken.None);
                 }
                 else
                 {
                     _activeTracking = null;
-                    _todaysLogs = new List<ProjectTimeLog>();
                 }
+
+                _todaysLogs = await db.GetProjectTimeLogsAsync(_currentUserContext.UserId, DateTime.Today, DateTime.Now, CancellationToken.None);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "Failed to load home state for user {UserId}.", _currentUserContext.UserId);
                 _message = "Failed to load today's state.";
+            }
+        }
+
+        /// <summary>
+        /// Draws today's finished project/task sessions, most recent first - what came before the
+        /// currently active one (if any), so Home stays informative beyond just "what's active now".
+        /// The still-open segment (if any) is excluded here since it's already shown as "Active".
+        /// </summary>
+        private void RenderToday(Frame frame, int y)
+        {
+            var finished = _todaysLogs.Where(l => l.EndTime is not null).OrderByDescending(l => l.StartTime).ToList();
+            if (finished.Count == 0)
+            {
+                return;
+            }
+
+            frame.Write(1, y, "Today", ColorToken.Accent);
+            frame.Rule(y + 1);
+
+            for (var i = 0; i < finished.Count; i++)
+            {
+                var log = finished[i];
+                var label = log.Task is not null ? $"{log.Project.Name} / {log.Task.Title}" : log.Project.Name;
+                var row = y + 2 + i;
+
+                frame.Write(1, row, $"{Formatting.Time(log.StartTime)}-{Formatting.Time(log.EndTime!.Value)}  {label}", ColorToken.Dim);
+                frame.WriteRight(frame.Width - 1, row, Formatting.Duration(log.EndTime.Value - log.StartTime), ColorToken.Dim);
             }
         }
 

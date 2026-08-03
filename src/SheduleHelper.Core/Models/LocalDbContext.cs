@@ -479,6 +479,8 @@ namespace SheduleHelper.Core.Models
         public async Task<List<ProjectTimeLog>> GetProjectTimeLogsAsync(int userId, DateTime from, DateTime to, CancellationToken cancellationToken)
         {
             return await ProjectTimeLogs
+                .Include(l => l.Project)
+                .Include(l => l.Task)
                 .Where(l => l.AttendanceLog.UserId == userId && l.StartTime >= from && l.StartTime <= to)
                 .ToListAsync(cancellationToken);
         }
