@@ -25,6 +25,16 @@ namespace SheduleHelper.Cli.Screens
         private string? _message;
         private bool _confirmingDelete;
 
+        // Column widths for the task table. Task title is the only column that grows/shrinks with
+        // the console - Status and Duration are small, fixed-width values that always fit.
+        private const int MinTitleColumnWidth = 10;
+        private const int TitlePrefixWidth = 2;   // "{marker} "
+        private const int TitleToStatusGap = 1;   // guarantees a visible gap even when the title is
+                                                   // truncated - padding alone isn't reliable here
+                                                   // since "…" can render wider than one column.
+        private const int StatusColumnWidth = 14;
+        private const int DurationColumnWidth = 8;
+
         #endregion
 
         #region Constructors
@@ -59,8 +69,10 @@ namespace SheduleHelper.Cli.Screens
             var project = _project;
             Header.Draw(frame, $"PROJECTS > {project.Name}", "Esc Back");
 
-            frame.Write(1, 3, project.Description ?? "(no description)", ColorToken.Dim);
-            frame.WriteRight(frame.Width - 1, 3, project.IsActive ? "active" : "archived", project.IsActive ? ColorToken.Positive : ColorToken.Dim);
+            var statusText = project.IsActive ? "active" : "archived";
+            var descriptionAvailable = Math.Max(1, frame.Width - 1 - statusText.Length - 2);
+            frame.Write(1, 3, Formatting.Truncate(project.Description ?? "(no description)", descriptionAvailable), ColorToken.Dim);
+            frame.WriteRight(frame.Width - 1, 3, statusText, project.IsActive ? ColorToken.Positive : ColorToken.Dim);
 
             frame.Write(1, 5, "Tasks", ColorToken.Accent);
             frame.Rule(6);
@@ -70,14 +82,17 @@ namespace SheduleHelper.Cli.Screens
                 frame.Write(1, 8, "No tasks yet - press N to create one.", ColorToken.Dim);
             }
 
+            var titleWidth = TitleColumnWidth(frame.Width);
+
             for (var i = 0; i < _rows.Count; i++)
             {
                 var row = _rows[i];
                 var selected = _list.SelectedIndex == i;
                 var marker = selected ? "►" : " ";
                 var color = selected ? ColorToken.Accent : ColorToken.Default;
+                var title = Formatting.Truncate(row.Task.Title, titleWidth).PadRight(titleWidth);
 
-                frame.Write(1, 7 + i, $"{marker} {row.Task.Title,-30}{StatusLabel(row.Task.Status),-14}{Formatting.Duration(row.LoggedTime),8}", color);
+                frame.Write(1, 7 + i, $"{marker} {title} {StatusLabel(row.Task.Status),-14}{Formatting.Duration(row.LoggedTime),8}", color);
             }
 
             if (_confirmingDelete)
@@ -147,6 +162,16 @@ namespace SheduleHelper.Cli.Screens
         #endregion
 
         #region Helpers
+
+        /// <summary>
+        /// Computes how wide the Task title column can be for the given console width, so it grows
+        /// to use available space instead of always clipping at a fixed 30 columns.
+        /// </summary>
+        private static int TitleColumnWidth(int frameWidth)
+        {
+            var fixedWidth = TitlePrefixWidth + TitleToStatusGap + StatusColumnWidth + DurationColumnWidth;
+            return Math.Max(MinTitleColumnWidth, frameWidth - fixedWidth - 1);
+        }
 
         private static string StatusLabel(TaskItemStatus status) => status switch
         {

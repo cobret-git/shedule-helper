@@ -25,6 +25,19 @@ namespace SheduleHelper.Cli.Screens
         private string? _message;
         private bool _confirmingDelete;
 
+        // Column widths for the project table. Project name is the only column that grows/shrinks
+        // with the console - the rest are small, fixed-width values that always fit.
+        private const int MinNameColumnWidth = 10;
+        private const int NamePrefixWidth = 4;   // "{marker}{index,2} "
+        private const int NameToTasksGap = 1;    // guarantees a visible gap even when the name is
+                                                  // truncated - padding alone isn't reliable here
+                                                  // since "…" can render wider than one column.
+        private const int TasksColumnWidth = 5;
+        private const int TasksToTotalGap = 3;
+        private const int TotalColumnWidth = 8;
+        private const int TotalToStatusGap = 3;
+        private const int StatusColumnWidth = 8; // "archived"
+
         #endregion
 
         #region Constructors
@@ -50,7 +63,11 @@ namespace SheduleHelper.Cli.Screens
         {
             Header.Draw(frame, "PROJECTS", "Esc Back");
 
-            frame.Write(1, 3, "#  Project                        Tasks     Total   Status", ColorToken.Dim);
+            var nameWidth = NameColumnWidth(frame.Width);
+            var statusX = 1 + NamePrefixWidth + nameWidth + NameToTasksGap + TasksColumnWidth + TasksToTotalGap + TotalColumnWidth + TotalToStatusGap;
+
+            frame.Write(1, 3, $"#   {"Project".PadRight(nameWidth)} {"Tasks",5}   {"Total",8}", ColorToken.Dim);
+            frame.Write(statusX, 3, "Status", ColorToken.Dim);
             frame.Rule(4);
 
             if (_rows.Count == 0)
@@ -64,9 +81,10 @@ namespace SheduleHelper.Cli.Screens
                 var selected = _list.SelectedIndex == i;
                 var marker = selected ? "►" : " ";
                 var color = selected ? ColorToken.Accent : ColorToken.Default;
+                var name = Formatting.Truncate(row.Project.Name, nameWidth).PadRight(nameWidth);
 
-                frame.Write(1, 5 + i, $"{marker}{i + 1,2} {row.Project.Name,-28}{row.TaskCount,5}   {Formatting.Duration(row.TotalTime),8}", color);
-                frame.Write(60, 5 + i, row.Project.IsActive ? "active" : "archived", row.Project.IsActive ? ColorToken.Positive : ColorToken.Dim);
+                frame.Write(1, 5 + i, $"{marker}{i + 1,2} {name} {row.TaskCount,5}   {Formatting.Duration(row.TotalTime),8}", color);
+                frame.Write(statusX, 5 + i, row.Project.IsActive ? "active" : "archived", row.Project.IsActive ? ColorToken.Positive : ColorToken.Dim);
             }
 
             if (_confirmingDelete)
@@ -126,6 +144,16 @@ namespace SheduleHelper.Cli.Screens
         #endregion
 
         #region Helpers
+
+        /// <summary>
+        /// Computes how wide the Project name column can be for the given console width, so it
+        /// grows to use available space instead of always clipping at a fixed 28 columns.
+        /// </summary>
+        private static int NameColumnWidth(int frameWidth)
+        {
+            var fixedWidth = NamePrefixWidth + NameToTasksGap + TasksColumnWidth + TasksToTotalGap + TotalColumnWidth + TotalToStatusGap + StatusColumnWidth;
+            return Math.Max(MinNameColumnWidth, frameWidth - fixedWidth - 1);
+        }
 
         private async Task LoadAsync()
         {

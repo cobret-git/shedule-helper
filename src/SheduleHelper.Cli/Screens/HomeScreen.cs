@@ -214,22 +214,52 @@ namespace SheduleHelper.Cli.Screens
             // over data already in hand - no database access from a render.
             var target = snapshot.DailyTarget;
             var worked = snapshot.WorkedAsOf(DateTime.Now);
-            var ratio = target > TimeSpan.Zero ? worked.TotalSeconds / target.TotalSeconds : 0;
-            ProgressBar.Draw(frame, 1, 4, 40, ratio, $"{Formatting.Duration(worked)} / {Formatting.Duration(target)}");
+            var overtime = worked > target ? worked - target : TimeSpan.Zero;
+
+            // The bar's scale grows to keep a fixed ~45-minute buffer visible past the current
+            // position, so it never looks saturated the moment the target - or any amount of
+            // overtime - is reached; the buffer is what renders as empty/dim past the fill.
+            var headroom = TimeSpan.FromMinutes(45);
+            var scale = target + overtime + headroom;
+            var normalWorked = worked < target ? worked : target;
+            var normalRatio = scale > TimeSpan.Zero ? normalWorked.TotalSeconds / scale.TotalSeconds : 0;
+            var overtimeRatio = scale > TimeSpan.Zero ? overtime.TotalSeconds / scale.TotalSeconds : 0;
+
+            var caption = overtime > TimeSpan.Zero
+                ? $"{Formatting.Duration(worked)} / {Formatting.Duration(target)} ({Formatting.Balance(overtime)})"
+                : $"{Formatting.Duration(worked)} / {Formatting.Duration(target)}";
+            ProgressBar.Draw(frame, 1, 4, 40, normalRatio, overtimeRatio, caption);
+
+            var nextRow = 9;
 
             if (_activeTracking is { } tracking)
             {
-                var label = tracking.Task is not null ? $"{tracking.Project.Name} / {tracking.Task.Title}" : tracking.Project.Name;
-                frame.Write(1, 6, $"Active   ▶ {label}");
-                frame.WriteRight(frame.Width - 1, 6, Formatting.Duration(DateTime.Now - tracking.StartTime));
-                frame.Write(3, 7, $"started {Formatting.Time(tracking.StartTime)}", ColorToken.Dim);
+                // Project and task each get their own line and their own truncation budget -
+                // joining them with " / " on one line (the old behaviour) meant a long project name
+                // could push the task title, or even the elapsed-time readout, clean off the edge.
+                const string prefix = "Active   ▶ ";
+                var elapsed = Formatting.Duration(DateTime.Now - tracking.StartTime);
+                var projectAvailable = Math.Max(1, frame.Width - 1 - prefix.Length - elapsed.Length - 2);
+                frame.Write(1, 6, $"{prefix}{Formatting.Truncate(tracking.Project.Name, projectAvailable)}");
+                frame.WriteRight(frame.Width - 1, 6, elapsed);
+
+                var detailRow = 7;
+                if (tracking.Task is not null)
+                {
+                    var taskAvailable = Math.Max(1, frame.Width - 1 - 3);
+                    frame.Write(3, detailRow, Formatting.Truncate(tracking.Task.Title, taskAvailable), ColorToken.Dim);
+                    detailRow++;
+                }
+
+                frame.Write(3, detailRow, $"started {Formatting.Time(tracking.StartTime)}", ColorToken.Dim);
+                nextRow = detailRow + 2;
             }
             else
             {
                 frame.Write(1, 6, "Active   no project - press S to start tracking", ColorToken.Dim);
             }
 
-            RenderToday(frame, 9);
+            RenderToday(frame, nextRow);
 
             KeyBar.Draw(frame, ("S", "Switch"), ("O", "Clock out"), ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
         }
@@ -478,8 +508,12 @@ namespace SheduleHelper.Cli.Screens
                 var label = log.Task is not null ? $"{log.Project.Name} / {log.Task.Title}" : log.Project.Name;
                 var row = y + 2 + i;
 
-                frame.Write(1, row, $"{Formatting.Time(log.StartTime)}-{Formatting.Time(log.EndTime!.Value)}  {label}", ColorToken.Dim);
-                frame.WriteRight(frame.Width - 1, row, Formatting.Duration(log.EndTime.Value - log.StartTime), ColorToken.Dim);
+                var prefix = $"{Formatting.Time(log.StartTime)}-{Formatting.Time(log.EndTime!.Value)}  ";
+                var duration = Formatting.Duration(log.EndTime.Value - log.StartTime);
+                var labelAvailable = Math.Max(1, frame.Width - 1 - prefix.Length - duration.Length - 2);
+
+                frame.Write(1, row, $"{prefix}{Formatting.Truncate(label, labelAvailable)}", ColorToken.Dim);
+                frame.WriteRight(frame.Width - 1, row, duration, ColorToken.Dim);
             }
         }
 

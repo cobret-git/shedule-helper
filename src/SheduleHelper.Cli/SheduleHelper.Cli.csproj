@@ -5,8 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyVersion>1.0.1</AssemblyVersion>
-    <FileVersion>1.0.1</FileVersion>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <FileVersion>1.0.2</FileVersion>
 
     <!-- The MSIX package carries the runtime with it: a Store package cannot ask
          Windows to go install .NET 10 first. Keep RuntimeIdentifiers in sync with

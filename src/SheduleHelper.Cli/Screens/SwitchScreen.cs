@@ -59,13 +59,15 @@ namespace SheduleHelper.Cli.Screens
                 frame.Write(1, 3, "No active projects yet - add one from the Projects browser once it exists.", ColorToken.Dim);
             }
 
+            var labelAvailable = Math.Max(1, frame.Width - 1 - 2 - 1);
+
             for (var i = 0; i < _rows.Count; i++)
             {
                 var row = _rows[i];
                 var selected = _list.SelectedIndex == i;
                 var marker = selected ? "►" : row.IsCurrent ? "●" : " ";
                 var color = selected ? ColorToken.Accent : row.IsCurrent ? ColorToken.Positive : ColorToken.Default;
-                frame.Write(1, 3 + i, $"{marker} {row.Label}", color);
+                frame.Write(1, 3 + i, $"{marker} {Formatting.Truncate(row.Label, labelAvailable)}", color);
             }
 
             if (!string.IsNullOrWhiteSpace(_message))
