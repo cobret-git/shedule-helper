@@ -85,10 +85,9 @@ namespace SheduleHelper.Core.Services
                 throw new AttendanceOperationException(MSG.error_clockOutBeforeClockIn);
             }
 
-            if (clockOutTime > DateTime.Now)
-            {
-                throw new AttendanceOperationException(MSG.error_clockOutTimeInFuture);
-            }
+            // Deliberately no "not in the future" check here, unlike ClockInAsync above - leaving
+            // early and picking a time a bit ahead (e.g. "I'm heading out at 17:05") is a normal
+            // thing to want, and clockOutTime <= openLog.ClockIn above already rules out nonsense.
 
             try
             {

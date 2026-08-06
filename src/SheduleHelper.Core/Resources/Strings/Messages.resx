@@ -128,7 +128,7 @@
 	</data>
 	<data name="error_clockOutTimeInFuture" xml:space="preserve">
 		<value>Clock-out time can't be in the future.</value>
-		<comment>Shown when the user picks a clock-out time later than now.</comment>
+		<comment>Shown when the user picks a clock-out time later than now. Still used by SheduleHelper.Modern's HomeViewModel - AttendanceService itself no longer enforces this for the CLI, which allows clocking out ahead of now on purpose.</comment>
 	</data>
 	<data name="error_clockOutBeforeClockIn" xml:space="preserve">
 		<value>Clock-out time must be after your clock-in time.</value>
