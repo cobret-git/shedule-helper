@@ -50,7 +50,9 @@ namespace SheduleHelper.Core.Services
 
             try
             {
-                return await db.StartProjectTimeLogAsync(attendanceLogId, projectId, taskId, startTime, cancellationToken);
+                var segment = await db.StartProjectTimeLogAsync(attendanceLogId, projectId, taskId, startTime, cancellationToken);
+                await MarkTaskInProgressAsync(db, taskId, cancellationToken);
+                return segment;
             }
             catch (DbUpdateException)
             {
@@ -115,6 +117,33 @@ namespace SheduleHelper.Core.Services
                 : TrackingResumeOutcome.Resumed;
 
             return new TrackingResumeResult(outcome, segment, last.Project.Name, carryTask ? last.Task!.Title : null);
+        }
+
+        #endregion
+
+        #region Helpers
+
+        /// <summary>
+        /// Moves a task out of <see cref="TaskItemStatus.Todo"/> the first time it's tracked, so the
+        /// Switch screen's "not yet done" filter stops showing it once you've actually started it -
+        /// otherwise nothing ever recorded that a task had been picked up, and it kept reappearing
+        /// in the switch menu on every visit for as long as it stayed untouched at Todo. Leaves
+        /// <see cref="TaskItemStatus.InProgress"/> and <see cref="TaskItemStatus.Done"/> alone -
+        /// switching back to a task you already marked Done should not silently un-finish it.
+        /// </summary>
+        private static async Task MarkTaskInProgressAsync(LocalDbContext db, int? taskId, CancellationToken cancellationToken)
+        {
+            if (taskId is null)
+            {
+                return;
+            }
+
+            var task = await db.Tasks.FindAsync(new object?[] { taskId.Value }, cancellationToken);
+            if (task is not null && task.Status == TaskItemStatus.Todo)
+            {
+                task.Status = TaskItemStatus.InProgress;
+                await db.SaveChangesAsync(cancellationToken);
+            }
         }
 
         #endregion

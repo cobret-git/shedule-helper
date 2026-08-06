@@ -90,7 +90,7 @@ namespace SheduleHelper.Cli.Screens
                 frame.Write(1, frame.Height - 4, _message, ColorToken.Negative);
             }
 
-            KeyBar.Draw(frame, ("up/down", "Move"), ("Enter", "Track"), ("X", "Stop tracking"), ("Esc", "Cancel"));
+            KeyBar.Draw(frame, ("up/down", "Move"), ("Enter", "Track"), ("D", "Mark done"), ("X", "Stop tracking"), ("Esc", "Cancel"));
         }
 
         /// <inheritdoc/>
@@ -114,6 +114,9 @@ namespace SheduleHelper.Cli.Screens
                     break;
                 case ConsoleKey.Enter:
                     await SwitchToSelectedAsync(screens);
+                    break;
+                case ConsoleKey.D:
+                    await MarkSelectedDoneAsync();
                     break;
                 case ConsoleKey.X:
                     await StopAsync(screens);
@@ -191,6 +194,45 @@ namespace SheduleHelper.Cli.Screens
             }
 
             await SwitchAsync(screens, row, DateTime.Now);
+        }
+
+        /// <summary>
+        /// Marks the highlighted task Done directly from here, since this is exactly where a task
+        /// stops mattering - right as the user picks up the next one. Without this, the only way to
+        /// get a finished task out of this list was a trip to the Projects browser's own "D" cycle.
+        /// Project rows (no <see cref="Row.TaskId"/>) have no status to change, so they're ignored.
+        /// </summary>
+        private async Task MarkSelectedDoneAsync()
+        {
+            if (_rows.Count == 0 || _list.SelectedIndex >= _rows.Count)
+            {
+                return;
+            }
+
+            var row = _rows[_list.SelectedIndex];
+            if (row.TaskId is not { } taskId)
+            {
+                return;
+            }
+
+            try
+            {
+                await using var db = _dbContextFactory.CreateDbContext();
+                var task = await db.Tasks.FindAsync(new object?[] { taskId }, CancellationToken.None);
+                if (task is null)
+                {
+                    return;
+                }
+
+                task.Status = TaskItemStatus.Done;
+                await db.SaveChangesAsync(CancellationToken.None);
+                await LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Failed to mark task {TaskId} done.", taskId);
+                _message = "Something went wrong marking the task done.";
+            }
         }
 
         private void RenderStartTimeChoice(Frame frame, Row row)
