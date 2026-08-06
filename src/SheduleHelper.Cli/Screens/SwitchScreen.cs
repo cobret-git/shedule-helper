@@ -20,11 +20,18 @@ namespace SheduleHelper.Cli.Screens
         private readonly ILocalDbContextFactory _dbContextFactory;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly int _attendanceLogId;
+        private readonly DateTime _clockInTime;
         private readonly ILogger _logger = Log.ForContext<SwitchScreen>();
 
         private List<Row> _rows = new();
         private SelectList _list = new(0);
         private string? _message;
+        private bool _hasTrackedToday;
+
+        // Set while asking "now, or at clock-in time?" for the first pick of the day - see
+        // SwitchToSelectedAsync.
+        private Row? _pendingRow;
+        private SelectList _startTimeOptions = new(2);
 
         #endregion
 
@@ -34,12 +41,14 @@ namespace SheduleHelper.Cli.Screens
         /// Initializes a new instance of the <see cref="SwitchScreen"/> class.
         /// </summary>
         /// <param name="attendanceLogId">The open attendance session tracking should be recorded against.</param>
-        public SwitchScreen(ITrackingService trackingService, ILocalDbContextFactory dbContextFactory, ICurrentUserContext currentUserContext, int attendanceLogId)
+        /// <param name="clockInTime">Today's clock-in time - offered as an alternative start time when nothing has been tracked yet today.</param>
+        public SwitchScreen(ITrackingService trackingService, ILocalDbContextFactory dbContextFactory, ICurrentUserContext currentUserContext, int attendanceLogId, DateTime clockInTime)
         {
             _trackingService = trackingService;
             _dbContextFactory = dbContextFactory;
             _currentUserContext = currentUserContext;
             _attendanceLogId = attendanceLogId;
+            _clockInTime = clockInTime;
         }
 
         #endregion
@@ -53,6 +62,12 @@ namespace SheduleHelper.Cli.Screens
         public void Render(Frame frame)
         {
             Header.Draw(frame, "SWITCH", "Esc Cancel");
+
+            if (_pendingRow is { } pendingRow)
+            {
+                RenderStartTimeChoice(frame, pendingRow);
+                return;
+            }
 
             if (_rows.Count == 0)
             {
@@ -81,6 +96,12 @@ namespace SheduleHelper.Cli.Screens
         /// <inheritdoc/>
         public async Task HandleKey(ConsoleKeyInfo key, ScreenStack screens)
         {
+            if (_pendingRow is { } pendingRow)
+            {
+                await HandleStartTimeChoiceKey(key, screens, pendingRow);
+                return;
+            }
+
             if (_list.HandleKey(key))
             {
                 return;
@@ -112,6 +133,8 @@ namespace SheduleHelper.Cli.Screens
                 var userId = _currentUserContext.UserId;
 
                 var activeTracking = await _trackingService.GetActiveTrackingAsync(_attendanceLogId, CancellationToken.None);
+                _hasTrackedToday = await db.HasAnyProjectTimeLogAsync(_attendanceLogId, CancellationToken.None);
+
                 var projects = (await db.GetProjectsByUserIdAsync(userId, CancellationToken.None))
                     .Where(p => p.IsActive)
                     .OrderBy(p => p.Name)
@@ -156,19 +179,79 @@ namespace SheduleHelper.Cli.Screens
 
             var row = _rows[_list.SelectedIndex];
 
+            // Picking the very first task of the day defaults to "now" every time otherwise, even
+            // when the user clocked in a while ago and only just got around to choosing what to
+            // work on - backdating the very first segment to the clock-in time is the whole point
+            // of offering the choice, so it's skipped once anything has already been tracked today.
+            if (!_hasTrackedToday && DateTime.Now - _clockInTime > TimeSpan.FromMinutes(1))
+            {
+                _startTimeOptions = new SelectList(2);
+                _pendingRow = row;
+                return;
+            }
+
+            await SwitchAsync(screens, row, DateTime.Now);
+        }
+
+        private void RenderStartTimeChoice(Frame frame, Row row)
+        {
+            frame.Write(1, 3, $"Start \"{row.Label.Trim()}\" at:", ColorToken.Dim);
+
+            DrawStartTimeRow(frame, 5, 0, "Now", Formatting.Time(DateTime.Now));
+            DrawStartTimeRow(frame, 6, 1, "At clock-in", Formatting.Time(_clockInTime));
+
+            if (!string.IsNullOrWhiteSpace(_message))
+            {
+                frame.Write(1, frame.Height - 4, _message, ColorToken.Negative);
+            }
+
+            KeyBar.Draw(frame, ("up/down", "Select"), ("Enter", "Confirm"), ("Esc", "Cancel"));
+        }
+
+        private void DrawStartTimeRow(Frame frame, int y, int index, string label, string value)
+        {
+            var selected = _startTimeOptions.SelectedIndex == index;
+            var marker = selected ? "►" : " ";
+            frame.Write(1, y, $"{marker} {label}", selected ? ColorToken.Accent : ColorToken.Default);
+            frame.Write(20, y, value);
+        }
+
+        private async Task HandleStartTimeChoiceKey(ConsoleKeyInfo key, ScreenStack screens, Row row)
+        {
+            if (_startTimeOptions.HandleKey(key))
+            {
+                return;
+            }
+
+            switch (key.Key)
+            {
+                case ConsoleKey.Escape:
+                    _pendingRow = null;
+                    break;
+                case ConsoleKey.Enter:
+                    var startTime = _startTimeOptions.SelectedIndex == 0 ? DateTime.Now : _clockInTime;
+                    await SwitchAsync(screens, row, startTime);
+                    break;
+            }
+        }
+
+        private async Task SwitchAsync(ScreenStack screens, Row row, DateTime startTime)
+        {
             try
             {
-                await _trackingService.SwitchAsync(_attendanceLogId, row.ProjectId, row.TaskId, DateTime.Now, CancellationToken.None);
+                await _trackingService.SwitchAsync(_attendanceLogId, row.ProjectId, row.TaskId, startTime, CancellationToken.None);
                 await screens.Pop();
             }
             catch (TrackingOperationException ex)
             {
                 _message = ex.Message;
+                _pendingRow = null;
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "Failed to switch tracking to project {ProjectId}.", row.ProjectId);
                 _message = "Something went wrong switching projects.";
+                _pendingRow = null;
             }
         }
 

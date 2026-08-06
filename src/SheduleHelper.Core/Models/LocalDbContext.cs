@@ -452,6 +452,19 @@ namespace SheduleHelper.Core.Models
         }
 
         /// <summary>
+        /// Whether any project/task has been tracked yet within the given attendance session - open
+        /// or already closed. Lets callers tell "picking the first task of the day" (no segments
+        /// yet) apart from an ordinary mid-day switch, since only the former benefits from choosing
+        /// between "now" and the clock-in time as the start.
+        /// </summary>
+        /// <param name="attendanceLogId">The identifier of the attendance session to check.</param>
+        /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while waiting for the task to complete.</param>
+        public async Task<bool> HasAnyProjectTimeLogAsync(int attendanceLogId, CancellationToken cancellationToken)
+        {
+            return await ProjectTimeLogs.AnyAsync(l => l.AttendanceLogId == attendanceLogId, cancellationToken);
+        }
+
+        /// <summary>
         /// Retrieves the settings belonging to the specified user.
         /// </summary>
         /// <param name="userId">The identifier of the user whose settings should be retrieved.</param>

@@ -161,7 +161,7 @@ namespace SheduleHelper.Cli.Screens
                     await screens.Push(new ClockOutScreen(_attendanceService, _currentUserContext, snapshot));
                     break;
                 case ConsoleKey.S when snapshot.DayState == AttendanceDayState.ClockedIn:
-                    await screens.Push(new SwitchScreen(_trackingService, _dbContextFactory, _currentUserContext, snapshot.OpenAttendanceLog!.Id));
+                    await screens.Push(new SwitchScreen(_trackingService, _dbContextFactory, _currentUserContext, snapshot.OpenAttendanceLog!.Id, snapshot.OpenAttendanceLog!.ClockIn));
                     break;
                 case ConsoleKey.R when snapshot.DayState == AttendanceDayState.ForgottenSession:
                     await screens.Push(new ResolveForgottenScreen(_attendanceService, _currentUserContext, snapshot));
