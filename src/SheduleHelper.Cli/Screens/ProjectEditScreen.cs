@@ -22,8 +22,8 @@ namespace SheduleHelper.Cli.Screens
         private readonly ILogger _logger = Log.ForContext<ProjectEditScreen>();
 
         private readonly TextField _name;
-        private readonly TextField _description;
         private readonly SelectList _rows = new(3);
+        private string _description;
         private bool _active;
         private string? _message;
 
@@ -41,7 +41,7 @@ namespace SheduleHelper.Cli.Screens
             _currentUserContext = currentUserContext;
             _existingProject = existingProject;
             _name = new TextField(existingProject?.Name ?? string.Empty);
-            _description = new TextField(existingProject?.Description ?? string.Empty);
+            _description = existingProject?.Description ?? string.Empty;
             _active = existingProject?.IsActive ?? true;
         }
 
@@ -57,8 +57,10 @@ namespace SheduleHelper.Cli.Screens
             DrawLabel(frame, 3, 0, "Name");
             _name.Draw(frame, 16, 3, 50, _rows.SelectedIndex == 0);
 
+            // Description is a preview only - editing it happens on its own full-screen editor (see
+            // the Enter case below) rather than in a 2-3 row inline box too small for a paragraph.
             DrawLabel(frame, 4, 1, "Description");
-            _description.Draw(frame, 16, 4, 50, _rows.SelectedIndex == 1);
+            frame.Write(16, 4, Formatting.PreviewSummary(_description, Math.Max(1, frame.Width - 17)), ColorToken.Dim);
 
             DrawLabel(frame, 5, 2, "Active");
             frame.Write(16, 5, _active ? "[ YES ]" : "[ NO  ]", _active ? ColorToken.Positive : ColorToken.Dim);
@@ -68,7 +70,11 @@ namespace SheduleHelper.Cli.Screens
                 frame.Write(1, frame.Height - 4, _message, ColorToken.Negative);
             }
 
-            KeyBar.Draw(frame, ("up/down", "Field"), ("left/right", "Move/Toggle"), ("Enter", "Save"), ("F10", "Save"), ("Esc", "Cancel"));
+            // Enter means something different depending on focus: it saves the form everywhere
+            // except Description, where it opens the full-screen editor instead - F10 is the one key
+            // that always saves, regardless of which field is focused.
+            var enterHint = _rows.SelectedIndex == 1 ? ("Enter", "Edit description") : ("Enter", "Save");
+            KeyBar.Draw(frame, ("up/down", "Field"), ("left/right", "Move/Toggle"), enterHint, ("F10", "Save"), ("Esc", "Cancel"));
         }
 
         /// <inheritdoc/>
@@ -79,8 +85,13 @@ namespace SheduleHelper.Cli.Screens
                 case ConsoleKey.Escape:
                     await screens.Pop();
                     return;
-                case ConsoleKey.Enter:
                 case ConsoleKey.F10:
+                    await SaveAsync(screens);
+                    return;
+                case ConsoleKey.Enter when _rows.SelectedIndex == 1:
+                    await screens.Push(new DescriptionEditScreen(_name.Value, _description, value => _description = value));
+                    return;
+                case ConsoleKey.Enter:
                     await SaveAsync(screens);
                     return;
             }
@@ -100,8 +111,10 @@ namespace SheduleHelper.Cli.Screens
                 return;
             }
 
-            var field = _rows.SelectedIndex == 0 ? _name : _description;
-            field.HandleKey(key);
+            if (_rows.SelectedIndex == 0)
+            {
+                _name.HandleKey(key);
+            }
         }
 
         #endregion
@@ -129,12 +142,12 @@ namespace SheduleHelper.Cli.Screens
 
                 if (_existingProject is null)
                 {
-                    await db.CreateProjectAsync(name, _currentUserContext.UserId, NullIfEmpty(_description.Value), CancellationToken.None);
+                    await db.CreateProjectAsync(name, _currentUserContext.UserId, NullIfEmpty(_description), CancellationToken.None);
                 }
                 else
                 {
                     _existingProject.Name = name;
-                    _existingProject.Description = NullIfEmpty(_description.Value);
+                    _existingProject.Description = NullIfEmpty(_description);
                     _existingProject.IsActive = _active;
                     await db.UpdateProjectAsync(_existingProject, CancellationToken.None);
                 }

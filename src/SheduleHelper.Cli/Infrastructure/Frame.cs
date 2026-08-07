@@ -106,6 +106,19 @@ namespace SheduleHelper.Cli.Infrastructure
             Fill(0, y, Width, '─', fg);
         }
 
+        /// <summary>
+        /// Draws a vertical rule at column <paramref name="x"/>, spanning <paramref name="height"/>
+        /// rows starting at <paramref name="y"/> - the divider between two side-by-side
+        /// <see cref="Region"/>s (e.g. a list and an inspector pane).
+        /// </summary>
+        public void VRule(int x, int y, int height, ColorToken fg = ColorToken.Dim)
+        {
+            for (var row = y; row < y + height; row++)
+            {
+                Write(x, row, "│", fg);
+            }
+        }
+
         #endregion
     }
 }

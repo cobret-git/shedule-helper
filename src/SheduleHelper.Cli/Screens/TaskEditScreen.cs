@@ -21,8 +21,8 @@ namespace SheduleHelper.Cli.Screens
         private readonly ILogger _logger = Log.ForContext<TaskEditScreen>();
 
         private readonly TextField _title;
-        private readonly TextField _description;
         private readonly SelectList _rows = new(3);
+        private string _description;
         private TaskItemStatus _status;
         private string? _message;
 
@@ -41,7 +41,7 @@ namespace SheduleHelper.Cli.Screens
             _projectId = projectId;
             _existingTask = existingTask;
             _title = new TextField(existingTask?.Title ?? string.Empty);
-            _description = new TextField(existingTask?.Description ?? string.Empty);
+            _description = existingTask?.Description ?? string.Empty;
             _status = existingTask?.Status ?? TaskItemStatus.Todo;
         }
 
@@ -57,8 +57,10 @@ namespace SheduleHelper.Cli.Screens
             DrawLabel(frame, 3, 0, "Title");
             _title.Draw(frame, 16, 3, 50, _rows.SelectedIndex == 0);
 
+            // Description is a preview only - editing it happens on its own full-screen editor (see
+            // the Enter case below) rather than in a 2-3 row inline box too small for a paragraph.
             DrawLabel(frame, 4, 1, "Description");
-            _description.Draw(frame, 16, 4, 50, _rows.SelectedIndex == 1);
+            frame.Write(16, 4, Formatting.PreviewSummary(_description, Math.Max(1, frame.Width - 17)), ColorToken.Dim);
 
             DrawLabel(frame, 5, 2, "Status");
             frame.Write(16, 5, $"< {StatusLabel(_status)} >");
@@ -68,7 +70,11 @@ namespace SheduleHelper.Cli.Screens
                 frame.Write(1, frame.Height - 4, _message, ColorToken.Negative);
             }
 
-            KeyBar.Draw(frame, ("up/down", "Field"), ("left/right", "Move/Change"), ("Enter", "Save"), ("F10", "Save"), ("Esc", "Cancel"));
+            // Enter means something different depending on focus: it saves the form everywhere
+            // except Description, where it opens the full-screen editor instead - F10 is the one key
+            // that always saves, regardless of which field is focused.
+            var enterHint = _rows.SelectedIndex == 1 ? ("Enter", "Edit description") : ("Enter", "Save");
+            KeyBar.Draw(frame, ("up/down", "Field"), ("left/right", "Move/Change"), enterHint, ("F10", "Save"), ("Esc", "Cancel"));
         }
 
         /// <inheritdoc/>
@@ -79,8 +85,13 @@ namespace SheduleHelper.Cli.Screens
                 case ConsoleKey.Escape:
                     await screens.Pop();
                     return;
-                case ConsoleKey.Enter:
                 case ConsoleKey.F10:
+                    await SaveAsync(screens);
+                    return;
+                case ConsoleKey.Enter when _rows.SelectedIndex == 1:
+                    await screens.Push(new DescriptionEditScreen(_title.Value, _description, value => _description = value));
+                    return;
+                case ConsoleKey.Enter:
                     await SaveAsync(screens);
                     return;
             }
@@ -100,8 +111,10 @@ namespace SheduleHelper.Cli.Screens
                 return;
             }
 
-            var field = _rows.SelectedIndex == 0 ? _title : _description;
-            field.HandleKey(key);
+            if (_rows.SelectedIndex == 0)
+            {
+                _title.HandleKey(key);
+            }
         }
 
         #endregion
@@ -145,12 +158,12 @@ namespace SheduleHelper.Cli.Screens
 
                 if (_existingTask is null)
                 {
-                    await db.CreateTaskAsync(title, NullIfEmpty(_description.Value), _status, _projectId, CancellationToken.None);
+                    await db.CreateTaskAsync(title, NullIfEmpty(_description), _status, _projectId, CancellationToken.None);
                 }
                 else
                 {
                     _existingTask.Title = title;
-                    _existingTask.Description = NullIfEmpty(_description.Value);
+                    _existingTask.Description = NullIfEmpty(_description);
                     _existingTask.Status = _status;
                     await db.UpdateTaskAsync(_existingTask, CancellationToken.None);
                 }

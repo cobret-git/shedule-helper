@@ -38,6 +38,9 @@ namespace SheduleHelper.Cli.Screens
         private DayStartResolution? _resolution;
         private bool _bannerDismissed;
 
+        // How many rows the active task's description preview spans - see ActiveDescriptionPreview.
+        private const int DescriptionPreviewLines = 3;
+
         #endregion
 
         #region Constructors
@@ -163,6 +166,9 @@ namespace SheduleHelper.Cli.Screens
                 case ConsoleKey.S when snapshot.DayState == AttendanceDayState.ClockedIn:
                     await screens.Push(new SwitchScreen(_trackingService, _dbContextFactory, _currentUserContext, snapshot.OpenAttendanceLog!.Id, snapshot.OpenAttendanceLog!.ClockIn));
                     break;
+                case ConsoleKey.Enter when ActiveDescriptionPreview(_activeTracking, Terminal.Width).Truncated:
+                    await screens.Push(new DescriptionViewScreen(_activeTracking!.Task!.Title, _activeTracking.Task.Description!));
+                    break;
                 case ConsoleKey.R when snapshot.DayState == AttendanceDayState.ForgottenSession:
                     await screens.Push(new ResolveForgottenScreen(_attendanceService, _currentUserContext, snapshot));
                     break;
@@ -231,23 +237,28 @@ namespace SheduleHelper.Cli.Screens
             ProgressBar.Draw(frame, 1, 4, 40, normalRatio, overtimeRatio, caption);
 
             var nextRow = 9;
+            var descriptionTruncated = false;
 
             if (_activeTracking is { } tracking)
             {
-                // Project and task each get their own line and their own truncation budget -
-                // joining them with " / " on one line (the old behaviour) meant a long project name
-                // could push the task title, or even the elapsed-time readout, clean off the edge.
+                // Project and task are one truncated line, same as everywhere else a name/title
+                // pair is shown (e.g. RenderToday below) - joining them with " / " and truncating
+                // the whole thing as a unit is simpler than splitting them across two lines, and
+                // fits just as well now that it's actually bounded to the console width.
                 const string prefix = "Active   ▶ ";
                 var elapsed = Formatting.Duration(DateTime.Now - tracking.StartTime);
-                var projectAvailable = Math.Max(1, frame.Width - 1 - prefix.Length - elapsed.Length - 2);
-                frame.Write(1, 6, $"{prefix}{Formatting.Truncate(tracking.Project.Name, projectAvailable)}");
+                var label = tracking.Task is not null ? $"{tracking.Project.Name} / {tracking.Task.Title}" : tracking.Project.Name;
+                var labelAvailable = Math.Max(1, frame.Width - 1 - prefix.Length - elapsed.Length - 2);
+                frame.Write(1, 6, $"{prefix}{Formatting.Truncate(label, labelAvailable)}");
                 frame.WriteRight(frame.Width - 1, 6, elapsed);
 
+                var (descriptionLines, truncated) = ActiveDescriptionPreview(tracking, frame.Width);
+                descriptionTruncated = truncated;
+
                 var detailRow = 7;
-                if (tracking.Task is not null)
+                foreach (var line in descriptionLines)
                 {
-                    var taskAvailable = Math.Max(1, frame.Width - 1 - 3);
-                    frame.Write(3, detailRow, Formatting.Truncate(tracking.Task.Title, taskAvailable), ColorToken.Dim);
+                    frame.Write(3, detailRow, line, ColorToken.Dim);
                     detailRow++;
                 }
 
@@ -261,7 +272,19 @@ namespace SheduleHelper.Cli.Screens
 
             RenderToday(frame, nextRow);
 
-            KeyBar.Draw(frame, ("S", "Switch"), ("O", "Clock out"), ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
+            var keyBindings = new List<(string Key, string Label)>
+            {
+                ("S", "Switch"), ("O", "Clock out"), ("P", "Projects"), ("R", "Reports"),
+            };
+
+            if (descriptionTruncated)
+            {
+                keyBindings.Add(("Enter", "View description"));
+            }
+
+            keyBindings.Add(("F10", "Settings"));
+            keyBindings.Add(("Q", "Quit"));
+            KeyBar.Draw(frame, keyBindings.ToArray());
         }
 
         private void RenderNotClockedIn(Frame frame, AttendanceDaySnapshot snapshot)
@@ -484,6 +507,25 @@ namespace SheduleHelper.Cli.Screens
                 _logger.Error(ex, "Failed to load home state for user {UserId}.", _currentUserContext.UserId);
                 _message = "Failed to load today's state.";
             }
+        }
+
+        /// <summary>
+        /// Computes the active task's description preview - up to <see cref="DescriptionPreviewLines"/>
+        /// lines, and whether there's more left over. A pure function of <paramref name="tracking"/>
+        /// and <paramref name="frameWidth"/> rather than a field set inside <see cref="RenderClockedIn"/>,
+        /// so <see cref="HandleKey"/> can independently ask "is there a full view worth offering?"
+        /// without depending on Render having already run this frame.
+        /// </summary>
+        private static (List<string> Lines, bool Truncated) ActiveDescriptionPreview(ProjectTimeLog? tracking, int frameWidth)
+        {
+            var description = tracking?.Task?.Description;
+            if (string.IsNullOrWhiteSpace(description))
+            {
+                return (new List<string>(), false);
+            }
+
+            var available = Math.Max(1, frameWidth - 1 - 3);
+            return Formatting.PreviewLines(description, available, DescriptionPreviewLines);
         }
 
         /// <summary>
