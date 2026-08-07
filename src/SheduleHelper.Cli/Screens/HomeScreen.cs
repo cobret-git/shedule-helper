@@ -137,7 +137,7 @@ namespace SheduleHelper.Cli.Screens
                     await screens.Quit();
                     break;
                 case ConsoleKey.P:
-                    await screens.Push(new ProjectsScreen(_dbContextFactory, _currentUserContext));
+                    await screens.Push(new ProjectsScreen(_dbContextFactory, _currentUserContext, _pathProvider));
                     break;
                 case ConsoleKey.F10:
                     await screens.Push(new SettingsScreen(_dbContextFactory, _currentUserContext, _pathProvider));

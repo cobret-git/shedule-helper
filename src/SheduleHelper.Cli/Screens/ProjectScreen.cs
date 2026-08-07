@@ -22,6 +22,7 @@ namespace SheduleHelper.Cli.Screens
         private readonly ILocalDbContextFactory _dbContextFactory;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly int _projectId;
+        private readonly IPathProvider _pathProvider;
         private readonly ILogger _logger = Log.ForContext<ProjectScreen>();
 
         private Project? _project;
@@ -47,11 +48,12 @@ namespace SheduleHelper.Cli.Screens
         /// <summary>
         /// Initializes a new instance of the <see cref="ProjectScreen"/> class.
         /// </summary>
-        public ProjectScreen(ILocalDbContextFactory dbContextFactory, ICurrentUserContext currentUserContext, int projectId)
+        public ProjectScreen(ILocalDbContextFactory dbContextFactory, ICurrentUserContext currentUserContext, int projectId, IPathProvider pathProvider)
         {
             _dbContextFactory = dbContextFactory;
             _currentUserContext = currentUserContext;
             _projectId = projectId;
+            _pathProvider = pathProvider;
         }
 
         #endregion
@@ -190,10 +192,10 @@ namespace SheduleHelper.Cli.Screens
                     await screens.Push(new TaskViewScreen(BuildInspectorContent(_rows[_list.SelectedIndex])));
                     break;
                 case ConsoleKey.N:
-                    await screens.Push(new TaskEditScreen(_dbContextFactory, _project.Id, null));
+                    await screens.Push(new TaskEditScreen(_dbContextFactory, _project.Id, null, _pathProvider));
                     break;
                 case ConsoleKey.E when _rows.Count > 0:
-                    await screens.Push(new TaskEditScreen(_dbContextFactory, _project.Id, _rows[_list.SelectedIndex].Task));
+                    await screens.Push(new TaskEditScreen(_dbContextFactory, _project.Id, _rows[_list.SelectedIndex].Task, _pathProvider));
                     break;
                 case ConsoleKey.D when _rows.Count > 0:
                     await CycleStatusAsync();

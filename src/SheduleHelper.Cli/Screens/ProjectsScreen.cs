@@ -18,6 +18,7 @@ namespace SheduleHelper.Cli.Screens
 
         private readonly ILocalDbContextFactory _dbContextFactory;
         private readonly ICurrentUserContext _currentUserContext;
+        private readonly IPathProvider _pathProvider;
         private readonly ILogger _logger = Log.ForContext<ProjectsScreen>();
 
         private List<Row> _rows = new();
@@ -45,10 +46,11 @@ namespace SheduleHelper.Cli.Screens
         /// <summary>
         /// Initializes a new instance of the <see cref="ProjectsScreen"/> class.
         /// </summary>
-        public ProjectsScreen(ILocalDbContextFactory dbContextFactory, ICurrentUserContext currentUserContext)
+        public ProjectsScreen(ILocalDbContextFactory dbContextFactory, ICurrentUserContext currentUserContext, IPathProvider pathProvider)
         {
             _dbContextFactory = dbContextFactory;
             _currentUserContext = currentUserContext;
+            _pathProvider = pathProvider;
         }
 
         #endregion
@@ -124,7 +126,7 @@ namespace SheduleHelper.Cli.Screens
                     await screens.Pop();
                     break;
                 case ConsoleKey.Enter when _rows.Count > 0:
-                    await screens.Push(new ProjectScreen(_dbContextFactory, _currentUserContext, _rows[_list.SelectedIndex].Project.Id));
+                    await screens.Push(new ProjectScreen(_dbContextFactory, _currentUserContext, _rows[_list.SelectedIndex].Project.Id, _pathProvider));
                     break;
                 case ConsoleKey.N:
                     await screens.Push(new ProjectEditScreen(_dbContextFactory, _currentUserContext, null));

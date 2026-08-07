@@ -8,6 +8,10 @@ using System.IO.Abstractions;
 var fileSystem = new FileSystem();
 var pathProvider = new ConsolePathProvider(fileSystem);
 
+// Best-effort: removes scratch files ExternalEditor left behind if the last run crashed or was
+// killed mid-edit, before anything else touches the data directory.
+ExternalEditor.CleanUpStaleFiles(pathProvider);
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .WriteTo.File(
