@@ -68,6 +68,41 @@ namespace SheduleHelper.Cli.Widgets
             frame.Write(x + barWidth + 2, y, caption);
         }
 
+        /// <summary>
+        /// <see cref="Region"/>-scoped equivalent of the single-segment <see cref="Draw(Frame, int, int, int, double, string, ColorToken)"/> -
+        /// sizes itself against the region's own width rather than the underlying frame's, so a bar
+        /// drawn into a narrowed column (e.g. beside an inspector pane) can't overflow into whatever
+        /// is next to it.
+        /// </summary>
+        public static void Draw(Region region, int x, int y, int maxBarWidth, double ratio, string caption, ColorToken fillColor = ColorToken.Accent)
+        {
+            var availableWidth = region.Width - x - caption.Length - 3;
+            var barWidth = Math.Max(0, Math.Min(maxBarWidth, availableWidth));
+            var filled = (int)Math.Round(barWidth * Math.Clamp(ratio, 0, 1));
+
+            region.Fill(x, y, filled, '█', fillColor);
+            region.Fill(x + filled, y, barWidth - filled, '░', ColorToken.Dim);
+            region.Write(x + barWidth + 2, y, caption);
+        }
+
+        /// <summary>
+        /// <see cref="Region"/>-scoped equivalent of the two-segment <see cref="Draw(Frame, int, int, int, double, double, string, ColorToken, ColorToken)"/> -
+        /// see the single-segment <see cref="Region"/> overload above for why this matters.
+        /// </summary>
+        public static void Draw(Region region, int x, int y, int maxBarWidth, double primaryRatio, double secondaryRatio, string caption, ColorToken primaryColor = ColorToken.Accent, ColorToken secondaryColor = ColorToken.Warning)
+        {
+            var availableWidth = region.Width - x - caption.Length - 3;
+            var barWidth = Math.Max(0, Math.Min(maxBarWidth, availableWidth));
+
+            var primaryWidth = (int)Math.Round(barWidth * Math.Clamp(primaryRatio, 0, 1));
+            var secondaryWidth = Math.Min((int)Math.Round(barWidth * Math.Clamp(secondaryRatio, 0, 1)), barWidth - primaryWidth);
+
+            region.Fill(x, y, primaryWidth, '█', primaryColor);
+            region.Fill(x + primaryWidth, y, secondaryWidth, '█', secondaryColor);
+            region.Fill(x + primaryWidth + secondaryWidth, y, barWidth - primaryWidth - secondaryWidth, '░', ColorToken.Dim);
+            region.Write(x + barWidth + 2, y, caption);
+        }
+
         #endregion
     }
 }

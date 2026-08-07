@@ -11,7 +11,13 @@ namespace SheduleHelper.Cli.Widgets
     /// <param name="Title">The selected row's name/title, drawn as the pane's own heading.</param>
     /// <param name="Facts">Label/value/colour rows drawn under the heading, in order.</param>
     /// <param name="Description">The full description text, or <see langword="null"/>/empty for none.</param>
-    public sealed record InspectorContent(string Title, IReadOnlyList<(string Label, string Value, ColorToken Color)> Facts, string? Description);
+    /// <param name="WrapTitle">
+    /// When <see langword="true"/>, the heading wraps across as many rows as it needs instead of
+    /// truncating to one - for a pane that's the one place showing a name in full (e.g. Home's
+    /// currently-tracked task), as opposed to a list-row pane where the row itself already shows
+    /// the name and the pane just needs to identify which one, so truncating it there costs nothing.
+    /// </param>
+    public sealed record InspectorContent(string Title, IReadOnlyList<(string Label, string Value, ColorToken Color)> Facts, string? Description, bool WrapTitle = false);
 
     /// <summary>
     /// The side pane that previews whatever row is selected in a list beside it - facts too long or
@@ -60,10 +66,19 @@ namespace SheduleHelper.Cli.Widgets
         /// </summary>
         public static void Draw(Region region, InspectorContent content)
         {
-            region.Write(1, 1, Formatting.Truncate(content.Title, Math.Max(1, region.Width - 2)), ColorToken.Accent);
-            region.Rule(2);
+            var titleWidth = Math.Max(1, region.Width - 2);
+            var titleLines = content.WrapTitle ? Formatting.Wrap(content.Title, titleWidth) : new List<string> { Formatting.Truncate(content.Title, titleWidth) };
 
-            var y = 3;
+            var y = 1;
+            foreach (var line in titleLines)
+            {
+                region.Write(1, y, line, ColorToken.Accent);
+                y++;
+            }
+
+            region.Rule(y);
+            y++;
+
             foreach (var (label, value, color) in content.Facts)
             {
                 region.Write(1, y, label.PadRight(LabelColumnWidth));

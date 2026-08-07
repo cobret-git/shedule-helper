@@ -65,16 +65,26 @@ namespace SheduleHelper.Cli.Screens
         {
             Header.Draw(frame, "PROJECTS", "Esc Back");
 
-            var nameWidth = NameColumnWidth(frame.Width);
+            // The body splits into the project list and an inspector pane once there's room for
+            // both - same threshold and layout ProjectScreen uses for its own task list.
+            const int bodyTop = 2;
+            var bodyHeight = Math.Max(1, frame.Height - bodyTop - 2);
+            var showPane = Inspector.ShouldShowPane(frame.Width);
+            var paneWidth = showPane ? Inspector.PaneWidth(frame.Width) : 0;
+            var listWidth = showPane ? frame.Width - paneWidth - 1 : frame.Width;
+
+            var list = new Region(frame, 0, bodyTop, listWidth, bodyHeight);
+
+            var nameWidth = NameColumnWidth(list.Width);
             var statusX = 1 + NamePrefixWidth + nameWidth + NameToTasksGap + TasksColumnWidth + TasksToTotalGap + TotalColumnWidth + TotalToStatusGap;
 
-            frame.Write(1, 3, $"#   {"Project".PadRight(nameWidth)} {"Tasks",5}   {"Total",8}", ColorToken.Dim);
-            frame.Write(statusX, 3, "Status", ColorToken.Dim);
-            frame.Rule(4);
+            list.Write(1, 1, $"#   {"Project".PadRight(nameWidth)} {"Tasks",5}   {"Total",8}", ColorToken.Dim);
+            list.Write(statusX, 1, "Status", ColorToken.Dim);
+            list.Rule(2);
 
             if (_rows.Count == 0)
             {
-                frame.Write(1, 6, "No projects yet - press N to create one.", ColorToken.Dim);
+                list.Write(1, 4, "No projects yet - press N to create one.", ColorToken.Dim);
             }
 
             for (var i = 0; i < _rows.Count; i++)
@@ -85,17 +95,34 @@ namespace SheduleHelper.Cli.Screens
                 var color = selected ? ColorToken.Accent : ColorToken.Default;
                 var name = Formatting.Truncate(row.Project.Name, nameWidth).PadRight(nameWidth);
 
-                frame.Write(1, 5 + i, $"{marker}{i + 1,2} {name} {row.TaskCount,5}   {Formatting.Duration(row.TotalTime),8}", color);
-                frame.Write(statusX, 5 + i, row.Project.IsActive ? "active" : "archived", row.Project.IsActive ? ColorToken.Positive : ColorToken.Dim);
+                list.Write(1, 3 + i, $"{marker}{i + 1,2} {name} {row.TaskCount,5}   {Formatting.Duration(row.TotalTime),8}", color);
+                list.Write(statusX, 3 + i, row.Project.IsActive ? "active" : "archived", row.Project.IsActive ? ColorToken.Positive : ColorToken.Dim);
             }
 
+            if (showPane)
+            {
+                frame.VRule(listWidth, bodyTop, bodyHeight);
+                var pane = new Region(frame, listWidth + 1, bodyTop, paneWidth, bodyHeight);
+
+                if (_rows.Count > 0)
+                {
+                    Inspector.Draw(pane, BuildInspectorContent(_rows[_list.SelectedIndex]));
+                }
+                else
+                {
+                    pane.Write(1, 1, "No project selected.", ColorToken.Dim);
+                }
+            }
+
+            // Drawn into the list region rather than the frame, so a long message clips at the
+            // divider instead of running under the pane - same fix as ProjectScreen's.
             if (_confirmingDelete)
             {
-                frame.Write(1, frame.Height - 4, "Delete this project and its tasks? Y to confirm, any other key to cancel.", ColorToken.Negative);
+                list.Write(1, list.Height - 1, "Delete this project and its tasks? Y to confirm, any other key to cancel.", ColorToken.Negative);
             }
             else if (!string.IsNullOrWhiteSpace(_message))
             {
-                frame.Write(1, frame.Height - 4, _message, ColorToken.Negative);
+                list.Write(1, list.Height - 1, _message, ColorToken.Negative);
             }
 
             KeyBar.Draw(frame, ("up/down", "Move"), ("Enter", "Open"), ("N", "New"), ("E", "Edit"), ("A", "Archive/Activate"), ("Del", "Delete"), ("Esc", "Back"));
@@ -148,13 +175,32 @@ namespace SheduleHelper.Cli.Screens
         #region Helpers
 
         /// <summary>
-        /// Computes how wide the Project name column can be for the given console width, so it
+        /// Builds what the inspector pane shows for a project row - its name as the heading,
+        /// status/task count/total time as facts, and its own description underneath. Unlike
+        /// ProjectScreen (which deliberately never shows a project's description, since that screen
+        /// exists to work through its tasks, not re-explain the project), this is the one place a
+        /// project's description is shown at all.
+        /// </summary>
+        private static InspectorContent BuildInspectorContent(Row row)
+        {
+            var facts = new List<(string Label, string Value, ColorToken Color)>
+            {
+                ("Status", row.Project.IsActive ? "active" : "archived", row.Project.IsActive ? ColorToken.Positive : ColorToken.Dim),
+                ("Tasks", row.TaskCount.ToString(), ColorToken.Default),
+                ("Total", Formatting.Duration(row.TotalTime), ColorToken.Default),
+            };
+
+            return new InspectorContent(row.Project.Name, facts, row.Project.Description);
+        }
+
+        /// <summary>
+        /// Computes how wide the Project name column can be for the given list region width, so it
         /// grows to use available space instead of always clipping at a fixed 28 columns.
         /// </summary>
-        private static int NameColumnWidth(int frameWidth)
+        private static int NameColumnWidth(int listWidth)
         {
             var fixedWidth = NamePrefixWidth + NameToTasksGap + TasksColumnWidth + TasksToTotalGap + TotalColumnWidth + TotalToStatusGap + StatusColumnWidth;
-            return Math.Max(MinNameColumnWidth, frameWidth - fixedWidth - 1);
+            return Math.Max(MinNameColumnWidth, listWidth - fixedWidth - 1);
         }
 
         private async Task LoadAsync()

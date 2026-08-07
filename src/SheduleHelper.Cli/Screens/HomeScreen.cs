@@ -38,9 +38,6 @@ namespace SheduleHelper.Cli.Screens
         private DayStartResolution? _resolution;
         private bool _bannerDismissed;
 
-        // How many rows the active task's description preview spans - see ActiveDescriptionPreview.
-        private const int DescriptionPreviewLines = 3;
-
         #endregion
 
         #region Constructors
@@ -94,29 +91,54 @@ namespace SheduleHelper.Cli.Screens
             }
 
             var snapshot = _snapshot;
-            RenderBalance(frame, snapshot);
+
+            // Only the clocked-in state has an active task/project worth previewing - every other
+            // state renders at full width exactly as before, so the content column only narrows here.
+            const int bodyTop = 2;
+            var showPane = snapshot.DayState == AttendanceDayState.ClockedIn && Inspector.ShouldShowPane(frame.Width);
+            var paneWidth = showPane ? Inspector.PaneWidth(frame.Width) : 0;
+            var contentWidth = showPane ? frame.Width - paneWidth - 1 : frame.Width;
+            var content = new Region(frame, 0, 0, contentWidth, frame.Height);
+
+            RenderBalance(content, snapshot);
 
             switch (snapshot.DayState)
             {
                 case AttendanceDayState.ClockedIn:
-                    RenderClockedIn(frame, snapshot);
+                    RenderClockedIn(content, snapshot);
                     break;
                 case AttendanceDayState.NotClockedIn:
-                    RenderNotClockedIn(frame, snapshot);
+                    RenderNotClockedIn(content, snapshot);
                     break;
                 case AttendanceDayState.DayComplete:
-                    RenderDayComplete(frame, snapshot);
+                    RenderDayComplete(content, snapshot);
                     break;
                 case AttendanceDayState.ForgottenSession:
-                    RenderForgottenSession(frame, snapshot);
+                    RenderForgottenSession(content, snapshot);
                     break;
             }
 
-            RenderBanner(frame);
+            if (showPane)
+            {
+                var bodyHeight = Math.Max(1, frame.Height - bodyTop - 2);
+                frame.VRule(contentWidth, bodyTop, bodyHeight);
+
+                var pane = new Region(frame, contentWidth + 1, bodyTop, paneWidth, bodyHeight);
+                if (BuildInspectorContent() is { } inspectorContent)
+                {
+                    Inspector.Draw(pane, inspectorContent);
+                }
+                else
+                {
+                    pane.Write(1, 1, "Nothing being tracked yet.", ColorToken.Dim);
+                }
+            }
+
+            RenderBanner(content);
 
             if (!string.IsNullOrWhiteSpace(_message))
             {
-                frame.Write(1, frame.Height - 3, _message, ColorToken.Negative);
+                content.Write(1, frame.Height - 3, _message, ColorToken.Negative);
             }
         }
 
@@ -166,8 +188,8 @@ namespace SheduleHelper.Cli.Screens
                 case ConsoleKey.S when snapshot.DayState == AttendanceDayState.ClockedIn:
                     await screens.Push(new SwitchScreen(_trackingService, _dbContextFactory, _currentUserContext, snapshot.OpenAttendanceLog!.Id, snapshot.OpenAttendanceLog!.ClockIn));
                     break;
-                case ConsoleKey.Enter when ActiveDescriptionPreview(_activeTracking, Terminal.Width).Truncated:
-                    await screens.Push(new DescriptionViewScreen(_activeTracking!.Task!.Title, _activeTracking.Task.Description!));
+                case ConsoleKey.Enter when _activeTracking is not null:
+                    await screens.Push(new TaskViewScreen(BuildInspectorContent()!));
                     break;
                 case ConsoleKey.R when snapshot.DayState == AttendanceDayState.ForgottenSession:
                     await screens.Push(new ResolveForgottenScreen(_attendanceService, _currentUserContext, snapshot));
@@ -192,27 +214,27 @@ namespace SheduleHelper.Cli.Screens
         /// still change - and because <see cref="AttendanceDaySnapshot.RollingMonthlyBalance"/>
         /// counts completed days only, so on its own it looks frozen all day.
         /// </summary>
-        private static void RenderBalance(Frame frame, AttendanceDaySnapshot snapshot)
+        private static void RenderBalance(Region content, AttendanceDaySnapshot snapshot)
         {
             var balanceColor = snapshot.RollingMonthlyBalance >= TimeSpan.Zero ? ColorToken.Positive : ColorToken.Negative;
             var openDayBalance = snapshot.OpenDayBalanceAsOf(DateTime.Now);
 
             if (openDayBalance is not { } today)
             {
-                frame.WriteRight(frame.Width - 1, 3, $"Balance  {Formatting.Balance(snapshot.RollingMonthlyBalance)}", balanceColor);
+                content.WriteRight(content.Width - 1, 3, $"Balance  {Formatting.Balance(snapshot.RollingMonthlyBalance)}", balanceColor);
                 return;
             }
 
             var todayText = $" · today {Formatting.Balance(today)}";
-            frame.WriteRight(frame.Width - 1, 3, todayText, ColorToken.Dim);
-            frame.WriteRight(frame.Width - 1 - todayText.Length, 3, $"Balance  {Formatting.Balance(snapshot.RollingMonthlyBalance)}", balanceColor);
+            content.WriteRight(content.Width - 1, 3, todayText, ColorToken.Dim);
+            content.WriteRight(content.Width - 1 - todayText.Length, 3, $"Balance  {Formatting.Balance(snapshot.RollingMonthlyBalance)}", balanceColor);
         }
 
-        private void RenderClockedIn(Frame frame, AttendanceDaySnapshot snapshot)
+        private void RenderClockedIn(Region content, AttendanceDaySnapshot snapshot)
         {
             var openLog = snapshot.OpenAttendanceLog!;
-            frame.Write(1, 3, "● CLOCKED IN", ColorToken.Positive);
-            frame.Write(14, 3, $"since {Formatting.Time(openLog.ClockIn)}", ColorToken.Dim);
+            content.Write(1, 3, "● CLOCKED IN", ColorToken.Positive);
+            content.Write(14, 3, $"since {Formatting.Time(openLog.ClockIn)}", ColorToken.Dim);
 
             // Recomputed per frame rather than read off the snapshot: the loop redraws every second,
             // so this is what makes the bar and the worked figure tick along with the clock instead
@@ -234,94 +256,89 @@ namespace SheduleHelper.Cli.Screens
             var caption = overtime > TimeSpan.Zero
                 ? $"{Formatting.Duration(worked)} / {Formatting.Duration(target)} ({Formatting.Balance(overtime)})"
                 : $"{Formatting.Duration(worked)} / {Formatting.Duration(target)}";
-            ProgressBar.Draw(frame, 1, 4, 40, normalRatio, overtimeRatio, caption);
+            ProgressBar.Draw(content, 1, 4, 40, normalRatio, overtimeRatio, caption);
 
             var nextRow = 9;
-            var descriptionTruncated = false;
 
             if (_activeTracking is { } tracking)
             {
-                // Project and task are one truncated line, same as everywhere else a name/title
-                // pair is shown (e.g. RenderToday below) - joining them with " / " and truncating
-                // the whole thing as a unit is simpler than splitting them across two lines, and
-                // fits just as well now that it's actually bounded to the console width.
+                // Project and task are now two lines rather than one truncated "Project / Task" -
+                // the full names live in the inspector pane (wrapped, untrimmed); these stay
+                // truncated, same as every other compact row on this screen.
                 const string prefix = "Active   ▶ ";
                 var elapsed = Formatting.Duration(DateTime.Now - tracking.StartTime);
-                var label = tracking.Task is not null ? $"{tracking.Project.Name} / {tracking.Task.Title}" : tracking.Project.Name;
-                var labelAvailable = Math.Max(1, frame.Width - 1 - prefix.Length - elapsed.Length - 2);
-                frame.Write(1, 6, $"{prefix}{Formatting.Truncate(label, labelAvailable)}");
-                frame.WriteRight(frame.Width - 1, 6, elapsed);
-
-                var (descriptionLines, truncated) = ActiveDescriptionPreview(tracking, frame.Width);
-                descriptionTruncated = truncated;
+                var projectAvailable = Math.Max(1, content.Width - 1 - prefix.Length - elapsed.Length - 2);
+                content.Write(1, 6, $"{prefix}{Formatting.Truncate(tracking.Project.Name, projectAvailable)}");
+                content.WriteRight(content.Width - 1, 6, elapsed);
 
                 var detailRow = 7;
-                foreach (var line in descriptionLines)
+                if (tracking.Task is { } task)
                 {
-                    frame.Write(3, detailRow, line, ColorToken.Dim);
+                    var taskAvailable = Math.Max(1, content.Width - 1 - 3);
+                    content.Write(3, detailRow, Formatting.Truncate(task.Title, taskAvailable));
                     detailRow++;
                 }
 
-                frame.Write(3, detailRow, $"started {Formatting.Time(tracking.StartTime)}", ColorToken.Dim);
+                content.Write(3, detailRow, $"started {Formatting.Time(tracking.StartTime)}", ColorToken.Dim);
                 nextRow = detailRow + 2;
             }
             else
             {
-                frame.Write(1, 6, "Active   no project - press S to start tracking", ColorToken.Dim);
+                content.Write(1, 6, "Active   no project - press S to start tracking", ColorToken.Dim);
             }
 
-            RenderToday(frame, nextRow);
+            RenderToday(content, nextRow);
 
             var keyBindings = new List<(string Key, string Label)>
             {
                 ("S", "Switch"), ("O", "Clock out"), ("P", "Projects"), ("R", "Reports"),
             };
 
-            if (descriptionTruncated)
+            if (_activeTracking is not null)
             {
-                keyBindings.Add(("Enter", "View description"));
+                keyBindings.Add(("Enter", "Open"));
             }
 
             keyBindings.Add(("F10", "Settings"));
             keyBindings.Add(("Q", "Quit"));
-            KeyBar.Draw(frame, keyBindings.ToArray());
+            KeyBar.Draw(content.Frame, keyBindings.ToArray());
         }
 
-        private void RenderNotClockedIn(Frame frame, AttendanceDaySnapshot snapshot)
+        private void RenderNotClockedIn(Region content, AttendanceDaySnapshot snapshot)
         {
-            frame.Write(1, 3, "○ NOT CLOCKED IN", ColorToken.Dim);
+            content.Write(1, 3, "○ NOT CLOCKED IN", ColorToken.Dim);
 
-            ProgressBar.Draw(frame, 1, 4, 40, 0, $"0h 00m / {Formatting.Duration(snapshot.DailyTarget)}");
+            ProgressBar.Draw(content, 1, 4, 40, 0, $"0h 00m / {Formatting.Duration(snapshot.DailyTarget)}");
 
-            frame.Write(1, 6, "Good day. Ready when you are.");
-            frame.Write(3, 8, $"I   Clock in now                     {Formatting.Time(DateTime.Now)}");
-            frame.Write(3, 9, $"D   Clock in at default              {Formatting.Time(snapshot.UserSetting.DefaultClockInTime)}");
-            frame.Write(3, 10, "M   Clock in at custom time...");
+            content.Write(1, 6, "Good day. Ready when you are.");
+            content.Write(3, 8, $"I   Clock in now                     {Formatting.Time(DateTime.Now)}");
+            content.Write(3, 9, $"D   Clock in at default              {Formatting.Time(snapshot.UserSetting.DefaultClockInTime)}");
+            content.Write(3, 10, "M   Clock in at custom time...");
 
-            RenderToday(frame, 12);
+            RenderToday(content, 12);
 
-            KeyBar.Draw(frame, ("I", "Now"), ("D", "Default"), ("M", "Custom"), ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
+            KeyBar.Draw(content.Frame, ("I", "Now"), ("D", "Default"), ("M", "Custom"), ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
         }
 
-        private void RenderDayComplete(Frame frame, AttendanceDaySnapshot snapshot)
+        private void RenderDayComplete(Region content, AttendanceDaySnapshot snapshot)
         {
             var log = snapshot.TodayClosedAttendanceLog!;
-            frame.Write(1, 3, "✓ DAY COMPLETE", ColorToken.Dim);
-            frame.Write(1, 5, $"{Formatting.Time(log.ClockIn)} -> {Formatting.Time(log.ClockOut!.Value)}    worked {Formatting.Duration(snapshot.WorkedToday)}");
+            content.Write(1, 3, "✓ DAY COMPLETE", ColorToken.Dim);
+            content.Write(1, 5, $"{Formatting.Time(log.ClockIn)} -> {Formatting.Time(log.ClockOut!.Value)}    worked {Formatting.Duration(snapshot.WorkedToday)}");
 
-            RenderToday(frame, 7);
+            RenderToday(content, 7);
 
-            KeyBar.Draw(frame, ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
+            KeyBar.Draw(content.Frame, ("P", "Projects"), ("R", "Reports"), ("F10", "Settings"), ("Q", "Quit"));
         }
 
-        private static void RenderForgottenSession(Frame frame, AttendanceDaySnapshot snapshot)
+        private static void RenderForgottenSession(Region content, AttendanceDaySnapshot snapshot)
         {
             var openLog = snapshot.OpenAttendanceLog!;
-            frame.Write(1, 3, "⚠ UNFINISHED DAY", ColorToken.Warning);
-            frame.Write(1, 5, $"{openLog.ClockIn:ddd d MMM} - clocked in at {Formatting.Time(openLog.ClockIn)}, never clocked out.", ColorToken.Dim);
-            frame.Write(1, 6, "Close it before starting today's clock-in.", ColorToken.Dim);
+            content.Write(1, 3, "⚠ UNFINISHED DAY", ColorToken.Warning);
+            content.Write(1, 5, $"{openLog.ClockIn:ddd d MMM} - clocked in at {Formatting.Time(openLog.ClockIn)}, never clocked out.", ColorToken.Dim);
+            content.Write(1, 6, "Close it before starting today's clock-in.", ColorToken.Dim);
 
-            KeyBar.Draw(frame, ("R", "Resolve"), ("F1", "Help"), ("Q", "Quit"));
+            KeyBar.Draw(content.Frame, ("R", "Resolve"), ("F1", "Help"), ("Q", "Quit"));
         }
 
         /// <summary>
@@ -330,7 +347,7 @@ namespace SheduleHelper.Cli.Screens
         /// the ordinary clock-out and switch commands. Dismissed with <c>Esc</c>, and gone by the
         /// next launch regardless.
         /// </summary>
-        private void RenderBanner(Frame frame)
+        private void RenderBanner(Region content)
         {
             if (_bannerDismissed || _resolution is not { DidSomething: true } resolution)
             {
@@ -362,15 +379,15 @@ namespace SheduleHelper.Cli.Screens
             };
 
             const string dismiss = "Esc dismiss";
-            var firstRow = frame.Height - 5;
-            var available = frame.Width - 2 - dismiss.Length - 2;
+            var firstRow = content.Height - 5;
+            var available = content.Width - 2 - dismiss.Length - 2;
 
-            frame.Write(1, firstRow, Formatting.Truncate($"⚙ Auto · {string.Join(" · ", attendance)}", available), ColorToken.Accent);
-            frame.WriteRight(frame.Width - 1, firstRow, dismiss, ColorToken.Dim);
+            content.Write(1, firstRow, Formatting.Truncate($"⚙ Auto · {string.Join(" · ", attendance)}", available), ColorToken.Accent);
+            content.WriteRight(content.Width - 1, firstRow, dismiss, ColorToken.Dim);
 
             if (tracking is not null)
             {
-                frame.Write(9, firstRow + 1, Formatting.Truncate(tracking, frame.Width - 10), ColorToken.Accent);
+                content.Write(9, firstRow + 1, Formatting.Truncate(tracking, content.Width - 10), ColorToken.Accent);
             }
         }
 
@@ -510,30 +527,70 @@ namespace SheduleHelper.Cli.Screens
         }
 
         /// <summary>
-        /// Computes the active task's description preview - up to <see cref="DescriptionPreviewLines"/>
-        /// lines, and whether there's more left over. A pure function of <paramref name="tracking"/>
-        /// and <paramref name="frameWidth"/> rather than a field set inside <see cref="RenderClockedIn"/>,
-        /// so <see cref="HandleKey"/> can independently ask "is there a full view worth offering?"
-        /// without depending on Render having already run this frame.
+        /// Builds what the inspector pane (and the full-screen "Open" view) shows for whatever is
+        /// currently being tracked - the active task's own facts and description if one is set, or
+        /// the project's if tracking hasn't been narrowed to a task yet. <see langword="null"/> when
+        /// nothing is being tracked, which callers take as "don't draw a pane at all" rather than an
+        /// empty one. A pure function of already-loaded state rather than a field set inside
+        /// <see cref="RenderClockedIn"/>, so <see cref="HandleKey"/> can build the same content for
+        /// "Open" without depending on Render having already run this frame.
         /// </summary>
-        private static (List<string> Lines, bool Truncated) ActiveDescriptionPreview(ProjectTimeLog? tracking, int frameWidth)
+        private InspectorContent? BuildInspectorContent()
         {
-            var description = tracking?.Task?.Description;
-            if (string.IsNullOrWhiteSpace(description))
+            if (_activeTracking is not { } tracking)
             {
-                return (new List<string>(), false);
+                return null;
             }
 
-            var available = Math.Max(1, frameWidth - 1 - 3);
-            return Formatting.PreviewLines(description, available, DescriptionPreviewLines);
+            if (tracking.Task is { } task)
+            {
+                var facts = new List<(string Label, string Value, ColorToken Color)>
+                {
+                    ("Project", tracking.Project.Name, ColorToken.Default),
+                    ("Status", StatusLabel(task.Status), ColorToken.Default),
+                    ("Today", Formatting.Duration(TodaysLoggedTime(task.Id, tracking.Project.Id)), ColorToken.Default),
+                    ("Started", Formatting.Time(tracking.StartTime), ColorToken.Dim),
+                };
+
+                return new InspectorContent(task.Title, facts, task.Description, WrapTitle: true);
+            }
+
+            var projectFacts = new List<(string Label, string Value, ColorToken Color)>
+            {
+                ("Today", Formatting.Duration(TodaysLoggedTime(null, tracking.Project.Id)), ColorToken.Default),
+                ("Started", Formatting.Time(tracking.StartTime), ColorToken.Dim),
+            };
+
+            return new InspectorContent(tracking.Project.Name, projectFacts, tracking.Project.Description, WrapTitle: true);
         }
+
+        /// <summary>
+        /// Sums already-loaded time log segments for today against a specific task, or (with
+        /// <paramref name="taskId"/> null) every segment logged against the project regardless of
+        /// task - the inspector pane's "Today" fact. The still-open segment, if it matches, counts
+        /// up to now, so this keeps pace with the live elapsed figure on the Active line above.
+        /// </summary>
+        private TimeSpan TodaysLoggedTime(int? taskId, int projectId)
+        {
+            return _todaysLogs
+                .Where(l => taskId.HasValue ? l.TaskId == taskId : l.ProjectId == projectId)
+                .Aggregate(TimeSpan.Zero, (total, l) => total + ((l.EndTime ?? DateTime.Now) - l.StartTime));
+        }
+
+        private static string StatusLabel(TaskItemStatus status) => status switch
+        {
+            TaskItemStatus.Todo => "todo",
+            TaskItemStatus.InProgress => "in progress",
+            TaskItemStatus.Done => "done",
+            _ => status.ToString(),
+        };
 
         /// <summary>
         /// Draws today's finished project/task sessions, most recent first - what came before the
         /// currently active one (if any), so Home stays informative beyond just "what's active now".
         /// The still-open segment (if any) is excluded here since it's already shown as "Active".
         /// </summary>
-        private void RenderToday(Frame frame, int y)
+        private void RenderToday(Region content, int y)
         {
             var finished = _todaysLogs.Where(l => l.EndTime is not null).OrderByDescending(l => l.StartTime).ToList();
             if (finished.Count == 0)
@@ -541,8 +598,8 @@ namespace SheduleHelper.Cli.Screens
                 return;
             }
 
-            frame.Write(1, y, "Today", ColorToken.Accent);
-            frame.Rule(y + 1);
+            content.Write(1, y, "Today", ColorToken.Accent);
+            content.Rule(y + 1);
 
             for (var i = 0; i < finished.Count; i++)
             {
@@ -552,10 +609,10 @@ namespace SheduleHelper.Cli.Screens
 
                 var prefix = $"{Formatting.Time(log.StartTime)}-{Formatting.Time(log.EndTime!.Value)}  ";
                 var duration = Formatting.Duration(log.EndTime.Value - log.StartTime);
-                var labelAvailable = Math.Max(1, frame.Width - 1 - prefix.Length - duration.Length - 2);
+                var labelAvailable = Math.Max(1, content.Width - 1 - prefix.Length - duration.Length - 2);
 
-                frame.Write(1, row, $"{prefix}{Formatting.Truncate(label, labelAvailable)}", ColorToken.Dim);
-                frame.WriteRight(frame.Width - 1, row, duration, ColorToken.Dim);
+                content.Write(1, row, $"{prefix}{Formatting.Truncate(label, labelAvailable)}", ColorToken.Dim);
+                content.WriteRight(content.Width - 1, row, duration, ColorToken.Dim);
             }
         }
 
