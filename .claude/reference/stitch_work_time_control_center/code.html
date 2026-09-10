@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ChronosTrack | Enterprise Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed-variant": "#46445f",
+                    "secondary": "#4b626c",
+                    "tertiary-fixed-dim": "#c7c3e4",
+                    "on-secondary-container": "#4f6670",
+                    "primary-container": "#2f7c9c",
+                    "primary": "#006382",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#bfc8ce",
+                    "on-primary-fixed": "#001e2b",
+                    "on-secondary-fixed-variant": "#334a53",
+                    "primary-fixed": "#c0e8ff",
+                    "tertiary-fixed": "#e3dfff",
+                    "on-background": "#191c1e",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#89d0f3",
+                    "on-primary-container": "#f9fcff",
+                    "surface-dim": "#d8dadd",
+                    "on-secondary": "#ffffff",
+                    "outline": "#70787e",
+                    "error": "#ba1a1a",
+                    "tertiary": "#5b5975",
+                    "surface-container": "#eceef1",
+                    "surface-container-low": "#f2f4f6",
+                    "on-secondary-fixed": "#051e27",
+                    "primary-fixed-dim": "#89d0f3",
+                    "on-primary-fixed-variant": "#004d66",
+                    "on-surface": "#191c1e",
+                    "surface-container-highest": "#e0e3e5",
+                    "secondary-fixed": "#cee6f2",
+                    "on-tertiary-fixed": "#1a1931",
+                    "surface-bright": "#f7f9fc",
+                    "on-tertiary-container": "#fffbff",
+                    "background": "#f7f9fc",
+                    "secondary-fixed-dim": "#b2cad6",
+                    "inverse-surface": "#2d3133",
+                    "inverse-on-surface": "#eff1f4",
+                    "surface-container-high": "#e6e8eb",
+                    "surface": "#f7f9fc",
+                    "on-error-container": "#93000a",
+                    "on-surface-variant": "#40484d",
+                    "surface-tint": "#096685",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#cbe4ef",
+                    "on-error": "#ffffff",
+                    "surface-variant": "#e0e3e5",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-container": "#74718f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "xs": "4px",
+                    "md": "16px",
+                    "margin-mobile": "16px",
+                    "base": "4px",
+                    "margin-desktop": "32px",
+                    "sm": "8px",
+                    "xl": "32px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Libre Franklin"],
+                    "label-md": ["Libre Franklin"],
+                    "headline-lg-mobile": ["Libre Franklin"],
+                    "headline-lg": ["Libre Franklin"],
+                    "body-md": ["Libre Franklin"],
+                    "headline-md": ["Libre Franklin"],
+                    "body-lg": ["Libre Franklin"],
+                    "headline-sm": ["Libre Franklin"]
+            },
+            "fontSize": {
+                    "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Libre Franklin', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hatched-pattern {
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0,0,0,0.05) 4px, rgba(0,0,0,0.05) 8px);
+        }
+        .ticking::after {
+            content: ':';
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .bento-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .bento-card:hover {
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<div class="flex h-screen overflow-hidden">
+<!-- Side Navigation (Shared Component) -->
+<aside class="hidden md:flex flex-col h-full py-md space-y-sm bg-surface-container-low border-r border-outline-variant w-64 flex-shrink-0">
+<div class="px-md mb-xl">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">history_toggle_off</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-bold text-primary">ChronosTrack</h1>
+<p class="font-label-sm text-label-sm text-outline opacity-80 uppercase tracking-wider">Enterprise Edition</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-xs px-sm">
+<!-- Dashboard Active -->
+<a class="flex items-center gap-md px-md py-sm bg-secondary-container text-on-secondary-container border-l-4 border-primary font-semibold transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="font-body-md text-body-md">Tasks</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+<span class="font-body-md text-body-md">Timesheets</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-body-md text-body-md">Reports</span>
+</a>
+</nav>
+<div class="px-md py-md mt-auto">
+<button class="w-full bg-primary hover:bg-primary-fixed-variant text-on-primary py-sm px-md rounded-lg flex items-center justify-center gap-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span class="font-label-md text-label-md">New Task</span>
+</button>
+</div>
+<div class="px-sm pt-sm border-t border-outline-variant">
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-all duration-200" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-body-md text-body-md">Help</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col overflow-y-auto">
+<!-- TopNavBar (Shared Component) -->
+<header class="flex justify-between items-center w-full px-margin-desktop h-16 bg-surface border-b border-outline-variant flex-shrink-0">
+<div class="flex items-center gap-md">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline material-symbols-outlined text-[18px]">search</span>
+<input class="bg-surface-variant border-none rounded-full pl-10 pr-4 py-2 w-64 font-body-md text-body-md focus:ring-2 focus:ring-primary focus:bg-white transition-all" placeholder="Search tasks or projects..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:bg-surface-variant p-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">dark_mode</span>
+</button>
+<button class="relative text-on-surface-variant hover:bg-surface-variant p-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+</div>
+<div class="h-8 w-[1px] bg-outline-variant"></div>
+<div class="flex items-center gap-sm cursor-pointer hover:bg-surface-variant p-1 rounded-lg transition-colors">
+<div class="text-right hidden sm:block">
+<p class="font-label-md text-label-md leading-tight">Dr. Julian Vance</p>
+<p class="font-label-sm text-label-sm text-outline">Lead Architect</p>
+</div>
+<img class="w-10 h-10 rounded-full border border-outline-variant object-cover" data-alt="A professional headshot of a mature male executive in his 40s with short-cropped hair and stylish glasses. He is wearing a crisp white dress shirt and a navy blazer, looking directly at the camera with a confident and calm expression. The background is a soft-focus modern corporate office with cool blue and grey tones, emphasizing a clinical and high-end enterprise environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5qQOKPGSC7TJ9juNKnZZjHkO6GBHAgVEvb1V7aF_NW1vEi6ryLUUT3wfhlQyVJFDmqdsJeYpsh-EEIqeIkhJASV_gNtQj-Jjguy4cym3WHIzErgi4_j_6K0SqxdEtjgs3R4UvcEeASiWUzGHEkGZqg9Dlv8LNLXtL8CFfVi0ovwIVuP_wGjU286FVZVciaNR4kair-Z7WD11U97yPjW_mx6Xkila2rJZf7cAaox7oydq8f80kgRY_"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<section class="p-margin-desktop space-y-lg max-w-[1440px] mx-auto w-full">
+<!-- Hero Section: Stats & Punch Action -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Live Budget & Daily Progress -->
+<div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-md">
+<div class="bento-card bg-surface-container-low border border-outline-variant p-lg rounded-xl flex flex-col justify-between">
+<div>
+<h3 class="font-label-md text-label-md text-outline uppercase tracking-widest mb-xs">Live Monthly Budget</h3>
+<div class="flex items-baseline gap-sm">
+<span class="font-headline-lg text-headline-lg text-primary">+2.5h</span>
+<span class="font-body-md text-body-md text-on-tertiary-fixed-variant bg-tertiary-fixed rounded px-2 py-0.5">Over Target</span>
+</div>
+</div>
+<div class="mt-md">
+<p class="font-body-md text-body-md text-on-surface-variant">Cumulative balance calculated until <span class="font-semibold">Oct 24</span>. You are maintaining an optimal efficiency ratio.</p>
+</div>
+</div>
+<div class="bento-card bg-surface-container-low border border-outline-variant p-lg rounded-xl flex flex-col justify-between">
+<div>
+<h3 class="font-label-md text-label-md text-outline uppercase tracking-widest mb-xs">Today's Progress</h3>
+<div class="flex items-baseline gap-xs">
+<span class="font-headline-md text-headline-md">5h 15m</span>
+<span class="font-body-md text-body-md text-outline">/ 8h 00m</span>
+</div>
+</div>
+<div class="mt-md space-y-xs">
+<div class="h-3 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[65.6%] rounded-full shadow-[0_0_8px_rgba(47,124,156,0.3)]"></div>
+</div>
+<div class="flex justify-between font-label-sm text-label-sm text-outline">
+<span>65% Complete</span>
+<span>2h 45m left</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Smart Punch Action Bar -->
+<div class="lg:col-span-4 bg-surface-container-highest border border-outline-variant p-lg rounded-xl flex flex-col items-center justify-center text-center gap-md">
+<div class="relative">
+<div class="absolute -inset-4 bg-primary/10 rounded-full animate-ping opacity-20"></div>
+<button class="bg-primary-container hover:bg-primary text-on-primary-container px-xl py-md rounded-xl font-headline-sm text-headline-sm flex items-center gap-md shadow-lg active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[32px]">stop_circle</span>
+                                Finish Day
+                            </button>
+</div>
+<div class="flex items-center gap-sm">
+<p class="font-body-md text-body-md text-on-surface-variant">Active since <span class="font-bold">08:45 AM</span></p>
+<button class="p-1 hover:bg-surface-variant rounded-md text-primary transition-colors" title="Manual Override">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Daily Timeline Visualizer -->
+<div class="bento-card bg-surface-container-low border border-outline-variant p-lg rounded-xl">
+<div class="flex justify-between items-center mb-lg">
+<div>
+<h3 class="font-headline-sm text-headline-sm">Daily Timeline</h3>
+<p class="font-body-md text-body-md text-outline">Thursday, October 24, 2024</p>
+</div>
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-xs">
+<div class="w-3 h-3 bg-primary rounded-sm"></div>
+<span class="font-label-sm text-label-sm">Project A</span>
+</div>
+<div class="flex items-center gap-xs">
+<div class="w-3 h-3 bg-tertiary-container rounded-sm"></div>
+<span class="font-label-sm text-label-sm">Project B</span>
+</div>
+<div class="flex items-center gap-xs">
+<div class="w-3 h-3 hatched-pattern border border-outline-variant rounded-sm"></div>
+<span class="font-label-sm text-label-sm">Break</span>
+</div>
+</div>
+</div>
+<div class="relative w-full">
+<!-- Hours scale -->
+<div class="flex justify-between px-xs mb-2">
+<span class="text-[10px] font-label-sm text-outline">08:00</span>
+<span class="text-[10px] font-label-sm text-outline">10:00</span>
+<span class="text-[10px] font-label-sm text-outline">12:00</span>
+<span class="text-[10px] font-label-sm text-outline">14:00</span>
+<span class="text-[10px] font-label-sm text-outline">16:00</span>
+<span class="text-[10px] font-label-sm text-outline">18:00</span>
+</div>
+<!-- Visual Timeline -->
+<div class="h-12 w-full bg-surface-variant rounded-lg flex overflow-hidden border border-outline-variant">
+<!-- 08:45 - 11:15 Project A (2.5h) -->
+<div class="h-full bg-primary/90 border-r border-on-primary/20 flex items-center justify-center text-on-primary overflow-hidden" style="width: 25%">
+<span class="font-label-sm truncate px-xs">Project A</span>
+</div>
+<!-- 11:15 - 12:45 Project B (1.5h) -->
+<div class="h-full bg-tertiary-container border-r border-on-tertiary-container/20 flex items-center justify-center text-on-tertiary-container overflow-hidden" style="width: 15%">
+<span class="font-label-sm truncate px-xs">Project B</span>
+</div>
+<!-- 12:45 - 13:45 Lunch (1h) -->
+<div class="h-full hatched-pattern border-r border-outline-variant/30 flex items-center justify-center text-on-surface-variant overflow-hidden" style="width: 10%">
+<span class="font-label-sm truncate px-xs">Lunch</span>
+</div>
+<!-- 13:45 - 16:30 Project A (Current) -->
+<div class="h-full bg-primary border-r border-on-primary/20 flex items-center justify-center text-on-primary overflow-hidden" style="width: 30%">
+<span class="font-label-sm truncate px-xs">Project A (Live)</span>
+</div>
+<!-- Remaining Empty -->
+<div class="h-full bg-transparent flex-1"></div>
+</div>
+<!-- Current Time Marker -->
+<div class="absolute top-0 bottom-0 left-[80%] w-0.5 bg-error z-10">
+<div class="absolute -top-1 -left-1 w-2.5 h-2.5 bg-error rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Bottom Row: Context Switcher & Details -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Active Project Context Switcher -->
+<div class="lg:col-span-5 bento-card bg-surface-container-low border border-outline-variant rounded-xl overflow-hidden">
+<div class="px-lg py-md bg-surface-container border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-label-md text-label-md font-bold text-on-surface uppercase tracking-wide">Project Context</h3>
+<button class="text-primary font-label-md text-label-md hover:underline">View All</button>
+</div>
+<div class="p-md space-y-sm">
+<!-- Active Project -->
+<div class="group flex items-center gap-md p-md bg-secondary-container rounded-lg border-l-4 border-primary">
+<div class="w-10 h-10 rounded bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">timer</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-xs">
+<h4 class="font-body-lg text-body-lg font-bold">Clinical Trial - Phase II</h4>
+<span class="inline-flex h-2 w-2 rounded-full bg-error animate-pulse"></span>
+</div>
+<p class="font-label-sm text-label-sm text-on-secondary-container">Architecture &amp; System Design</p>
+</div>
+<div class="text-right">
+<p class="font-headline-sm text-headline-sm font-bold text-primary ticking">02:45</p>
+<p class="font-label-sm text-label-sm text-outline uppercase">Active Now</p>
+</div>
+</div>
+<!-- Alternative Project A -->
+<div class="group flex items-center gap-md p-md hover:bg-surface-variant rounded-lg transition-colors cursor-pointer">
+<div class="w-10 h-10 rounded bg-tertiary/10 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">corporate_fare</span>
+</div>
+<div class="flex-1">
+<h4 class="font-body-lg text-body-lg font-semibold">Corporate Compliance</h4>
+<p class="font-label-sm text-label-sm text-outline">Internal Quarterly Audit</p>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="px-md py-1.5 bg-outline-variant hover:bg-outline hover:text-white rounded-lg font-label-md text-label-md transition-all">Switch</button>
+</div>
+</div>
+<!-- Alternative Project B -->
+<div class="group flex items-center gap-md p-md hover:bg-surface-variant rounded-lg transition-colors cursor-pointer">
+<div class="w-10 h-10 rounded bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">architecture</span>
+</div>
+<div class="flex-1">
+<h4 class="font-body-lg text-body-lg font-semibold">Design System 3.0</h4>
+<p class="font-label-sm text-label-sm text-outline">Component Library Audit</p>
+</div>
+<div class="opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="px-md py-1.5 bg-outline-variant hover:bg-outline hover:text-white rounded-lg font-label-md text-label-md transition-all">Switch</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Performance Trends & Quick Actions -->
+<div class="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="bento-card bg-surface-container-low border border-outline-variant p-lg rounded-xl">
+<h3 class="font-label-md text-label-md text-outline uppercase tracking-widest mb-md">Efficiency Score</h3>
+<div class="flex items-center gap-lg">
+<div class="relative w-24 h-24">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#E0E2E6" stroke-dasharray="100, 100" stroke-width="3"></path>
+<path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#006382" stroke-dasharray="92, 100" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-headline-sm text-headline-sm">92</span>
+</div>
+</div>
+<div class="space-y-sm">
+<p class="font-body-md text-body-md"><span class="text-primary font-bold">High Precision</span> zone. You're 8% more efficient than last week.</p>
+<div class="flex items-center gap-xs text-primary font-bold">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+<span class="font-label-md text-label-md">+4 pts</span>
+</div>
+</div>
+</div>
+</div>
+<div class="bento-card bg-surface-container-low border border-outline-variant p-lg rounded-xl flex flex-col">
+<h3 class="font-label-md text-label-md text-outline uppercase tracking-widest mb-md">Quick Logs</h3>
+<div class="space-y-sm flex-1">
+<button class="w-full flex items-center justify-between p-sm hover:bg-surface-variant rounded border border-outline-variant transition-colors group">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">coffee</span>
+<span class="font-body-md text-body-md">Log Break</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-sm hover:bg-surface-variant rounded border border-outline-variant transition-colors group">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">event_repeat</span>
+<span class="font-body-md text-body-md">Repeat Yesterday</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-sm hover:bg-surface-variant rounded border border-outline-variant transition-colors group">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-outline group-hover:text-primary">edit_note</span>
+<span class="font-body-md text-body-md">Bulk Manual Entry</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Micro-interaction for the ticking timer -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const timerEl = document.querySelector('.ticking');
+            let seconds = 45;
+            let minutes = 2;
+            let hours = 0;
+
+            setInterval(() => {
+                seconds++;
+                if (seconds >= 60) {
+                    seconds = 0;
+                    minutes++;
+                }
+                if (minutes >= 60) {
+                    minutes = 0;
+                    hours++;
+                }
+                
+                const minStr = String(minutes).padStart(2, '0');
+                const secStr = String(seconds).padStart(2, '0');
+                timerEl.textContent = `${minStr}:${secStr}`;
+            }, 1000);
+
+            // Add simple button click feedback
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    btn.classList.add('scale-95');
+                    setTimeout(() => btn.classList.remove('scale-95'), 150);
+                });
+            });
+        });
+    </script>
+</body></html>
