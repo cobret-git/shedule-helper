@@ -1,0 +1,23 @@
+********************* SWITCH *******************
+ 
+Choose a project or task to switch to:
+------------------------------------------------
+> STINT CLI
+    FIX ARG PARSER                        ACTIVE
+    ICON PACKAGING
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+------------------------------------------------
+ 
+[enter] select  [p] pause  [d] done  [q] quit

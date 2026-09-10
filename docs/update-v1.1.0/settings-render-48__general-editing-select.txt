@@ -1,0 +1,23 @@
+********************* SETTINGS > GENERAL *******
+
+------------------------------------------------
+  CLOCK
+    Default clock-in                       08:00
+    Default clock-out                      16:30
+  > Round to nearest                   < 5 min >
+
+  DAY
+    Daily target                          7h 30m
+    Week starts on                    [ Monday ]
+    Day rolls over at                      04:00
+
+  BALANCE
+    Carry over balance                   [ Yes ]
+    Reset balance                      [ Never ]
+
+
+
+
+------------------------------------------------
+
+[←→] change  [enter] confirm  [esc] cancel

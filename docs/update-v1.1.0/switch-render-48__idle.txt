@@ -1,0 +1,23 @@
+********************* SWITCH *******************
+ 
+Choose a project or task to switch to:
+------------------------------------------------
+> STINT CLI
+    FIX ARG PARSER                        ACTIVE
+    ICON PACKAGING
+ 
+  INTERNAL
+    EMAIL / ADMIN
+    CLIENT MEETING
+ 
+  DESIGN
+    MOCKUPS
+    REVIEW
+ 
+  QA
+ 
+  < page 1/2 > .................................
+ 
+------------------------------------------------
+ 
+[enter] select  [p] pause  [d] done  [q] quit

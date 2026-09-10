@@ -1,0 +1,23 @@
+********************* PROJECT ******************
+
+------------------------------------------------
+> STINT CLI
+    FIX ARG PARSER
+    ICON PACKAGING
+    MSIX MANIFEST
+    STORE LISTING
+    PRIVACY POLICY
+    ALIAS RENAME
+
+
+
+
+
+
+
+
+    
+
+------------------------------------------------
+
+[e] edit  [d] delete  [n] new  [q] quit
