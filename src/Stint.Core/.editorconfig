@@ -1,0 +1,8 @@
+root = false
+
+# Keep every type in this project under the single Stint.Core namespace,
+# regardless of which folder/subfolder the file lives in. Disables the
+# "namespace does not match folder structure" suggestion (IDE0130) and
+# the related "sync namespace" IDE action for this project.
+[*.cs]
+dotnet_style_namespace_match_folder = false
