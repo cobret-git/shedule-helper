@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36127.28 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.9.12120.119
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SheduleHelper.WpfApp", "SheduleHelper.WpfApp\SheduleHelper.WpfApp.csproj", "{6A92DA76-F470-43EF-A8C1-59583F7B2730}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stint.Cli", "Stint.Cli\Stint.Cli.csproj", "{81D965CA-44C5-4F47-9A4B-E37F5DDE7648}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stint.Core", "Stint.Core\Stint.Core.csproj", "{E0223B88-D01C-4FAB-94E7-D2070144829C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{6A92DA76-F470-43EF-A8C1-59583F7B2730}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6A92DA76-F470-43EF-A8C1-59583F7B2730}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6A92DA76-F470-43EF-A8C1-59583F7B2730}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6A92DA76-F470-43EF-A8C1-59583F7B2730}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81D965CA-44C5-4F47-9A4B-E37F5DDE7648}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81D965CA-44C5-4F47-9A4B-E37F5DDE7648}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81D965CA-44C5-4F47-9A4B-E37F5DDE7648}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81D965CA-44C5-4F47-9A4B-E37F5DDE7648}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0223B88-D01C-4FAB-94E7-D2070144829C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0223B88-D01C-4FAB-94E7-D2070144829C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0223B88-D01C-4FAB-94E7-D2070144829C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0223B88-D01C-4FAB-94E7-D2070144829C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
