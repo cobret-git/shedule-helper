@@ -30,6 +30,12 @@ namespace Stint.Core
         Task<Project> AddProjectAsync(Project project, CancellationToken ct = default);
 
         /// <summary>
+        /// Updates the editable fields (<see cref="Project.Name"/>, <see cref="Project.Description"/>,
+        /// <see cref="Project.IsActive"/>) of the project matching <see cref="Project.Id"/>.
+        /// </summary>
+        Task UpdateProjectAsync(Project project, CancellationToken ct = default);
+
+        /// <summary>
         /// Flips <see cref="Project.IsActive"/> on the given project.
         /// </summary>
         Task SetProjectActiveAsync(int projectId, bool isActive, CancellationToken ct = default);
@@ -54,6 +60,12 @@ namespace Stint.Core
         Task<TaskItem> AddTaskAsync(TaskItem task, CancellationToken ct = default);
 
         /// <summary>
+        /// Updates the editable fields (<see cref="TaskItem.Title"/>, <see cref="TaskItem.Description"/>,
+        /// <see cref="TaskItem.Status"/>) of the task matching <see cref="TaskItem.Id"/>.
+        /// </summary>
+        Task UpdateTaskAsync(TaskItem task, CancellationToken ct = default);
+
+        /// <summary>
         /// Updates the lifecycle status of the given task.
         /// </summary>
         Task UpdateTaskStatusAsync(int taskId, TaskItemStatus status, CancellationToken ct = default);
@@ -71,6 +83,12 @@ namespace Stint.Core
         /// Starts a new attendance session (clock in) for the given work date.
         /// </summary>
         Task<AttendanceLog> ClockInAsync(string workDate, DateTime clockIn, CancellationToken ct = default);
+
+        /// <summary>
+        /// Records a full-day absence (vacation, sick, holiday, unpaid) for the given work date,
+        /// crediting it with <paramref name="creditedDuration"/> instead of tracked clock times.
+        /// </summary>
+        Task<AttendanceLog> RecordLeaveDayAsync(string workDate, DayType dayType, TimeSpan creditedDuration, CancellationToken ct = default);
 
         /// <summary>
         /// Ends the given attendance session (clock out).
@@ -107,6 +125,28 @@ namespace Stint.Core
         /// Closes the given time log segment, recording why it stopped.
         /// </summary>
         Task CloseTimeLogAsync(int timeLogId, DateTime endTime, TimeLogCloseReason reason, CancellationToken ct = default);
+
+        #endregion
+
+        #region Reporting
+
+        /// <summary>
+        /// Returns tracked time per project per calendar day in <paramref name="rangeStart"/>..<paramref name="rangeEnd"/>
+        /// (inclusive), with lunch deducted per <paramref name="settings"/>.
+        /// </summary>
+        Task<List<ProjectTimeDailyEntry>> GetProjectTimeDailyAsync(DateOnly rangeStart, DateOnly rangeEnd, AppSettings settings, CancellationToken ct = default);
+
+        /// <summary>
+        /// Returns tracked time per project per calendar month in <paramref name="rangeStart"/>..<paramref name="rangeEnd"/>
+        /// (inclusive), with lunch deducted per <paramref name="settings"/>.
+        /// </summary>
+        Task<List<ProjectTimeMonthlyEntry>> GetProjectTimeMonthlyAsync(DateOnly rangeStart, DateOnly rangeEnd, AppSettings settings, CancellationToken ct = default);
+
+        /// <summary>
+        /// Returns tracked time across all projects per calendar month in <paramref name="rangeStart"/>..<paramref name="rangeEnd"/>
+        /// (inclusive), with lunch deducted per <paramref name="settings"/>.
+        /// </summary>
+        Task<List<ProjectTimeMonthlyTotalEntry>> GetProjectTimeMonthlyTotalAsync(DateOnly rangeStart, DateOnly rangeEnd, AppSettings settings, CancellationToken ct = default);
 
         #endregion
     }

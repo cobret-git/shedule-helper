@@ -53,6 +53,18 @@ namespace Stint.Core
             return project;
         }
 
+        public async Task UpdateProjectAsync(Project project, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            var existing = await context.Projects.FirstOrDefaultAsync(p => p.Id == project.Id, ct)
+                ?? throw new InvalidOperationException($"Project {project.Id} was not found.");
+
+            existing.Name = project.Name;
+            existing.Description = project.Description;
+            existing.IsActive = project.IsActive;
+            await context.SaveChangesAsync(ct);
+        }
+
         public async Task SetProjectActiveAsync(int projectId, bool isActive, CancellationToken ct = default)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
@@ -91,6 +103,18 @@ namespace Stint.Core
             return task;
         }
 
+        public async Task UpdateTaskAsync(TaskItem task, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            var existing = await context.Tasks.FirstOrDefaultAsync(t => t.Id == task.Id, ct)
+                ?? throw new InvalidOperationException($"Task {task.Id} was not found.");
+
+            existing.Title = task.Title;
+            existing.Description = task.Description;
+            existing.Status = task.Status;
+            await context.SaveChangesAsync(ct);
+        }
+
         public async Task UpdateTaskStatusAsync(int taskId, TaskItemStatus status, CancellationToken ct = default)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
@@ -102,6 +126,37 @@ namespace Stint.Core
         }
 
         // Attendance
+
+        public async Task<AttendanceLog> RecordLeaveDayAsync(string workDate, DayType dayType, TimeSpan creditedDuration, CancellationToken ct = default)
+        {
+            if (dayType == DayType.Worked)
+                throw new ArgumentException("Use ClockInAsync for worked days.", nameof(dayType));
+
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            var attendanceLog = new AttendanceLog
+            {
+                WorkDate = workDate,
+                DayType = dayType,
+                CreditedDuration = creditedDuration
+            };
+
+            context.AttendanceLogs.Add(attendanceLog);
+            await context.SaveChangesAsync(ct);
+            return attendanceLog;
+        }
+
+        // Not yet exposed via IStintDataGateway - no caller needs a leave-day breakdown yet. Kept
+        // private until a real use case shows up; promote it (and add to the interface) then.
+        private async Task<Dictionary<DayType, int>> GetLeaveDaySummaryAsync(string rangeStart, string rangeEnd, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            return await context.AttendanceLogs
+                .Where(a => a.WorkDate.CompareTo(rangeStart) >= 0 && a.WorkDate.CompareTo(rangeEnd) <= 0)
+                .Where(a => a.DayType != DayType.Worked)
+                .GroupBy(a => a.DayType)
+                .Select(g => new { g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Key, x => x.Count, ct);
+        }
 
         public async Task<AttendanceLog?> GetAttendanceForDateAsync(string workDate, CancellationToken ct = default)
         {
@@ -190,6 +245,103 @@ namespace Stint.Core
             timeLog.EndTime = endTime;
             timeLog.ClosedReason = reason;
             await context.SaveChangesAsync(ct);
+        }
+
+        // Reporting
+
+        public async Task<List<ProjectTimeDailyEntry>> GetProjectTimeDailyAsync(DateOnly rangeStart, DateOnly rangeEnd, AppSettings settings, CancellationToken ct = default)
+        {
+            var segments = await GetTrackedSegmentsAsync(rangeStart, rangeEnd, settings, ct);
+            return segments
+                .GroupBy(s => (s.Date, s.ProjectName))
+                .Select(g => new ProjectTimeDailyEntry(g.Key.Date, g.Key.ProjectName, SumDurations(g)))
+                .OrderBy(e => e.Date).ThenBy(e => e.ProjectName)
+                .ToList();
+        }
+
+        public async Task<List<ProjectTimeMonthlyEntry>> GetProjectTimeMonthlyAsync(DateOnly rangeStart, DateOnly rangeEnd, AppSettings settings, CancellationToken ct = default)
+        {
+            var segments = await GetTrackedSegmentsAsync(rangeStart, rangeEnd, settings, ct);
+            return segments
+                .GroupBy(s => (s.Date.Year, s.Date.Month, s.ProjectName))
+                .Select(g => new ProjectTimeMonthlyEntry(g.Key.Year, g.Key.Month, g.Key.ProjectName, SumDurations(g)))
+                .OrderBy(e => e.Year).ThenBy(e => e.Month).ThenBy(e => e.ProjectName)
+                .ToList();
+        }
+
+        public async Task<List<ProjectTimeMonthlyTotalEntry>> GetProjectTimeMonthlyTotalAsync(DateOnly rangeStart, DateOnly rangeEnd, AppSettings settings, CancellationToken ct = default)
+        {
+            var segments = await GetTrackedSegmentsAsync(rangeStart, rangeEnd, settings, ct);
+            return segments
+                .GroupBy(s => (s.Date.Year, s.Date.Month))
+                .Select(g => new ProjectTimeMonthlyTotalEntry(g.Key.Year, g.Key.Month, SumDurations(g)))
+                .OrderBy(e => e.Year).ThenBy(e => e.Month)
+                .ToList();
+        }
+
+        #endregion
+
+        #region Helpers
+
+        // Loads every closed segment in the range, joined to its project name, with lunch already
+        // deducted per-segment. Small local dataset - simpler and safer to aggregate the three
+        // Reporting shapes above in memory than to translate the date-overlap math to SQL.
+        private async Task<List<(DateOnly Date, string ProjectName, TimeSpan Duration)>> GetTrackedSegmentsAsync(
+            DateOnly rangeStart, DateOnly rangeEnd, AppSettings settings, CancellationToken ct)
+        {
+            var rangeStartInclusive = rangeStart.ToDateTime(TimeOnly.MinValue);
+            var rangeEndExclusive = rangeEnd.ToDateTime(TimeOnly.MinValue).AddDays(1);
+
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            var rawSegments = await context.ProjectTimeLogs
+                .Where(l => l.EndTime != null && l.StartTime >= rangeStartInclusive && l.StartTime < rangeEndExclusive)
+                .Select(l => new { l.StartTime, EndTime = l.EndTime!.Value, ProjectName = l.Project.Name })
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            return rawSegments
+                .Select(s => (
+                    Date: DateOnly.FromDateTime(s.StartTime),
+                    s.ProjectName,
+                    Duration: DeductLunch(s.StartTime, s.EndTime, settings)))
+                .ToList();
+        }
+
+        // Applies AppSettings.LunchStrategy to one tracked segment.
+        private static TimeSpan DeductLunch(DateTime start, DateTime end, AppSettings settings)
+        {
+            switch (settings.LunchStrategy)
+            {
+                case LunchStrategy.None:
+                    return end - start;
+
+                case LunchStrategy.FixedWindow:
+                    var day = start.Date;
+                    var windowStart = day + settings.LunchStartTime.ToTimeSpan();
+                    var windowEnd = day + settings.LunchEndTime.ToTimeSpan();
+
+                    var overlapStart = start > windowStart ? start : windowStart;
+                    var overlapEnd = end < windowEnd ? end : windowEnd;
+                    var overlap = overlapEnd > overlapStart ? overlapEnd - overlapStart : TimeSpan.Zero;
+
+                    return (end - start) - overlap;
+
+                case LunchStrategy.DurationBased:
+                default:
+                    // AppSettings has no "attendance exceeds a threshold" value defined yet - rather
+                    // than guess at one, refuse until that setting exists and this is wired up for real.
+                    throw new NotSupportedException(
+                        $"{nameof(LunchStrategy.DurationBased)} lunch deduction isn't implemented yet - no threshold is defined in {nameof(AppSettings)}.");
+            }
+        }
+
+        private static TimeSpan SumDurations(IEnumerable<(DateOnly Date, string ProjectName, TimeSpan Duration)> segments)
+        {
+            var totalTicks = 0L;
+            foreach (var segment in segments)
+                totalTicks += segment.Duration.Ticks;
+
+            return TimeSpan.FromTicks(totalTicks);
         }
 
         #endregion

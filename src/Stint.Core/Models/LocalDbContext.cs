@@ -26,15 +26,14 @@ namespace Stint.Core
         #region Handlers
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // TaskItem: store TaskItemStatus enum as its string name
-            modelBuilder.Entity<TaskItem>()
-                .Property(t => t.Status)
-                .HasConversion<string>();
+            // Enums are stored as their underlying int (EF Core default) everywhere in this model -
+            // cheaper than strings. Values are pinned by their explicit numbers in each enum
+            // declaration, so don't reorder or remove them; only append.
 
-            // ProjectTimeLog: store TimeLogCloseReason enum as its string name, nullable while open
-            modelBuilder.Entity<ProjectTimeLog>()
-                .Property(l => l.ClosedReason)
-                .HasConversion<string>();
+            // AttendanceLog: at most one attendance log per calendar date
+            modelBuilder.Entity<AttendanceLog>()
+                .HasIndex(a => a.WorkDate)
+                .IsUnique();
 
             // Project: unique name
             modelBuilder.Entity<Project>()
