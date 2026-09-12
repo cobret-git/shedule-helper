@@ -14,7 +14,6 @@ namespace Stint.Cli.ViewModels
         #region Fields
 
         private static readonly IReadOnlyList<KeyHint> NoKeyHints = Array.Empty<KeyHint>();
-
         private string _title = string.Empty;
         private IReadOnlyList<KeyHint> _keyHints = NoKeyHints;
         private bool _isDisposed;

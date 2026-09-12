@@ -197,7 +197,9 @@ namespace Stint.Core
             await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             return await context.ProjectTimeLogs
                 .Where(l => l.AttendanceLogId == attendanceLogId)
-                .OrderBy(l => l.StartTime)
+                .Include(l => l.Project)
+                .Include(l => l.Task)
+                .OrderByDescending(l => l.StartTime)
                 .AsNoTracking()
                 .ToListAsync(ct);
         }

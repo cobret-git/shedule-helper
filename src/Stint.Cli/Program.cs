@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Stint.Cli.Services;
+using Stint.Cli.ViewModels;
 using Stint.Core;
 
 var services = new ServiceCollection();
@@ -21,9 +22,9 @@ services.AddSingleton<IStintDataGateway, StintDataGateway>();
 
 services.AddSingleton<ISettingsService<AppSettings>, SettingsService<AppSettings>>();
 
-// TODO: register each screen ViewModel here once it exists, as transient - NavigationService
-// resolves a fresh instance per push and disposes it itself when popped for good.
-// e.g. services.AddTransient<HomeViewModel>();
+// Screen ViewModels are transient - NavigationService resolves a fresh instance per push and
+// disposes it itself when popped for good.
+services.AddTransient<HomeScreenViewModel>();
 
 await using var provider = services.BuildServiceProvider();
 
@@ -35,6 +36,7 @@ var appSettingsService = provider.GetRequiredService<ISettingsService<AppSetting
 await appSettingsService.LoadAsync();
 
 var navigation = provider.GetRequiredService<INavigationService>();
+navigation.NavigateTo<HomeScreenViewModel>();
 
-// TODO: navigation.NavigateTo<HomeViewModel>() once Home exists, then hand off to the
-// render pipeline's main loop.
+// TODO: hand off to the render pipeline's main loop - nothing reads navigation.Current or
+// draws a frame yet.

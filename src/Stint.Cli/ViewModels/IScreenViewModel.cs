@@ -31,8 +31,10 @@ namespace Stint.Cli.ViewModels
         /// <remarks>
         /// This list doubles as the input dispatch table: the render pipeline matches a
         /// pressed key against these entries and invokes the bound <see cref="KeyHint.Command"/>
-        /// directly when it can execute. A screen only sees raw console input for things that
-        /// don't fit this shape (free-form text entry), through a narrower, separate mechanism.
+        /// directly when it can execute. Free-form text entry (e.g. typing digits into a custom
+        /// time field) isn't represented here at all - that's the render pipeline's own concern,
+        /// reading plain VM state/methods (never <c>ConsoleKey</c>/<c>ConsoleKeyInfo</c>) to
+        /// decide when to intercept keys itself instead of dispatching through this list.
         /// Expected to change over time as a screen's state changes (e.g. Home's hints differ
         /// while clocked in vs. not clocked in) - raise <see cref="INotifyPropertyChanged.PropertyChanged"/>
         /// for this property when that happens so the footer redraws.

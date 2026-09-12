@@ -100,7 +100,9 @@ namespace Stint.Core
         #region Project Time Logs
 
         /// <summary>
-        /// Returns all time log segments recorded within the given attendance session, ordered by start time.
+        /// Returns all time log segments recorded within the given attendance session, most
+        /// recently started first, with <see cref="ProjectTimeLog.Project"/> and
+        /// <see cref="ProjectTimeLog.Task"/> eager-loaded.
         /// </summary>
         Task<List<ProjectTimeLog>> GetTimeLogsForAttendanceAsync(int attendanceLogId, CancellationToken ct = default);
 
