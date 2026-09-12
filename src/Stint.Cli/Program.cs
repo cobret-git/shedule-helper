@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Stint.Cli.Services;
 using Stint.Cli.ViewModels;
+using Stint.Cli.Views;
 using Stint.Core;
 
 var services = new ServiceCollection();
@@ -26,6 +27,11 @@ services.AddSingleton<ISettingsService<AppSettings>, SettingsService<AppSettings
 // disposes it itself when popped for good.
 services.AddTransient<HomeScreenViewModel>();
 
+// One IScreenView per screen ViewModel above, plus the pipeline that resolves/drives them.
+services.AddSingleton<IScreenView, HomeScreen>();
+services.AddSingleton<ScreenViewRegistry>();
+services.AddSingleton<ConsoleHost>();
+
 await using var provider = services.BuildServiceProvider();
 
 // Must run before anything touches IStintDataGateway - see IDatabaseMigrator.
@@ -38,5 +44,5 @@ await appSettingsService.LoadAsync();
 var navigation = provider.GetRequiredService<INavigationService>();
 navigation.NavigateTo<HomeScreenViewModel>();
 
-// TODO: hand off to the render pipeline's main loop - nothing reads navigation.Current or
-// draws a frame yet.
+var host = provider.GetRequiredService<ConsoleHost>();
+await host.RunAsync();
