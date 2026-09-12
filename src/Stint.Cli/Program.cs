@@ -19,6 +19,8 @@ services.AddDbContextFactory<LocalDbContext>((serviceProvider, options) =>
 services.AddSingleton<IDatabaseMigrator, DatabaseMigrator>();
 services.AddSingleton<IStintDataGateway, StintDataGateway>();
 
+services.AddSingleton<ISettingsService<AppSettings>, SettingsService<AppSettings>>();
+
 // TODO: register each screen ViewModel here once it exists, as transient - NavigationService
 // resolves a fresh instance per push and disposes it itself when popped for good.
 // e.g. services.AddTransient<HomeViewModel>();
@@ -28,6 +30,9 @@ await using var provider = services.BuildServiceProvider();
 // Must run before anything touches IStintDataGateway - see IDatabaseMigrator.
 var migrator = provider.GetRequiredService<IDatabaseMigrator>();
 await migrator.MigrateAsync();
+
+var appSettingsService = provider.GetRequiredService<ISettingsService<AppSettings>>();
+await appSettingsService.LoadAsync();
 
 var navigation = provider.GetRequiredService<INavigationService>();
 
