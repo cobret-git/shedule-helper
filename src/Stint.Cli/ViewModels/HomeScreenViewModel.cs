@@ -76,7 +76,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("in", BeginClockInCommand, ConsoleKey.I),
                 new KeyHint("out", ClockOutCommand, ConsoleKey.O),
                 new KeyHint("switch", SwitchCommand, ConsoleKey.S),
-                new KeyHint("new", NewProjectCommand, ConsoleKey.N),
+                new KeyHint("projects", OpenProjectsCommand, ConsoleKey.P),
                 new KeyHint("page", PreviousPageCommand, ConsoleKey.LeftArrow),
                 new KeyHint("page", NextPageCommand, ConsoleKey.RightArrow),
                 new KeyHint("quit", QuitCommand, ConsoleKey.Q)
@@ -338,8 +338,8 @@ namespace Stint.Cli.ViewModels
             // TODO: Navigation.NavigateTo<SwitchScreenViewModel>() once that screen exists.
         }
 
-        [RelayCommand(CanExecute = nameof(CanAddNewProject))] private void NewProject()
-            => Navigation.NavigateTo<ProjectsScreenViewModel, bool>(true);
+        [RelayCommand(CanExecute = nameof(CanOpenProjects))] private void OpenProjects()
+            => Navigation.NavigateTo<ProjectsScreenViewModel>();
 
         [RelayCommand(CanExecute = nameof(CanGoToPreviousPage))] private void PreviousPage() => CurrentPageIndex--;
 
@@ -370,7 +370,7 @@ namespace Stint.Cli.ViewModels
 
         private bool CanSwitch() => State == HomeState.ClockedIn && ProjectRows.Count > 0;
 
-        private bool CanAddNewProject() => State == HomeState.ClockedIn && ProjectRows.Count == 0;
+        private bool CanOpenProjects() => State == HomeState.ClockedIn && ProjectRows.Count == 0;
 
         private bool CanGoToPreviousPage() => State == HomeState.ClockedOut && CurrentPageIndex > 0;
 

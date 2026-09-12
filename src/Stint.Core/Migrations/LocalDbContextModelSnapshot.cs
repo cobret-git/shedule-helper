@@ -64,18 +64,13 @@ namespace Stint.Core.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("CreatedAt");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("Description");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER")
                         .HasColumnName("IsActive");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
+                        .HasMaxLength(14)
                         .HasColumnType("TEXT")
                         .HasColumnName("Name");
 
@@ -140,11 +135,6 @@ namespace Stint.Core.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("CreatedAt");
 
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT")
-                        .HasColumnName("Description");
-
                     b.Property<int>("ProjectId")
                         .HasColumnType("INTEGER")
                         .HasColumnName("ProjectId");
@@ -155,7 +145,7 @@ namespace Stint.Core.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(150)
+                        .HasMaxLength(16)
                         .HasColumnType("TEXT")
                         .HasColumnName("Title");
 

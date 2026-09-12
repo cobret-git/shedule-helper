@@ -86,7 +86,7 @@ namespace Stint.Cli.Views
                 // Only reachable while Creating with no other active projects yet - Idle with an
                 // empty list is short-circuited by Render() before this is ever called, and
                 // Editing always has at least the row being renamed.
-                RenderNameEntry(buffer, row, viewModel.NameInput, viewModel.NameStatusLabel);
+                RenderNameEntry(buffer, row, viewModel.NameInput, viewModel.NameStatusLabel, viewModel.IsNameTaken);
             }
             else
             {
@@ -100,7 +100,7 @@ namespace Stint.Cli.Views
                         // whatever sits at the current selection, rather than inserting/shifting
                         // the rest of the list - simplest single path for both, and matches the
                         // mockups once you read "creating" as "cursor happened to be on row 0".
-                        RenderNameEntry(buffer, row, viewModel.NameInput, viewModel.NameStatusLabel);
+                        RenderNameEntry(buffer, row, viewModel.NameInput, viewModel.NameStatusLabel, viewModel.IsNameTaken);
                     }
                     else
                     {
@@ -132,7 +132,7 @@ namespace Stint.Cli.Views
             }
         }
 
-        private static void RenderNameEntry(ScreenBuffer buffer, int row, string nameInput, string statusLabel)
+        private static void RenderNameEntry(ScreenBuffer buffer, int row, string nameInput, string statusLabel, bool isNameTaken)
         {
             const string marker = "> ";
             var typed = nameInput + "_";
@@ -140,6 +140,19 @@ namespace Stint.Cli.Views
 
             buffer.SetLine(row, line);
             buffer.AddColorSpan(row, marker.Length, typed.Length, ConsoleColor.Black, ConsoleColor.White);
+
+            if (statusLabel.Length == 0)
+            {
+                return;
+            }
+
+            // TAKEN/OK get their own red/green background instead of the console's own colors -
+            // much easier to spot at a glance than plain text while you're mid-keystroke.
+            var (foreground, background) = isNameTaken
+                ? (ConsoleColor.White, ConsoleColor.Red)
+                : (ConsoleColor.Black, ConsoleColor.Green);
+
+            buffer.AddColorSpan(row, line.Length - statusLabel.Length, statusLabel.Length, foreground, background);
         }
 
         #endregion

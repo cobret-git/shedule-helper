@@ -24,16 +24,9 @@ namespace Stint.Core
         /// Name of the project. Maps to 'Name'.
         /// </summary>
         [Required]
-        [MaxLength(100)]
+        [MaxLength(14)]
         [Column("Name")]
         public string Name { get; set; } = null!;
-
-        /// <summary>
-        /// Detailed description of the project. Maps to 'Description'.
-        /// </summary>
-        [MaxLength(500)]
-        [Column("Description")]
-        public string? Description { get; set; }
 
         /// <summary>
         /// Flag indicating whether the project is active (1) or inactive (0). Maps to 'IsActive'.

@@ -60,7 +60,6 @@ namespace Stint.Core
                 ?? throw new InvalidOperationException($"Project {project.Id} was not found.");
 
             existing.Name = project.Name;
-            existing.Description = project.Description;
             existing.IsActive = project.IsActive;
             await context.SaveChangesAsync(ct);
         }
@@ -117,7 +116,6 @@ namespace Stint.Core
                 ?? throw new InvalidOperationException($"Task {task.Id} was not found.");
 
             existing.Title = task.Title;
-            existing.Description = task.Description;
             existing.Status = task.Status;
             await context.SaveChangesAsync(ct);
         }

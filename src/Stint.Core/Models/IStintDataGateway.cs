@@ -30,8 +30,8 @@ namespace Stint.Core
         Task<Project> AddProjectAsync(Project project, CancellationToken ct = default);
 
         /// <summary>
-        /// Updates the editable fields (<see cref="Project.Name"/>, <see cref="Project.Description"/>,
-        /// <see cref="Project.IsActive"/>) of the project matching <see cref="Project.Id"/>.
+        /// Updates the editable fields (<see cref="Project.Name"/>, <see cref="Project.IsActive"/>)
+        /// of the project matching <see cref="Project.Id"/>.
         /// </summary>
         Task UpdateProjectAsync(Project project, CancellationToken ct = default);
 
@@ -65,8 +65,8 @@ namespace Stint.Core
         Task<TaskItem> AddTaskAsync(TaskItem task, CancellationToken ct = default);
 
         /// <summary>
-        /// Updates the editable fields (<see cref="TaskItem.Title"/>, <see cref="TaskItem.Description"/>,
-        /// <see cref="TaskItem.Status"/>) of the task matching <see cref="TaskItem.Id"/>.
+        /// Updates the editable fields (<see cref="TaskItem.Title"/>, <see cref="TaskItem.Status"/>)
+        /// of the task matching <see cref="TaskItem.Id"/>.
         /// </summary>
         Task UpdateTaskAsync(TaskItem task, CancellationToken ct = default);
 

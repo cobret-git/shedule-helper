@@ -5,10 +5,7 @@ namespace Stint.Cli.Models
     /// it has, per <see cref="Stint.Core.IStintDataGateway.GetTaskCountForProjectAsync"/>.
     /// </summary>
     /// <remarks>
-    /// Display-only - it never round-trips back to the gateway. <see cref="Stint.Cli.ViewModels.ProjectsScreenViewModel"/>
-    /// keeps the full <see cref="Stint.Core.Project"/> entities behind these rows around separately
-    /// so a rename doesn't have to (and can't accidentally) wipe fields this row doesn't carry,
-    /// like <see cref="Stint.Core.Project.Description"/>.
+    /// Display-only - it never round-trips back to the gateway.
     /// </remarks>
     public sealed class ProjectListRow
     {

@@ -19,7 +19,7 @@ namespace Stint.Cli.ViewModels
     /// free-form name entry reaches this class as plain characters via
     /// <see cref="AppendNameCharacter"/>/<see cref="RemoveNameCharacter"/>, never as a key.
     /// </remarks>
-    public sealed partial class ProjectsScreenViewModel : ScreenViewModelBase, IScreenViewModel<bool>
+    public sealed partial class ProjectsScreenViewModel : ScreenViewModelBase
     {
         #region Fields
 
@@ -28,17 +28,11 @@ namespace Stint.Cli.ViewModels
         // renderer once it's been tuned against a real console (see ProjectsScreen's own TODO).
         private const int PageSize = 14;
 
-        // Matches Project.Name's [MaxLength(100)] - stops a name from being typed past what the
+        // Matches Project.Name's [MaxLength(14)] - stops a name from being typed past what the
         // gateway would reject on commit anyway.
-        private const int MaxNameLength = 100;
+        private const int MaxNameLength = 14;
 
         private readonly IStintDataGateway _gateway;
-
-        // Full entities behind Projects, keyed by id - kept around purely so committing a rename
-        // (UpdateProjectAsync) can carry over Description/IsActive instead of wiping them; the
-        // gateway updates every editable field from whatever Project it's handed, and Projects
-        // itself (a ProjectListRow projection) doesn't carry those fields at all.
-        private Dictionary<int, Project> _projectsById = [];
 
         // Ids soft-deleted (SetProjectActiveAsync(id, false)) this screen visit, most recent on
         // top. Ctrl+Z pops one and reactivates it - handled entirely by ProjectsScreen.HandleKey
@@ -52,7 +46,6 @@ namespace Stint.Cli.ViewModels
         private string _nameInput = string.Empty;
         private int? _editingProjectId;
         private string? _loadError;
-        private bool _startInCreateMode;
         #endregion
 
         #region Constructors
@@ -72,6 +65,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("select", MoveSelectionDownCommand, ConsoleKey.DownArrow),
                 new KeyHint("confirm", ConfirmCommand, ConsoleKey.Enter),
                 new KeyHint("cancel", CancelCommand, ConsoleKey.Escape),
+                new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
                 new KeyHint("edit", BeginEditCommand, ConsoleKey.E),
                 new KeyHint("delete", DeleteCommand, ConsoleKey.D),
                 new KeyHint("new", BeginCreateCommand, ConsoleKey.N),
@@ -144,19 +138,7 @@ namespace Stint.Cli.ViewModels
             // Fire-and-forget for the same reason as Home's OnActivated: a local SQLite read is
             // fast enough that the one-frame stale gap is harmless.
             _ = RefreshAsync();
-
-            if (_startInCreateMode)
-            {
-                _startInCreateMode = false;
-                BeginCreate();
-            }
         }
-
-        /// <summary>
-        /// Whether this visit should open straight into <see cref="ProjectsMode.Creating"/> -
-        /// e.g. Home's "new project" key hint, which has nowhere else to send a first-time user.
-        /// </summary>
-        public void Initialize(bool startInCreateMode) => _startInCreateMode = startInCreateMode;
 
         /// <summary>
         /// Appends one character to <see cref="NameInput"/>, while <see cref="IsEditingName"/>.
@@ -233,10 +215,9 @@ namespace Stint.Cli.ViewModels
                     break;
 
                 case ProjectsMode.Editing:
-                    if (_editingProjectId is int id && _projectsById.TryGetValue(id, out var existing))
+                    if (_editingProjectId is int id)
                     {
-                        existing.Name = NameInput.Trim();
-                        await _gateway.UpdateProjectAsync(existing);
+                        await _gateway.UpdateProjectAsync(new Project { Id = id, Name = NameInput.Trim(), IsActive = true });
 
                         Mode = ProjectsMode.Idle;
                         _editingProjectId = null;
@@ -252,14 +233,22 @@ namespace Stint.Cli.ViewModels
             }
         }
 
-        // Esc while Creating/Editing: discards whatever was typed and drops back to Idle,
-        // leaving the project list (and any project being renamed) untouched.
+        // Esc while Creating/Editing: discards whatever was typed (and, while Creating, the
+        // never-persisted project along with it - nothing is written to the gateway until
+        // Confirm) and drops back to Idle, staying on this screen. Esc again from Idle is what
+        // actually leaves - see GoBack - so backing all the way out to Home always takes two
+        // presses once you're mid-edit, never one.
         [RelayCommand(CanExecute = nameof(CanCancel))] private void Cancel()
         {
             Mode = ProjectsMode.Idle;
             _editingProjectId = null;
             NameInput = string.Empty;
         }
+
+        // Esc while Idle: leaves Projects and returns to Home. CanGoBack requires Idle so this
+        // never fires ahead of Cancel above - both are bound to the same key, and ConsoleHost
+        // dispatch takes the first hint (in KeyHints order) whose command can execute.
+        [RelayCommand(CanExecute = nameof(CanGoBack))] private void GoBack() => Navigation.GoBack();
 
         [RelayCommand(CanExecute = nameof(CanBeginCreate))] private void BeginCreate()
         {
@@ -318,6 +307,8 @@ namespace Stint.Cli.ViewModels
 
         private bool CanCancel() => Mode != ProjectsMode.Idle;
 
+        private bool CanGoBack() => Mode == ProjectsMode.Idle && Navigation.CanGoBack;
+
         private bool CanBeginCreate() => Mode == ProjectsMode.Idle;
 
         private bool CanBeginEdit() => Mode == ProjectsMode.Idle && Projects.Count > 0;
@@ -336,16 +327,13 @@ namespace Stint.Cli.ViewModels
             {
                 var activeProjects = await _gateway.GetActiveProjectsAsync();
                 var rows = new List<ProjectListRow>(activeProjects.Count);
-                var byId = new Dictionary<int, Project>(activeProjects.Count);
 
                 foreach (var project in activeProjects)
                 {
-                    byId[project.Id] = project;
                     var taskCount = await _gateway.GetTaskCountForProjectAsync(project.Id);
                     rows.Add(new ProjectListRow { Id = project.Id, Name = project.Name, TaskCount = taskCount });
                 }
 
-                _projectsById = byId;
                 Projects = rows;
 
                 var targetIndex = selectProjectId is int id
