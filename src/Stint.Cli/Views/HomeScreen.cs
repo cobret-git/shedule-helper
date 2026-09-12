@@ -9,8 +9,7 @@ namespace Stint.Cli.Views
     /// </summary>
     /// <remarks>
     /// Row positions/how many project rows fit are approximate for now - tune once this is
-    /// actually seen running against a real console. The overtime bar segment isn't drawn in a
-    /// distinct color yet either - <see cref="ScreenBuffer"/> only carries plain text today.
+    /// actually seen running against a real console.
     /// </remarks>
     public sealed class HomeScreen : ScreenView<HomeScreenViewModel>
     {
@@ -77,10 +76,53 @@ namespace Stint.Cli.Views
                 var isSelected = option == viewModel.SelectedClockInOption;
                 var marker = isSelected ? "> " : "  ";
                 var isTyping = isSelected && option == ClockInOption.Custom && viewModel.IsEditingCustomTime;
-                var label = option.ToString() + (isTyping ? "_" : string.Empty);
+                var preview = viewModel.GetClockInPreview(option);
+                var line = marker + LineFormat.DotLeader(option.ToString(), preview, ScreenBuffer.Width - 2);
 
-                buffer.SetLine(row, marker + LineFormat.DotLeader(label, viewModel.GetClockInPreview(option), ScreenBuffer.Width - 2));
+                if (isTyping)
+                {
+                    // While typing, the contrast moves from the option's word onto the "--:--"
+                    // mask itself - it's the value being edited now, not the selection. The next
+                    // digit's own column is left un-inverted so it reads as a cursor sitting
+                    // inside the otherwise-highlighted mask.
+                    RenderCustomTimeMask(buffer, row, line, preview, viewModel.CustomTimeCursorIndex);
+                }
+                else if (isSelected)
+                {
+                    // The "> " marker alone is easy to miss - also invert the option's own word so
+                    // the selected row has real contrast, not just a leading glyph.
+                    buffer.SetLine(row, line, marker.Length, option.ToString().Length);
+                }
+                else
+                {
+                    buffer.SetLine(row, line);
+                }
+
                 row++;
+            }
+        }
+
+        private static void RenderCustomTimeMask(ScreenBuffer buffer, int row, string line, string preview, int? cursorIndex)
+        {
+            buffer.SetLine(row, line);
+
+            var previewStart = line.Length - preview.Length;
+
+            if (cursorIndex is not int cursor)
+            {
+                buffer.AddColorSpan(row, previewStart, preview.Length, ConsoleColor.Black, ConsoleColor.White);
+                return;
+            }
+
+            if (cursor > 0)
+            {
+                buffer.AddColorSpan(row, previewStart, cursor, ConsoleColor.Black, ConsoleColor.White);
+            }
+
+            var afterCursor = cursor + 1;
+            if (afterCursor < preview.Length)
+            {
+                buffer.AddColorSpan(row, previewStart + afterCursor, preview.Length - afterCursor, ConsoleColor.Black, ConsoleColor.White);
             }
         }
 
@@ -94,8 +136,12 @@ namespace Stint.Cli.Views
             RenderProgress(viewModel, buffer);
             RenderProjectTree(viewModel, buffer);
 
-            buffer.SetLine(ScreenBuffer.Height - 3, new string('-', ScreenBuffer.Width));
-            buffer.SetLine(ScreenBuffer.Height - 2, LineFormat.DotLeader("Balance:", LineFormat.FormatBalance(viewModel.Balance)));
+            // No separator of Home's own here - the pipeline already draws one rule above the
+            // footer (Height-2) for every screen, so a second dashed line right before Balance
+            // would just be a redundant, Home-specific extra. Height-3 is deliberately left
+            // untouched (Clear() already blanked it) so exactly one blank row separates Balance
+            // from that rule, per the mockup.
+            buffer.SetLine(ScreenBuffer.Height - 4, LineFormat.DotLeader("Balance:", LineFormat.FormatBalance(viewModel.Balance)));
         }
 
         private static void RenderProgress(HomeScreenViewModel viewModel, ScreenBuffer buffer)
@@ -104,14 +150,19 @@ namespace Stint.Cli.Views
             buffer.SetLine(5, LineFormat.DotLeader(elapsedOverTarget, $"{viewModel.PercentComplete}%"));
             buffer.SetLine(6, new string('*', ScreenBuffer.Width));
 
-            var barWidth = ScreenBuffer.Width - 2;
+            const int barRow = 7;
+            var barWidth = ScreenBuffer.Width;
             var normalCells = (int)Math.Round(viewModel.NormalFillFraction * barWidth);
             var overtimeCells = (int)Math.Round(viewModel.OvertimeFillFraction * barWidth);
             var emptyCells = Math.Max(0, barWidth - normalCells - overtimeCells);
 
-            // TODO: render the overtime segment in a distinct color once ScreenBuffer supports
-            // per-segment color - both segments use the same fill character for now.
-            buffer.SetLine(7, $"[{new string('#', normalCells)}{new string('#', overtimeCells)}{new string('.', emptyCells)}]");
+            // Solid block for filled cells, light shade for empty ones - same glyphs/segment
+            // split as the previous CLI's ProgressBar widget - with the overtime portion picked
+            // out in its own color instead of blending into the rest of the fill.
+            buffer.SetLine(barRow, $"{new string('█', normalCells)}{new string('█', overtimeCells)}{new string('░', emptyCells)}");
+            buffer.AddColorSpan(barRow, 0, normalCells, ConsoleColor.Cyan);
+            buffer.AddColorSpan(barRow, normalCells, overtimeCells, ConsoleColor.Yellow);
+            buffer.AddColorSpan(barRow, normalCells + overtimeCells, emptyCells, ConsoleColor.DarkGray);
         }
 
         private static void RenderProjectTree(HomeScreenViewModel viewModel, ScreenBuffer buffer)

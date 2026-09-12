@@ -43,8 +43,11 @@ namespace Stint.Cli.Views
 
         private static string Glyph(ConsoleKey key) => key switch
         {
-            ConsoleKey.UpArrow => "↑",
-            ConsoleKey.DownArrow => "↓",
+            // Plain ASCII, same as Left/Right below - the Unicode arrow glyphs (U+2191/U+2193)
+            // render as blank cells in a classic raster-font console (no TrueType/Unicode glyph
+            // support), showing up as "[] select" instead of "[↑↓] select".
+            ConsoleKey.UpArrow => "^",
+            ConsoleKey.DownArrow => "v",
             ConsoleKey.LeftArrow => "<",
             ConsoleKey.RightArrow => ">",
             ConsoleKey.Enter => "enter",

@@ -24,10 +24,12 @@ namespace Stint.Cli.ViewModels
     {
         #region Fields
 
-        // How much bar space is reserved for overtime once the shift runs past its target -
-        // matches the "extra 2hrs of empty space" behavior described for the shift bar. Not a
-        // setting yet; revisit if that ever needs to be user-configurable.
-        private static readonly TimeSpan OvertimeReserve = TimeSpan.FromHours(2);
+        // The progress bar's scale always keeps this much empty space past whatever the current
+        // furthest edge (target, or target+overtime) is - so it never reads as "full" the instant
+        // the target is reached, and doesn't jump/rescale as overtime starts accruing. Matches the
+        // previous CLI's ProgressBar headroom. Not a setting yet; revisit if that ever needs to be
+        // user-configurable.
+        private static readonly TimeSpan BarHeadroom = TimeSpan.FromMinutes(45);
         private static readonly IReadOnlyList<ClockInOption> AllClockInOptions =
         [
             ClockInOption.Now,
@@ -70,6 +72,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("select", MoveClockInSelectionUpCommand, ConsoleKey.UpArrow),
                 new KeyHint("select", MoveClockInSelectionDownCommand, ConsoleKey.DownArrow),
                 new KeyHint("confirm", ConfirmClockInCommand, ConsoleKey.Enter),
+                new KeyHint("cancel", CancelCustomTimeEditCommand, ConsoleKey.Escape),
                 new KeyHint("in", BeginClockInCommand, ConsoleKey.I),
                 new KeyHint("out", ClockOutCommand, ConsoleKey.O),
                 new KeyHint("switch", SwitchCommand, ConsoleKey.S),
@@ -131,11 +134,16 @@ namespace Stint.Cli.ViewModels
         /// <summary>Whether <see cref="Elapsed"/> has run past <see cref="Target"/>.</summary>
         public bool IsOvertime => Elapsed > Target;
 
+        /// <summary>How far <see cref="Elapsed"/> has run past <see cref="Target"/>, or zero.</summary>
+        public TimeSpan Overtime => IsOvertime ? Elapsed - Target : TimeSpan.Zero;
+
         /// <summary>
-        /// The time span the progress bar's full width represents - just <see cref="Target"/>
-        /// normally, or <see cref="Target"/> plus <see cref="OvertimeReserve"/> once in overtime.
+        /// The time span the progress bar's full width represents: <see cref="Target"/> plus
+        /// whatever <see cref="Overtime"/> has accrued so far, plus a fixed <see cref="BarHeadroom"/>
+        /// buffer past that - grows continuously with <see cref="Overtime"/> rather than jumping to
+        /// a bigger fixed range the instant overtime starts.
         /// </summary>
-        public TimeSpan BarRange => IsOvertime ? Target + OvertimeReserve : Target;
+        public TimeSpan BarRange => Target + Overtime + BarHeadroom;
 
         /// <summary>Fraction of the bar (0-1) filled by ordinary, within-target time.</summary>
         public double NormalFillFraction => BarRange > TimeSpan.Zero
@@ -143,9 +151,7 @@ namespace Stint.Cli.ViewModels
             : 0;
 
         /// <summary>Fraction of the bar (0-1) filled by overtime, drawn as a distinct segment.</summary>
-        public double OvertimeFillFraction => IsOvertime && BarRange > TimeSpan.Zero
-            ? (Elapsed - Target < OvertimeReserve ? Elapsed - Target : OvertimeReserve) / BarRange
-            : 0;
+        public double OvertimeFillFraction => BarRange > TimeSpan.Zero ? Overtime / BarRange : 0;
 
         /// <summary><see cref="Elapsed"/> as a percentage of <see cref="Target"/> - can exceed 100.</summary>
         public int PercentComplete => Target > TimeSpan.Zero ? (int)Math.Round(Elapsed / Target * 100) : 0;
@@ -165,6 +171,21 @@ namespace Stint.Cli.ViewModels
                 return $"{padded[0]}{padded[1]}:{padded[2]}{padded[3]}";
             }
         }
+
+        /// <summary>
+        /// Index into <see cref="CustomTimeDisplay"/> of the next digit to be typed - the render
+        /// pipeline's cue for where to draw the "cursor" - or null once all four digits are in and
+        /// there's nothing left to fill. Skips over the colon <see cref="CustomTimeDisplay"/>
+        /// inserts between the hour and minute pairs.
+        /// </summary>
+        public int? CustomTimeCursorIndex => _customTimeDigits.Length switch
+        {
+            0 => 0,
+            1 => 1,
+            2 => 3,
+            3 => 4,
+            _ => null
+        };
 
         /// <summary>Number of pages <see cref="CurrentPageProjectRows"/> paginates over.</summary>
         public int TotalPages => Math.Max(1, (int)Math.Ceiling(ProjectRows.Count / (double)ProjectRowsPerPage));
@@ -241,21 +262,13 @@ namespace Stint.Cli.ViewModels
 
         #region Commands
 
+        // Wraps around at both ends (Now -> up -> Custom, Custom -> down -> Now) rather than
+        // stopping at the first/last option.
         [RelayCommand(CanExecute = nameof(CanMoveClockInSelection))] private void MoveClockInSelectionUp()
-        {
-            if (SelectedClockInOptionIndex > 0)
-            {
-                SelectedClockInOptionIndex--;
-            }
-        }
+            => SelectedClockInOptionIndex = (SelectedClockInOptionIndex - 1 + ClockInOptions.Count) % ClockInOptions.Count;
 
         [RelayCommand(CanExecute = nameof(CanMoveClockInSelection))] private void MoveClockInSelectionDown()
-        {
-            if (SelectedClockInOptionIndex < ClockInOptions.Count - 1)
-            {
-                SelectedClockInOptionIndex++;
-            }
-        }
+            => SelectedClockInOptionIndex = (SelectedClockInOptionIndex + 1) % ClockInOptions.Count;
 
         // Enter: while Custom is highlighted but not yet being edited, starts editing instead of
         // clocking in - the second Enter (once a full, valid time is typed) actually clocks in.
@@ -281,6 +294,15 @@ namespace Stint.Cli.ViewModels
             _customTimeDigits = string.Empty;
 
             await RefreshAsync();
+        }
+
+        // Esc while typing a custom time: discards whatever digits were entered and drops back to
+        // the picker with Custom still highlighted, rather than committing a half-typed time.
+        [RelayCommand(CanExecute = nameof(CanCancelCustomTimeEdit))] private void CancelCustomTimeEdit()
+        {
+            IsEditingCustomTime = false;
+            _customTimeDigits = string.Empty;
+            OnPropertyChanged(nameof(CustomTimeDisplay));
         }
 
         // The clocked-out screen's "[i] in": re-opens the picker rather than instantly
@@ -341,6 +363,8 @@ namespace Stint.Cli.ViewModels
         private bool CanConfirmClockIn()
             => State == HomeState.NotClockedIn
                && (SelectedClockInOption != ClockInOption.Custom || !IsEditingCustomTime || IsCustomTimeComplete);
+
+        private bool CanCancelCustomTimeEdit() => IsEditingCustomTime;
 
         private bool CanBeginClockIn() => State == HomeState.ClockedOut;
 
