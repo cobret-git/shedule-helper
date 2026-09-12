@@ -26,9 +26,11 @@ services.AddSingleton<ISettingsService<AppSettings>, SettingsService<AppSettings
 // Screen ViewModels are transient - NavigationService resolves a fresh instance per push and
 // disposes it itself when popped for good.
 services.AddTransient<HomeScreenViewModel>();
+services.AddTransient<ProjectsScreenViewModel>();
 
 // One IScreenView per screen ViewModel above, plus the pipeline that resolves/drives them.
 services.AddSingleton<IScreenView, HomeScreen>();
+services.AddSingleton<IScreenView, ProjectsScreen>();
 services.AddSingleton<ScreenViewRegistry>();
 services.AddSingleton<ConsoleHost>();
 

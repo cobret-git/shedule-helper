@@ -47,7 +47,11 @@ namespace Stint.Cli.Services
         {
             if (!File.Exists(_filePath))
             {
+                // First run for this settings type - write the defaults out now rather than only
+                // ever holding them in memory, so there's an actual file to inspect/edit and this
+                // same "nothing on disk yet" branch doesn't run again on every future launch.
                 Settings = new TSettings();
+                await SaveAsync(ct);
                 return;
             }
 

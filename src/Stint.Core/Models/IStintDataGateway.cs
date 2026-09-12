@@ -50,6 +50,11 @@ namespace Stint.Core
         Task<List<TaskItem>> GetTasksForProjectAsync(int projectId, CancellationToken ct = default);
 
         /// <summary>
+        /// Returns how many tasks belong to the given project, without loading them.
+        /// </summary>
+        Task<int> GetTaskCountForProjectAsync(int projectId, CancellationToken ct = default);
+
+        /// <summary>
         /// Returns the task with the given id, or <see langword="null"/> if it doesn't exist.
         /// </summary>
         Task<TaskItem?> GetTaskByIdAsync(int taskId, CancellationToken ct = default);

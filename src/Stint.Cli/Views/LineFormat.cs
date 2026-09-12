@@ -31,6 +31,9 @@ namespace Stint.Cli.Views
             return $"{(value < TimeSpan.Zero ? "-" : "+")}{(int)magnitude.TotalHours}h {magnitude.Minutes:00}m";
         }
 
+        /// <summary>Formats a task count as <c>N tasks</c>, singular <c>1 task</c> included.</summary>
+        public static string FormatTaskCount(int count) => count == 1 ? "1 task" : $"{count} tasks";
+
         #endregion
     }
 }

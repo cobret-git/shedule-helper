@@ -1,0 +1,368 @@
+using CommunityToolkit.Mvvm.Input;
+using Stint.Cli.Models;
+using Stint.Cli.Services;
+using Stint.Cli.Components;
+using Stint.Core;
+
+namespace Stint.Cli.ViewModels
+{
+    /// <summary>
+    /// The Projects screen: the list of active projects, with inline create/rename and soft
+    /// delete (with a same-visit undo). See <c>docs/update-v1.1.0/projects-render-48__*.txt</c>
+    /// for the render mockups this takes its layout/labels from - row positions there are a
+    /// rough guide, not exact, the same way <see cref="HomeScreenViewModel"/>'s were.
+    /// </summary>
+    /// <remarks>
+    /// Same split of responsibility as Home: this class only exposes state and behavior: the
+    /// render pipeline (<see cref="Stint.Cli.Views.ProjectsScreen"/>) decides how <see cref="Mode"/> maps
+    /// to rows/colors, and is also the only thing that ever sees a raw <see cref="ConsoleKey"/> -
+    /// free-form name entry reaches this class as plain characters via
+    /// <see cref="AppendNameCharacter"/>/<see cref="RemoveNameCharacter"/>, never as a key.
+    /// </remarks>
+    public sealed partial class ProjectsScreenViewModel : ScreenViewModelBase, IScreenViewModel<bool>
+    {
+        #region Fields
+
+        // How many project rows the list shows per page - a rendering-layout assumption, not a
+        // setting, matching the projects-render-48 mockups. Keep in sync with the actual
+        // renderer once it's been tuned against a real console (see ProjectsScreen's own TODO).
+        private const int PageSize = 14;
+
+        // Matches Project.Name's [MaxLength(100)] - stops a name from being typed past what the
+        // gateway would reject on commit anyway.
+        private const int MaxNameLength = 100;
+
+        private readonly IStintDataGateway _gateway;
+
+        // Full entities behind Projects, keyed by id - kept around purely so committing a rename
+        // (UpdateProjectAsync) can carry over Description/IsActive instead of wiping them; the
+        // gateway updates every editable field from whatever Project it's handed, and Projects
+        // itself (a ProjectListRow projection) doesn't carry those fields at all.
+        private Dictionary<int, Project> _projectsById = [];
+
+        // Ids soft-deleted (SetProjectActiveAsync(id, false)) this screen visit, most recent on
+        // top. Ctrl+Z pops one and reactivates it - handled entirely by ProjectsScreen.HandleKey
+        // (see its remarks for why this isn't a KeyHint), which calls UndoLastDeleteAsync
+        // directly. Resets whenever this screen is recreated, since the VM itself is transient.
+        private readonly Stack<int> _undoDeleteStack = new();
+
+        private ProjectsMode _mode = ProjectsMode.Idle;
+        private IReadOnlyList<ProjectListRow> _projects = [];
+        private int _selectedIndex;
+        private string _nameInput = string.Empty;
+        private int? _editingProjectId;
+        private string? _loadError;
+        private bool _startInCreateMode;
+        #endregion
+
+        #region Constructors
+
+        public ProjectsScreenViewModel(INavigationService navigation, IStintDataGateway gateway)
+            : base(navigation)
+        {
+            ArgumentNullException.ThrowIfNull(gateway);
+
+            _gateway = gateway;
+
+            Title = "PROJECTS";
+
+            KeyHints =
+            [
+                new KeyHint("select", MoveSelectionUpCommand, ConsoleKey.UpArrow),
+                new KeyHint("select", MoveSelectionDownCommand, ConsoleKey.DownArrow),
+                new KeyHint("confirm", ConfirmCommand, ConsoleKey.Enter),
+                new KeyHint("cancel", CancelCommand, ConsoleKey.Escape),
+                new KeyHint("edit", BeginEditCommand, ConsoleKey.E),
+                new KeyHint("delete", DeleteCommand, ConsoleKey.D),
+                new KeyHint("new", BeginCreateCommand, ConsoleKey.N),
+                new KeyHint("quit", QuitCommand, ConsoleKey.Q)
+            ];
+        }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>Which of Projects' three renders is current.</summary>
+        public ProjectsMode Mode { get => _mode; private set => SetProperty(ref _mode, value); }
+
+        /// <summary>The active projects, ordered by name (per <see cref="IStintDataGateway.GetActiveProjectsAsync"/>).</summary>
+        public IReadOnlyList<ProjectListRow> Projects { get => _projects; private set => SetProperty(ref _projects, value); }
+
+        /// <summary>The currently highlighted row's index into <see cref="Projects"/>.</summary>
+        public int SelectedIndex { get => _selectedIndex; private set => SetProperty(ref _selectedIndex, value); }
+
+        /// <summary>The name being typed while <see cref="Mode"/> is Creating or Editing.</summary>
+        public string NameInput { get => _nameInput; private set => SetProperty(ref _nameInput, value); }
+
+        /// <summary>The error from the last failed refresh, if any.</summary>
+        public string? LoadError { get => _loadError; private set => SetProperty(ref _loadError, value); }
+
+        /// <summary>The row at <see cref="SelectedIndex"/>, or null if <see cref="Projects"/> is empty.</summary>
+        public ProjectListRow? SelectedProject => SelectedIndex >= 0 && SelectedIndex < Projects.Count ? Projects[SelectedIndex] : null;
+
+        /// <summary>Whether <see cref="NameInput"/> is currently being typed into.</summary>
+        public bool IsEditingName => Mode is ProjectsMode.Creating or ProjectsMode.Editing;
+
+        /// <summary>
+        /// Whether <see cref="NameInput"/> (trimmed) collides with another active project's name -
+        /// checked locally against the already-loaded <see cref="Projects"/> rather than a fresh
+        /// gateway call per keystroke, since the whole active list is already in memory. The
+        /// project currently being renamed never collides with its own (unchanged) name.
+        /// </summary>
+        public bool IsNameTaken => Projects.Any(p =>
+            p.Id != _editingProjectId && string.Equals(p.Name, NameInput.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>The "TAKEN"/"OK" label shown next to <see cref="NameInput"/> while typing.</summary>
+        public string NameStatusLabel => string.IsNullOrWhiteSpace(NameInput) ? string.Empty : (IsNameTaken ? "TAKEN" : "OK");
+
+        /// <summary>Number of pages <see cref="CurrentPageProjects"/> paginates over.</summary>
+        public int TotalPages => Math.Max(1, (int)Math.Ceiling(Projects.Count / (double)PageSize));
+
+        /// <summary>Which page <see cref="SelectedIndex"/> currently falls on.</summary>
+        public int CurrentPageIndex => Projects.Count == 0 ? 0 : SelectedIndex / PageSize;
+
+        /// <summary><see cref="SelectedIndex"/> relative to the start of <see cref="CurrentPageProjects"/>.</summary>
+        public int SelectedIndexOnPage => SelectedIndex - CurrentPageIndex * PageSize;
+
+        /// <summary>The slice of <see cref="Projects"/> for <see cref="CurrentPageIndex"/>.</summary>
+        public IReadOnlyList<ProjectListRow> CurrentPageProjects => Projects
+            .Skip(CurrentPageIndex * PageSize)
+            .Take(PageSize)
+            .ToList();
+
+        /// <summary>Whether Ctrl+Z (handled by the view, not a KeyHint) would do anything right now.</summary>
+        public bool CanUndoDelete => Mode == ProjectsMode.Idle && _undoDeleteStack.Count > 0;
+
+        #endregion
+
+        #region Methods
+
+        /// <inheritdoc />
+        public override void OnActivated()
+        {
+            // Fire-and-forget for the same reason as Home's OnActivated: a local SQLite read is
+            // fast enough that the one-frame stale gap is harmless.
+            _ = RefreshAsync();
+
+            if (_startInCreateMode)
+            {
+                _startInCreateMode = false;
+                BeginCreate();
+            }
+        }
+
+        /// <summary>
+        /// Whether this visit should open straight into <see cref="ProjectsMode.Creating"/> -
+        /// e.g. Home's "new project" key hint, which has nowhere else to send a first-time user.
+        /// </summary>
+        public void Initialize(bool startInCreateMode) => _startInCreateMode = startInCreateMode;
+
+        /// <summary>
+        /// Appends one character to <see cref="NameInput"/>, while <see cref="IsEditingName"/>.
+        /// The render pipeline decides which physical key counts as printable text - this method
+        /// takes the character itself, never a <see cref="ConsoleKey"/>/<see cref="ConsoleKeyInfo"/>.
+        /// </summary>
+        public void AppendNameCharacter(char character)
+        {
+            if (!IsEditingName || char.IsControl(character) || NameInput.Length >= MaxNameLength)
+            {
+                return;
+            }
+
+            NameInput += character;
+        }
+
+        /// <summary>
+        /// Removes the last typed character of <see cref="NameInput"/>, while <see cref="IsEditingName"/>.
+        /// If there's nothing left to remove, cancels back to <see cref="ProjectsMode.Idle"/> instead
+        /// of leaving an empty name field sitting open.
+        /// </summary>
+        public void RemoveNameCharacter()
+        {
+            if (!IsEditingName)
+            {
+                return;
+            }
+
+            if (NameInput.Length > 0)
+            {
+                NameInput = NameInput[..^1];
+            }
+            else
+            {
+                Cancel();
+            }
+        }
+
+        /// <summary>Pops the most recently soft-deleted project and reactivates it. See <see cref="CanUndoDelete"/>.</summary>
+        public async Task UndoLastDeleteAsync()
+        {
+            if (_undoDeleteStack.Count == 0)
+            {
+                return;
+            }
+
+            var projectId = _undoDeleteStack.Pop();
+            await _gateway.SetProjectActiveAsync(projectId, true);
+            await RefreshAsync(projectId);
+        }
+
+        #endregion
+
+        #region Commands
+
+        [RelayCommand(CanExecute = nameof(CanMoveSelection))] private void MoveSelectionUp()
+            => SelectedIndex = Math.Max(0, SelectedIndex - 1);
+
+        [RelayCommand(CanExecute = nameof(CanMoveSelection))] private void MoveSelectionDown()
+            => SelectedIndex = Math.Min(Projects.Count - 1, SelectedIndex + 1);
+
+        // Enter's behavior depends on Mode: commits the typed name while Creating/Editing;
+        // while Idle it would open the selected project, but CanConfirm() keeps that branch
+        // inert (and "[enter] ..." out of the footer entirely) for now.
+        [RelayCommand(CanExecute = nameof(CanConfirm))] private async Task ConfirmAsync()
+        {
+            switch (Mode)
+            {
+                case ProjectsMode.Creating:
+                    var created = await _gateway.AddProjectAsync(new Project { Name = NameInput.Trim() });
+                    Mode = ProjectsMode.Idle;
+                    NameInput = string.Empty;
+                    await RefreshAsync(created.Id);
+                    break;
+
+                case ProjectsMode.Editing:
+                    if (_editingProjectId is int id && _projectsById.TryGetValue(id, out var existing))
+                    {
+                        existing.Name = NameInput.Trim();
+                        await _gateway.UpdateProjectAsync(existing);
+
+                        Mode = ProjectsMode.Idle;
+                        _editingProjectId = null;
+                        NameInput = string.Empty;
+                        await RefreshAsync(id);
+                    }
+                    break;
+
+                case ProjectsMode.Idle:
+                    // TODO: Navigation.NavigateTo<ProjectScreenViewModel, Project>(SelectedProject!)
+                    // once that screen exists.
+                    break;
+            }
+        }
+
+        // Esc while Creating/Editing: discards whatever was typed and drops back to Idle,
+        // leaving the project list (and any project being renamed) untouched.
+        [RelayCommand(CanExecute = nameof(CanCancel))] private void Cancel()
+        {
+            Mode = ProjectsMode.Idle;
+            _editingProjectId = null;
+            NameInput = string.Empty;
+        }
+
+        [RelayCommand(CanExecute = nameof(CanBeginCreate))] private void BeginCreate()
+        {
+            Mode = ProjectsMode.Creating;
+            _editingProjectId = null;
+            NameInput = string.Empty;
+        }
+
+        [RelayCommand(CanExecute = nameof(CanBeginEdit))] private void BeginEdit()
+        {
+            var selected = SelectedProject;
+            if (selected is null)
+            {
+                return;
+            }
+
+            Mode = ProjectsMode.Editing;
+            _editingProjectId = selected.Id;
+            NameInput = selected.Name;
+        }
+
+        // Soft delete only - there's no hard-delete in the gateway, and GetActiveProjectsAsync
+        // already filters to IsActive, so deactivating is enough to drop it from this list. The
+        // id goes on the undo stack so Ctrl+Z (see CanUndoDelete) can bring it right back.
+        [RelayCommand(CanExecute = nameof(CanDelete))] private async Task DeleteAsync()
+        {
+            var selected = SelectedProject;
+            if (selected is null)
+            {
+                return;
+            }
+
+            await _gateway.SetProjectActiveAsync(selected.Id, false);
+            _undoDeleteStack.Push(selected.Id);
+            await RefreshAsync();
+        }
+
+        [RelayCommand] private void Quit()
+        {
+            // TODO: replace with a proper shutdown hook (flush logs, dispose the DI container)
+            // once the render pipeline/host loop exists - same TODO as Home's Quit.
+            Environment.Exit(0);
+        }
+
+        #endregion
+
+        #region CanExecute
+
+        private bool CanMoveSelection() => Mode == ProjectsMode.Idle && Projects.Count > 0;
+
+        private bool CanConfirm() => Mode switch
+        {
+            ProjectsMode.Creating or ProjectsMode.Editing => IsNameValid,
+            _ => false
+        };
+
+        private bool CanCancel() => Mode != ProjectsMode.Idle;
+
+        private bool CanBeginCreate() => Mode == ProjectsMode.Idle;
+
+        private bool CanBeginEdit() => Mode == ProjectsMode.Idle && Projects.Count > 0;
+
+        private bool CanDelete() => Mode == ProjectsMode.Idle && Projects.Count > 0;
+
+        private bool IsNameValid => !string.IsNullOrWhiteSpace(NameInput) && !IsNameTaken;
+
+        #endregion
+
+        #region Helpers
+
+        private async Task RefreshAsync(int? selectProjectId = null)
+        {
+            try
+            {
+                var activeProjects = await _gateway.GetActiveProjectsAsync();
+                var rows = new List<ProjectListRow>(activeProjects.Count);
+                var byId = new Dictionary<int, Project>(activeProjects.Count);
+
+                foreach (var project in activeProjects)
+                {
+                    byId[project.Id] = project;
+                    var taskCount = await _gateway.GetTaskCountForProjectAsync(project.Id);
+                    rows.Add(new ProjectListRow { Id = project.Id, Name = project.Name, TaskCount = taskCount });
+                }
+
+                _projectsById = byId;
+                Projects = rows;
+
+                var targetIndex = selectProjectId is int id
+                    ? rows.FindIndex(r => r.Id == id)
+                    : SelectedIndex;
+
+                SelectedIndex = Math.Clamp(targetIndex < 0 ? 0 : targetIndex, 0, Math.Max(0, rows.Count - 1));
+                LoadError = null;
+            }
+            catch (Exception ex)
+            {
+                // No logging pipeline exists yet - keep the error on the VM itself rather than
+                // losing it silently, same approach as Home's RefreshAsync.
+                LoadError = ex.Message;
+            }
+        }
+
+        #endregion
+    }
+}

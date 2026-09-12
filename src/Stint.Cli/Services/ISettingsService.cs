@@ -30,7 +30,8 @@ namespace Stint.Cli.Services
         /// <summary>
         /// Reads the settings file from disk and replaces <see cref="Settings"/> with its
         /// contents. If no file exists yet, <see cref="Settings"/> is reset to
-        /// <c>new TSettings()</c> instead - nothing is written to disk by this call.
+        /// <c>new TSettings()</c> and immediately saved, so the defaults are on disk from the
+        /// first run onward instead of this same "nothing to load" branch running every launch.
         /// </summary>
         Task LoadAsync(CancellationToken ct = default);
 

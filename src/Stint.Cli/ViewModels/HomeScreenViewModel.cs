@@ -339,9 +339,7 @@ namespace Stint.Cli.ViewModels
         }
 
         [RelayCommand(CanExecute = nameof(CanAddNewProject))] private void NewProject()
-        {
-            // TODO: Navigation.NavigateTo<ProjectsScreenViewModel>() (creating mode) once it exists.
-        }
+            => Navigation.NavigateTo<ProjectsScreenViewModel, bool>(true);
 
         [RelayCommand(CanExecute = nameof(CanGoToPreviousPage))] private void PreviousPage() => CurrentPageIndex--;
 

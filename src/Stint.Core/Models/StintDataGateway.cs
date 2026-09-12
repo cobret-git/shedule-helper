@@ -95,6 +95,13 @@ namespace Stint.Core
                 .FirstOrDefaultAsync(t => t.Id == taskId, ct);
         }
 
+        public async Task<int> GetTaskCountForProjectAsync(int projectId, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            return await context.Tasks
+                .CountAsync(t => t.ProjectId == projectId, ct);
+        }
+
         public async Task<TaskItem> AddTaskAsync(TaskItem task, CancellationToken ct = default)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
