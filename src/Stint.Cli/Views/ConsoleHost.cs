@@ -136,9 +136,18 @@ namespace Stint.Cli.Views
 
             // Every screen gets the same footer chrome: a full-width rule directly above the key
             // hints, so the key hints never look like they're just floating under whatever the
-            // screen's own last content row happened to be.
-            buffer.SetLine(ScreenBuffer.Height - 2, new string('-', ScreenBuffer.Width));
-            buffer.SetLine(ScreenBuffer.Height - 1, KeyHintsFooter.Render(current.KeyHints));
+            // screen's own last content row happened to be. The hints themselves may wrap onto
+            // more than one line (see KeyHintsFooter.Render), so the whole block - rule included -
+            // floats up from the bottom by however many lines that took.
+            var footerLines = KeyHintsFooter.Render(current.KeyHints, ScreenBuffer.Width);
+            var ruleRow = ScreenBuffer.Height - 1 - footerLines.Count;
+
+            buffer.SetLine(ruleRow, new string('-', ScreenBuffer.Width));
+            for (var i = 0; i < footerLines.Count; i++)
+            {
+                buffer.SetLine(ruleRow + 1 + i, footerLines[i]);
+            }
+
             buffer.Flush(origin.Left, origin.Top);
         }
 
