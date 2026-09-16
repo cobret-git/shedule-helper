@@ -45,12 +45,12 @@ namespace Stint.Core
         #region Tasks
 
         /// <summary>
-        /// Returns all tasks belonging to the given project, ordered by creation date.
+        /// Returns all active tasks belonging to the given project, ordered by creation date.
         /// </summary>
         Task<List<TaskItem>> GetTasksForProjectAsync(int projectId, CancellationToken ct = default);
 
         /// <summary>
-        /// Returns how many tasks belong to the given project, without loading them.
+        /// Returns how many active tasks belong to the given project, without loading them.
         /// </summary>
         Task<int> GetTaskCountForProjectAsync(int projectId, CancellationToken ct = default);
 
@@ -65,8 +65,8 @@ namespace Stint.Core
         Task<TaskItem> AddTaskAsync(TaskItem task, CancellationToken ct = default);
 
         /// <summary>
-        /// Updates the editable fields (<see cref="TaskItem.Title"/>, <see cref="TaskItem.Status"/>)
-        /// of the task matching <see cref="TaskItem.Id"/>.
+        /// Updates the editable fields (<see cref="TaskItem.Title"/>, <see cref="TaskItem.Status"/>,
+        /// <see cref="TaskItem.IsActive"/>) of the task matching <see cref="TaskItem.Id"/>.
         /// </summary>
         Task UpdateTaskAsync(TaskItem task, CancellationToken ct = default);
 
@@ -74,6 +74,13 @@ namespace Stint.Core
         /// Updates the lifecycle status of the given task.
         /// </summary>
         Task UpdateTaskStatusAsync(int taskId, TaskItemStatus status, CancellationToken ct = default);
+
+        /// <summary>
+        /// Flips <see cref="TaskItem.IsActive"/> on the given task - a soft delete/undo-delete,
+        /// same as <see cref="SetProjectActiveAsync"/>, so a removed task's <see cref="ProjectTimeLog"/>
+        /// history stays attributable instead of being nulled out.
+        /// </summary>
+        Task SetTaskActiveAsync(int taskId, bool isActive, CancellationToken ct = default);
 
         #endregion
 

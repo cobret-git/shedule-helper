@@ -80,7 +80,7 @@ namespace Stint.Core
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             return await context.Tasks
-                .Where(t => t.ProjectId == projectId)
+                .Where(t => t.ProjectId == projectId && t.IsActive)
                 .OrderBy(t => t.CreatedAt)
                 .AsNoTracking()
                 .ToListAsync(ct);
@@ -98,7 +98,7 @@ namespace Stint.Core
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             return await context.Tasks
-                .CountAsync(t => t.ProjectId == projectId, ct);
+                .CountAsync(t => t.ProjectId == projectId && t.IsActive, ct);
         }
 
         public async Task<TaskItem> AddTaskAsync(TaskItem task, CancellationToken ct = default)
@@ -117,6 +117,7 @@ namespace Stint.Core
 
             existing.Title = task.Title;
             existing.Status = task.Status;
+            existing.IsActive = task.IsActive;
             await context.SaveChangesAsync(ct);
         }
 
@@ -127,6 +128,16 @@ namespace Stint.Core
                 ?? throw new InvalidOperationException($"Task {taskId} was not found.");
 
             task.Status = status;
+            await context.SaveChangesAsync(ct);
+        }
+
+        public async Task SetTaskActiveAsync(int taskId, bool isActive, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            var task = await context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId, ct)
+                ?? throw new InvalidOperationException($"Task {taskId} was not found.");
+
+            task.IsActive = isActive;
             await context.SaveChangesAsync(ct);
         }
 

@@ -41,6 +41,14 @@ namespace Stint.Core
         public TaskItemStatus Status { get; set; } = TaskItemStatus.Todo;
 
         /// <summary>
+        /// Flag indicating whether the task is active (1) or soft-deleted (0). Maps to 'IsActive'.
+        /// Kept (rather than a hard delete) so a removed task's <see cref="ProjectTimeLog"/>
+        /// history stays attributable to a real task instead of a dangling/null reference.
+        /// </summary>
+        [Column("IsActive")]
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
         /// Timestamp indicating when the task was created. Maps to 'CreatedAt'.
         /// </summary>
         [Column("CreatedAt")]

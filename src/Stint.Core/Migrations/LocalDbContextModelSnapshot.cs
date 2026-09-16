@@ -135,6 +135,10 @@ namespace Stint.Core.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("CreatedAt");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("IsActive");
+
                     b.Property<int>("ProjectId")
                         .HasColumnType("INTEGER")
                         .HasColumnName("ProjectId");

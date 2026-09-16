@@ -11,7 +11,7 @@ using Stint.Core;
 namespace Stint.Core.Migrations
 {
     [DbContext(typeof(LocalDbContext))]
-    [Migration("20260912180619_InitialMigration")]
+    [Migration("20260916172254_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -137,6 +137,10 @@ namespace Stint.Core.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT")
                         .HasColumnName("CreatedAt");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("IsActive");
 
                     b.Property<int>("ProjectId")
                         .HasColumnType("INTEGER")
