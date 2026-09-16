@@ -77,8 +77,27 @@ namespace Stint.Cli.ViewModels
 
         #region Properties
 
-        /// <summary>Which of Projects' three renders is current.</summary>
-        public ProjectsMode Mode { get => _mode; private set => SetProperty(ref _mode, value); }
+        /// <summary>
+        /// Which of Projects' three renders is current. Setting this also updates <see cref="Title"/>,
+        /// so the title bar always shows what's actually being done (e.g. "PROJECTS - NEW") rather
+        /// than a static "PROJECTS" no matter the mode.
+        /// </summary>
+        public ProjectsMode Mode
+        {
+            get => _mode;
+            private set
+            {
+                if (SetProperty(ref _mode, value))
+                {
+                    Title = value switch
+                    {
+                        ProjectsMode.Creating => "PROJECTS - NEW",
+                        ProjectsMode.Editing => "PROJECTS - EDIT",
+                        _ => "PROJECTS"
+                    };
+                }
+            }
+        }
 
         /// <summary>The active projects, ordered by name (per <see cref="IStintDataGateway.GetActiveProjectsAsync"/>).</summary>
         public IReadOnlyList<ProjectListRow> Projects { get => _projects; private set => SetProperty(ref _projects, value); }
