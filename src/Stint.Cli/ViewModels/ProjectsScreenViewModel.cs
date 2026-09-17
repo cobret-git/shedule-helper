@@ -63,6 +63,7 @@ namespace Stint.Cli.ViewModels
             [
                 new KeyHint("select", MoveSelectionUpCommand, ConsoleKey.UpArrow),
                 new KeyHint("select", MoveSelectionDownCommand, ConsoleKey.DownArrow),
+                new KeyHint("open", OpenCommand, ConsoleKey.Enter),
                 new KeyHint("confirm", ConfirmCommand, ConsoleKey.Enter),
                 new KeyHint("cancel", CancelCommand, ConsoleKey.Escape),
                 new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
@@ -219,9 +220,9 @@ namespace Stint.Cli.ViewModels
         [RelayCommand(CanExecute = nameof(CanMoveSelection))] private void MoveSelectionDown()
             => SelectedIndex = Math.Min(Projects.Count - 1, SelectedIndex + 1);
 
-        // Enter's behavior depends on Mode: commits the typed name while Creating/Editing;
-        // while Idle it would open the selected project, but CanConfirm() keeps that branch
-        // inert (and "[enter] ..." out of the footer entirely) for now.
+        // Enter's behavior depends on Mode: commits the typed name while Creating/Editing. Idle
+        // is handled by the separate Open command below instead - CanConfirm keeps this one
+        // inert then, so the footer shows "[enter] open" rather than "[enter] confirm".
         [RelayCommand(CanExecute = nameof(CanConfirm))] private async Task ConfirmAsync()
         {
             switch (Mode)
@@ -246,10 +247,22 @@ namespace Stint.Cli.ViewModels
                     break;
 
                 case ProjectsMode.Idle:
-                    // TODO: Navigation.NavigateTo<ProjectScreenViewModel, Project>(SelectedProject!)
-                    // once that screen exists.
                     break;
             }
+        }
+
+        // Enter while Idle: drills into the selected project's task list. Bound to the same key
+        // as Confirm above - CanOpen/CanConfirm are never true at the same time, so exactly one
+        // of the two ever shows in the footer.
+        [RelayCommand(CanExecute = nameof(CanOpen))] private void Open()
+        {
+            var selected = SelectedProject;
+            if (selected is null)
+            {
+                return;
+            }
+
+            Navigation.NavigateTo<ProjectScreenViewModel, ProjectListRow>(selected);
         }
 
         // Esc while Creating/Editing: discards whatever was typed (and, while Creating, the
@@ -327,6 +340,8 @@ namespace Stint.Cli.ViewModels
         private bool CanCancel() => Mode != ProjectsMode.Idle;
 
         private bool CanGoBack() => Mode == ProjectsMode.Idle && Navigation.CanGoBack;
+
+        private bool CanOpen() => Mode == ProjectsMode.Idle && Projects.Count > 0;
 
         private bool CanBeginCreate() => Mode == ProjectsMode.Idle;
 

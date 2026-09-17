@@ -27,10 +27,12 @@ services.AddSingleton<ISettingsService<AppSettings>, SettingsService<AppSettings
 // disposes it itself when popped for good.
 services.AddTransient<HomeScreenViewModel>();
 services.AddTransient<ProjectsScreenViewModel>();
+services.AddTransient<ProjectScreenViewModel>();
 
 // One IScreenView per screen ViewModel above, plus the pipeline that resolves/drives them.
 services.AddSingleton<IScreenView, HomeScreen>();
 services.AddSingleton<IScreenView, ProjectsScreen>();
+services.AddSingleton<IScreenView, ProjectScreen>();
 services.AddSingleton<ScreenViewRegistry>();
 services.AddSingleton<ConsoleHost>();
 
