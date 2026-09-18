@@ -7,8 +7,8 @@ using Stint.Core;
 namespace Stint.Cli.ViewModels
 {
     /// <summary>
-    /// The Projects screen: the list of active projects, with inline create/rename and soft
-    /// delete (with a same-visit undo). See <c>docs/update-v1.1.0/projects-render-48__*.txt</c>
+    /// The Projects screen: the list of active projects, with inline create/rename and a
+    /// mark-then-confirm batch delete. See <c>docs/update-v1.1.0/projects-render-48__*.txt</c>
     /// for the render mockups this takes its layout/labels from - row positions there are a
     /// rough guide, not exact, the same way <see cref="HomeScreenViewModel"/>'s were.
     /// </summary>
@@ -34,11 +34,11 @@ namespace Stint.Cli.ViewModels
 
         private readonly IStintDataGateway _gateway;
 
-        // Ids soft-deleted (SetProjectActiveAsync(id, false)) this screen visit, most recent on
-        // top. Ctrl+Z pops one and reactivates it - handled entirely by ProjectsScreen.HandleKey
-        // (see its remarks for why this isn't a KeyHint), which calls UndoLastDeleteAsync
-        // directly. Resets whenever this screen is recreated, since the VM itself is transient.
-        private readonly Stack<int> _undoDeleteStack = new();
+        // Ids currently marked for deletion while Mode is ConfirmingDelete - never touched
+        // outside that mode, and always empty on the way back out of it (whether that's from
+        // Confirm, which clears it after the gateway calls, or Cancel, which clears it and
+        // discards it instead).
+        private readonly HashSet<int> _pendingDeleteIds = [];
 
         private ProjectsMode _mode = ProjectsMode.Idle;
         private IReadOnlyList<ProjectListRow> _projects = [];
@@ -68,7 +68,8 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("cancel", CancelCommand, ConsoleKey.Escape),
                 new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
                 new KeyHint("edit", BeginEditCommand, ConsoleKey.E),
-                new KeyHint("delete", DeleteCommand, ConsoleKey.D),
+                new KeyHint("delete", BeginDeleteCommand, ConsoleKey.D),
+                new KeyHint("mark", ToggleMarkForDeleteCommand, ConsoleKey.D),
                 new KeyHint("new", BeginCreateCommand, ConsoleKey.N),
                 new KeyHint("quit", QuitCommand, ConsoleKey.Q)
             ];
@@ -94,6 +95,7 @@ namespace Stint.Cli.ViewModels
                     {
                         ProjectsMode.Creating => "PROJECTS - NEW",
                         ProjectsMode.Editing => "PROJECTS - EDIT",
+                        ProjectsMode.ConfirmingDelete => "PROJECTS - DELETE",
                         _ => "PROJECTS"
                     };
                 }
@@ -145,8 +147,8 @@ namespace Stint.Cli.ViewModels
             .Take(PageSize)
             .ToList();
 
-        /// <summary>Whether Ctrl+Z (handled by the view, not a KeyHint) would do anything right now.</summary>
-        public bool CanUndoDelete => Mode == ProjectsMode.Idle && _undoDeleteStack.Count > 0;
+        /// <summary>The ids currently marked for deletion - only meaningful while <see cref="Mode"/> is ConfirmingDelete.</summary>
+        public IReadOnlySet<int> PendingDeleteIds => _pendingDeleteIds;
 
         #endregion
 
@@ -197,19 +199,6 @@ namespace Stint.Cli.ViewModels
             }
         }
 
-        /// <summary>Pops the most recently soft-deleted project and reactivates it. See <see cref="CanUndoDelete"/>.</summary>
-        public async Task UndoLastDeleteAsync()
-        {
-            if (_undoDeleteStack.Count == 0)
-            {
-                return;
-            }
-
-            var projectId = _undoDeleteStack.Pop();
-            await _gateway.SetProjectActiveAsync(projectId, true);
-            await RefreshAsync(projectId);
-        }
-
         #endregion
 
         #region Commands
@@ -220,9 +209,10 @@ namespace Stint.Cli.ViewModels
         [RelayCommand(CanExecute = nameof(CanMoveSelection))] private void MoveSelectionDown()
             => SelectedIndex = Math.Min(Projects.Count - 1, SelectedIndex + 1);
 
-        // Enter's behavior depends on Mode: commits the typed name while Creating/Editing. Idle
-        // is handled by the separate Open command below instead - CanConfirm keeps this one
-        // inert then, so the footer shows "[enter] open" rather than "[enter] confirm".
+        // Enter's behavior depends on Mode: commits the typed name while Creating/Editing, or
+        // commits the batch delete while ConfirmingDelete. Idle is handled by the separate Open
+        // command below instead - CanConfirm keeps this one inert then, so the footer shows
+        // "[enter] open" rather than "[enter] confirm".
         [RelayCommand(CanExecute = nameof(CanConfirm))] private async Task ConfirmAsync()
         {
             switch (Mode)
@@ -246,6 +236,17 @@ namespace Stint.Cli.ViewModels
                     }
                     break;
 
+                case ProjectsMode.ConfirmingDelete:
+                    foreach (var projectId in _pendingDeleteIds)
+                    {
+                        await _gateway.SetProjectActiveAsync(projectId, false);
+                    }
+
+                    _pendingDeleteIds.Clear();
+                    Mode = ProjectsMode.Idle;
+                    await RefreshAsync();
+                    break;
+
                 case ProjectsMode.Idle:
                     break;
             }
@@ -265,16 +266,17 @@ namespace Stint.Cli.ViewModels
             Navigation.NavigateTo<ProjectScreenViewModel, ProjectListRow>(selected);
         }
 
-        // Esc while Creating/Editing: discards whatever was typed (and, while Creating, the
-        // never-persisted project along with it - nothing is written to the gateway until
-        // Confirm) and drops back to Idle, staying on this screen. Esc again from Idle is what
-        // actually leaves - see GoBack - so backing all the way out to Home always takes two
-        // presses once you're mid-edit, never one.
+        // Esc while Creating/Editing/ConfirmingDelete: discards whatever was in progress (typed
+        // name, or every pending delete mark - nothing is written to the gateway until Confirm)
+        // and drops back to Idle, staying on this screen. Esc again from Idle is what actually
+        // leaves - see GoBack - so backing all the way out to Home always takes two presses once
+        // you're mid-edit/mid-delete, never one.
         [RelayCommand(CanExecute = nameof(CanCancel))] private void Cancel()
         {
             Mode = ProjectsMode.Idle;
             _editingProjectId = null;
             NameInput = string.Empty;
+            _pendingDeleteIds.Clear();
         }
 
         // Esc while Idle: leaves Projects and returns to Home. CanGoBack requires Idle so this
@@ -302,10 +304,10 @@ namespace Stint.Cli.ViewModels
             NameInput = selected.Name;
         }
 
-        // Soft delete only - there's no hard-delete in the gateway, and GetActiveProjectsAsync
-        // already filters to IsActive, so deactivating is enough to drop it from this list. The
-        // id goes on the undo stack so Ctrl+Z (see CanUndoDelete) can bring it right back.
-        [RelayCommand(CanExecute = nameof(CanDelete))] private async Task DeleteAsync()
+        // Enters the mark-then-confirm delete flow, immediately marking whatever was selected
+        // when delete was pressed - the "red indicator" shows up on it right away rather than
+        // requiring a separate first toggle just to mark the obvious one.
+        [RelayCommand(CanExecute = nameof(CanBeginDelete))] private void BeginDelete()
         {
             var selected = SelectedProject;
             if (selected is null)
@@ -313,9 +315,39 @@ namespace Stint.Cli.ViewModels
                 return;
             }
 
-            await _gateway.SetProjectActiveAsync(selected.Id, false);
-            _undoDeleteStack.Push(selected.Id);
-            await RefreshAsync();
+            Mode = ProjectsMode.ConfirmingDelete;
+            _pendingDeleteIds.Clear();
+            _pendingDeleteIds.Add(selected.Id);
+            OnPropertyChanged(nameof(PendingDeleteIds));
+        }
+
+        // D while ConfirmingDelete: adds or removes the currently selected project from the
+        // pending-delete set, without touching the gateway - only Confirm actually deletes. Bound
+        // to the same key as BeginDelete above - CanToggleMarkForDelete/CanBeginDelete are never
+        // true at the same time, so exactly one of the two ever fires.
+        // Unmarking the last remaining one drops straight back to Idle, same as Esc would, since
+        // an empty mark set means there's nothing left to confirm.
+        [RelayCommand(CanExecute = nameof(CanToggleMarkForDelete))] private void ToggleMarkForDelete()
+        {
+            var selected = SelectedProject;
+            if (selected is null)
+            {
+                return;
+            }
+
+            if (!_pendingDeleteIds.Remove(selected.Id))
+            {
+                _pendingDeleteIds.Add(selected.Id);
+                OnPropertyChanged(nameof(PendingDeleteIds));
+                return;
+            }
+
+            if (_pendingDeleteIds.Count == 0)
+            {
+                Mode = ProjectsMode.Idle;
+            }
+
+            OnPropertyChanged(nameof(PendingDeleteIds));
         }
 
         [RelayCommand] private void Quit()
@@ -329,11 +361,12 @@ namespace Stint.Cli.ViewModels
 
         #region CanExecute
 
-        private bool CanMoveSelection() => Mode == ProjectsMode.Idle && Projects.Count > 0;
+        private bool CanMoveSelection() => Mode is ProjectsMode.Idle or ProjectsMode.ConfirmingDelete && Projects.Count > 0;
 
         private bool CanConfirm() => Mode switch
         {
             ProjectsMode.Creating or ProjectsMode.Editing => IsNameValid,
+            ProjectsMode.ConfirmingDelete => _pendingDeleteIds.Count > 0,
             _ => false
         };
 
@@ -347,7 +380,9 @@ namespace Stint.Cli.ViewModels
 
         private bool CanBeginEdit() => Mode == ProjectsMode.Idle && Projects.Count > 0;
 
-        private bool CanDelete() => Mode == ProjectsMode.Idle && Projects.Count > 0;
+        private bool CanBeginDelete() => Mode == ProjectsMode.Idle && Projects.Count > 0;
+
+        private bool CanToggleMarkForDelete() => Mode == ProjectsMode.ConfirmingDelete && Projects.Count > 0;
 
         private bool IsNameValid => !string.IsNullOrWhiteSpace(NameInput) && !IsNameTaken;
 

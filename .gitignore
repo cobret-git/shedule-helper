@@ -419,3 +419,4 @@ FodyWeavers.xsd
 
 # Claude Code reference copies (not project source)
 .claude/reference/WinUI3-generic.xaml
+/src/.idea/.idea.SheduleHelper/.idea

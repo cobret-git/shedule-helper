@@ -67,12 +67,12 @@ namespace Stint.Cli.ViewModels
             [
                 new KeyHint("select", MoveSelectionUpCommand, ConsoleKey.UpArrow),
                 new KeyHint("select", MoveSelectionDownCommand, ConsoleKey.DownArrow),
-                new KeyHint("mark", ToggleMarkForDeleteCommand, ConsoleKey.Spacebar),
                 new KeyHint("confirm", ConfirmCommand, ConsoleKey.Enter),
                 new KeyHint("cancel", CancelCommand, ConsoleKey.Escape),
                 new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
                 new KeyHint("edit", BeginEditCommand, ConsoleKey.E),
                 new KeyHint("delete", BeginDeleteCommand, ConsoleKey.D),
+                new KeyHint("mark", ToggleMarkForDeleteCommand, ConsoleKey.D),
                 new KeyHint("new", BeginCreateCommand, ConsoleKey.N),
                 new KeyHint("quit", QuitCommand, ConsoleKey.Q)
             ];
@@ -309,8 +309,12 @@ namespace Stint.Cli.ViewModels
             OnPropertyChanged(nameof(PendingDeleteIds));
         }
 
-        // Space while ConfirmingDelete: adds or removes the currently selected task from the
-        // pending-delete set, without touching the gateway - only Confirm actually deletes.
+        // D while ConfirmingDelete: adds or removes the currently selected task from the
+        // pending-delete set, without touching the gateway - only Confirm actually deletes. Bound
+        // to the same key as BeginDelete above - CanToggleMarkForDelete/CanBeginDelete are never
+        // true at the same time, so exactly one of the two ever fires.
+        // Unmarking the last remaining one drops straight back to Idle, same as Esc would, since
+        // an empty mark set means there's nothing left to confirm.
         [RelayCommand(CanExecute = nameof(CanToggleMarkForDelete))] private void ToggleMarkForDelete()
         {
             var selected = SelectedTask;
@@ -322,6 +326,13 @@ namespace Stint.Cli.ViewModels
             if (!_pendingDeleteIds.Remove(selected.Id))
             {
                 _pendingDeleteIds.Add(selected.Id);
+                OnPropertyChanged(nameof(PendingDeleteIds));
+                return;
+            }
+
+            if (_pendingDeleteIds.Count == 0)
+            {
+                Mode = ProjectMode.Idle;
             }
 
             OnPropertyChanged(nameof(PendingDeleteIds));

@@ -6,8 +6,7 @@ namespace Stint.Cli.Views
 {
     /// <summary>
     /// Draws <see cref="ProjectsScreenViewModel"/>'s body content and intercepts the keys its
-    /// free-form project name entry - and Ctrl+Z undo - need that no fixed <see cref="KeyHint"/>
-    /// could represent.
+    /// free-form project name entry needs that no fixed <see cref="KeyHint"/> could represent.
     /// </summary>
     /// <remarks>
     /// Row positions/how many rows fit are approximate for now - tune once this is actually seen
@@ -42,16 +41,6 @@ namespace Stint.Cli.Views
         /// <inheritdoc />
         public override bool HandleKey(ProjectsScreenViewModel viewModel, ConsoleKeyInfo key)
         {
-            // Not a KeyHint: KeyHint dispatch matches on key.Key alone and ignores modifiers, so
-            // a "Z" hint would also fire on a bare "z" - which is a perfectly ordinary character
-            // to type while naming a project. Checking the Control modifier directly here, ahead
-            // of the free-text interception below, is what keeps the two from colliding.
-            if (key.Key == ConsoleKey.Z && key.Modifiers.HasFlag(ConsoleModifiers.Control) && viewModel.CanUndoDelete)
-            {
-                _ = viewModel.UndoLastDeleteAsync();
-                return true;
-            }
-
             if (!viewModel.IsEditingName)
             {
                 return false;
@@ -94,7 +83,7 @@ namespace Stint.Cli.Views
                 {
                     var isSelected = i == viewModel.SelectedIndexOnPage;
 
-                    if (isSelected && viewModel.Mode != ProjectsMode.Idle)
+                    if (isSelected && viewModel.Mode is ProjectsMode.Creating or ProjectsMode.Editing)
                     {
                         // Creating and Editing both overlay the name-entry row in place of
                         // whatever sits at the current selection, rather than inserting/shifting
@@ -104,7 +93,7 @@ namespace Stint.Cli.Views
                     }
                     else
                     {
-                        RenderProjectRow(buffer, row, rows[i], isSelected);
+                        RenderProjectRow(buffer, row, rows[i], isSelected, viewModel.PendingDeleteIds.Contains(rows[i].Id));
                     }
 
                     row++;
@@ -117,18 +106,23 @@ namespace Stint.Cli.Views
             }
         }
 
-        private static void RenderProjectRow(ScreenBuffer buffer, int row, ProjectListRow project, bool isSelected)
+        private static void RenderProjectRow(ScreenBuffer buffer, int row, ProjectListRow project, bool isSelected, bool isMarkedForDelete)
         {
             var marker = isSelected ? "> " : "  ";
             var line = marker + LineFormat.DotLeader(project.Name, LineFormat.FormatTaskCount(project.TaskCount), ScreenBuffer.Width - 2);
 
-            if (isSelected)
+            buffer.SetLine(row, line);
+
+            // A pending delete always wins the highlight over plain selection - "this is about
+            // to go away" is the more important thing to notice, and the two states are never
+            // meaningfully ambiguous since the cursor is wherever it was last moved to anyway.
+            if (isMarkedForDelete)
             {
-                buffer.SetLine(row, line, marker.Length, project.Name.Length);
+                buffer.AddColorSpan(row, marker.Length, project.Name.Length, ConsoleColor.White, ConsoleColor.Red);
             }
-            else
+            else if (isSelected)
             {
-                buffer.SetLine(row, line);
+                buffer.AddColorSpan(row, marker.Length, project.Name.Length, ConsoleColor.Black, ConsoleColor.White);
             }
         }
 
