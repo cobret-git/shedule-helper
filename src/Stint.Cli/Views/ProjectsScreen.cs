@@ -77,18 +77,29 @@ namespace Stint.Cli.Views
                 // Editing always has at least the row being renamed.
                 RenderNameEntry(buffer, row, viewModel.NameInput, viewModel.NameStatusLabel, viewModel.IsNameTaken);
             }
+            else if (viewModel.Mode == ProjectsMode.Creating)
+            {
+                // Creating appends the name-entry row after the existing list instead of
+                // overlaying it on whatever the cursor happened to be sitting on - wherever
+                // that was, it stays put and visible while the new name is typed.
+                foreach (var project in rows)
+                {
+                    RenderProjectRow(buffer, row, project, isSelected: false, isMarkedForDelete: false);
+                    row++;
+                }
+
+                RenderNameEntry(buffer, row, viewModel.NameInput, viewModel.NameStatusLabel, viewModel.IsNameTaken);
+            }
             else
             {
                 for (var i = 0; i < rows.Count; i++)
                 {
                     var isSelected = i == viewModel.SelectedIndexOnPage;
 
-                    if (isSelected && viewModel.Mode is ProjectsMode.Creating or ProjectsMode.Editing)
+                    if (isSelected && viewModel.Mode == ProjectsMode.Editing)
                     {
-                        // Creating and Editing both overlay the name-entry row in place of
-                        // whatever sits at the current selection, rather than inserting/shifting
-                        // the rest of the list - simplest single path for both, and matches the
-                        // mockups once you read "creating" as "cursor happened to be on row 0".
+                        // Editing overlays the name-entry row in place of the row being renamed -
+                        // unlike Creating, there's an existing row this one genuinely replaces.
                         RenderNameEntry(buffer, row, viewModel.NameInput, viewModel.NameStatusLabel, viewModel.IsNameTaken);
                     }
                     else

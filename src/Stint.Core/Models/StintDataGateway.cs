@@ -24,7 +24,7 @@ namespace Stint.Core
             await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             return await context.Projects
                 .Where(p => p.IsActive)
-                .OrderBy(p => p.Name)
+                .OrderBy(p => p.CreatedAt)
                 .AsNoTracking()
                 .ToListAsync(ct);
         }

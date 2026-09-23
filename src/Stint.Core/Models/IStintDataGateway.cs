@@ -10,7 +10,7 @@ namespace Stint.Core
         #region Projects
 
         /// <summary>
-        /// Returns all projects flagged as active, ordered by name.
+        /// Returns all projects flagged as active, in creation order.
         /// </summary>
         Task<List<Project>> GetActiveProjectsAsync(CancellationToken ct = default);
 

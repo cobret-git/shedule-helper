@@ -104,7 +104,7 @@ namespace Stint.Cli.ViewModels
             }
         }
 
-        /// <summary>The active projects, ordered by name (per <see cref="IStintDataGateway.GetActiveProjectsAsync"/>).</summary>
+        /// <summary>The active projects, in creation order (per <see cref="IStintDataGateway.GetActiveProjectsAsync"/>).</summary>
         public IReadOnlyList<ProjectListRow> Projects { get => _projects; private set => SetProperty(ref _projects, value); }
 
         /// <summary>The currently highlighted row's index into <see cref="Projects"/>.</summary>

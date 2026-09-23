@@ -85,17 +85,29 @@ namespace Stint.Cli.Views
                 // empty list is short-circuited by Render() before this is ever called.
                 RenderTitleEntry(buffer, row, viewModel.TitleInput);
             }
+            else if (viewModel.Mode == ProjectMode.Creating)
+            {
+                // Creating appends the title-entry row after the existing list instead of
+                // overlaying it on whatever the cursor happened to be sitting on - wherever that
+                // was, it stays put and visible while the new title is typed.
+                foreach (var task in rows)
+                {
+                    RenderTaskRow(buffer, row, task, isSelected: false, isMarkedForDelete: false);
+                    row++;
+                }
+
+                RenderTitleEntry(buffer, row, viewModel.TitleInput);
+            }
             else
             {
                 for (var i = 0; i < rows.Count; i++)
                 {
                     var isSelected = i == viewModel.SelectedIndexOnPage;
 
-                    if (isSelected && viewModel.Mode is ProjectMode.Creating or ProjectMode.Editing)
+                    if (isSelected && viewModel.Mode == ProjectMode.Editing)
                     {
-                        // Creating and Editing both overlay the title-entry row in place of
-                        // whatever sits at the current selection, rather than inserting/shifting
-                        // the rest of the list - same single path Projects uses for both.
+                        // Editing overlays the title-entry row in place of the row being renamed -
+                        // unlike Creating, there's an existing row this one genuinely replaces.
                         RenderTitleEntry(buffer, row, viewModel.TitleInput);
                     }
                     else

@@ -35,10 +35,13 @@ namespace Stint.Core
                 .HasIndex(a => a.WorkDate)
                 .IsUnique();
 
-            // Project: unique name
+            // Project: unique name among active projects only - a soft-deleted project's name
+            // (IsActive = 0) stays in the table forever, and must free up for reuse rather than
+            // permanently squatting on it.
             modelBuilder.Entity<Project>()
                 .HasIndex(p => p.Name)
-                .IsUnique();
+                .IsUnique()
+                .HasFilter("\"IsActive\" = 1");
 
             // Project 1:N Tasks
             modelBuilder.Entity<Project>()
