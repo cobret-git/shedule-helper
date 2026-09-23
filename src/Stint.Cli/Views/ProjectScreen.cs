@@ -31,12 +31,11 @@ namespace Stint.Cli.Views
         {
             buffer.SetLine(2, new string('-', ScreenBuffer.Width));
 
-            // The header keeps the "> " marker for every mode except Creating/Editing, where it
-            // hands the marker off to whichever task row is being typed into instead - the two
-            // never appear together, mirroring how the mockups show exactly one "> " on screen
-            // at a time.
-            var headerMarker = viewModel.Mode is ProjectMode.Creating or ProjectMode.Editing ? "  " : "> ";
-            buffer.SetLine(HeaderRow, headerMarker + viewModel.ProjectName);
+            // The header always shows "+ " - it used to hand the marker off (blank itself)
+            // while Creating/Editing, back when it shared "> " with the task row being typed
+            // into. Now that the header uses its own "+ " instead of "> ", there's no longer a
+            // clash to avoid, so it stays put in every mode.
+            buffer.SetLine(HeaderRow, "+ " + viewModel.ProjectName);
 
             if (viewModel.Tasks.Count == 0 && viewModel.Mode == ProjectMode.Idle)
             {
@@ -127,19 +126,22 @@ namespace Stint.Cli.Views
 
         private static void RenderTaskRow(ScreenBuffer buffer, int row, TaskItem task, bool isSelected, bool isMarkedForDelete)
         {
-            const string indent = "    ";
-            buffer.SetLine(row, indent + task.Title);
+            // Same indent scheme as RenderTitleEntry's own marker below - "  > " for the selected
+            // row, "    " otherwise - so the selection highlight always has the ">" to back it up,
+            // rather than relying on background color alone.
+            var marker = isSelected ? "  > " : "    ";
+            buffer.SetLine(row, marker + task.Title);
 
             // A pending delete always wins the highlight over plain selection - "this is about
             // to go away" is the more important thing to notice, and the two states are never
             // meaningfully ambiguous since the cursor is wherever it was last moved to anyway.
             if (isMarkedForDelete)
             {
-                buffer.AddColorSpan(row, indent.Length, task.Title.Length, ConsoleColor.White, ConsoleColor.Red);
+                buffer.AddColorSpan(row, marker.Length, task.Title.Length, ConsoleColor.White, ConsoleColor.Red);
             }
             else if (isSelected)
             {
-                buffer.AddColorSpan(row, indent.Length, task.Title.Length, ConsoleColor.Black, ConsoleColor.White);
+                buffer.AddColorSpan(row, marker.Length, task.Title.Length, ConsoleColor.Black, ConsoleColor.White);
             }
         }
 
