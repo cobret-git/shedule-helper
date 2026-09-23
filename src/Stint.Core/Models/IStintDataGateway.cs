@@ -36,7 +36,10 @@ namespace Stint.Core
         Task UpdateProjectAsync(Project project, CancellationToken ct = default);
 
         /// <summary>
-        /// Flips <see cref="Project.IsActive"/> on the given project.
+        /// Flips <see cref="Project.IsActive"/> on the given project - except deleting
+        /// (<paramref name="isActive"/> is <see langword="false"/>) a project with no
+        /// <see cref="ProjectTimeLog"/> history hard-deletes it instead, since there's nothing
+        /// worth keeping a soft-deleted row around for.
         /// </summary>
         Task SetProjectActiveAsync(int projectId, bool isActive, CancellationToken ct = default);
 
@@ -78,7 +81,9 @@ namespace Stint.Core
         /// <summary>
         /// Flips <see cref="TaskItem.IsActive"/> on the given task - a soft delete/undo-delete,
         /// same as <see cref="SetProjectActiveAsync"/>, so a removed task's <see cref="ProjectTimeLog"/>
-        /// history stays attributable instead of being nulled out.
+        /// history stays attributable instead of being nulled out. As with
+        /// <see cref="SetProjectActiveAsync"/>, deleting a task with no logged history hard-deletes
+        /// it instead.
         /// </summary>
         Task SetTaskActiveAsync(int taskId, bool isActive, CancellationToken ct = default);
 

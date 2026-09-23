@@ -70,7 +70,19 @@ namespace Stint.Core
             var project = await context.Projects.FirstOrDefaultAsync(p => p.Id == projectId, ct)
                 ?? throw new InvalidOperationException($"Project {projectId} was not found.");
 
-            project.IsActive = isActive;
+            // A project that was never actually tracked against has no history worth keeping a
+            // soft-deleted row around for - remove it outright instead of leaving it as DB
+            // garbage forever. One that does have logged time still only gets soft-deleted, same
+            // as before, so that history stays attributable.
+            if (!isActive && !await context.ProjectTimeLogs.AnyAsync(l => l.ProjectId == projectId, ct))
+            {
+                context.Projects.Remove(project);
+            }
+            else
+            {
+                project.IsActive = isActive;
+            }
+
             await context.SaveChangesAsync(ct);
         }
 
@@ -137,7 +149,18 @@ namespace Stint.Core
             var task = await context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId, ct)
                 ?? throw new InvalidOperationException($"Task {taskId} was not found.");
 
-            task.IsActive = isActive;
+            // Same trade-off as SetProjectActiveAsync: a task with no logged time is just
+            // garbage once removed, so it's hard-deleted instead of soft-deleted; one that does
+            // have history stays soft-deleted so that history stays attributable.
+            if (!isActive && !await context.ProjectTimeLogs.AnyAsync(l => l.TaskId == taskId, ct))
+            {
+                context.Tasks.Remove(task);
+            }
+            else
+            {
+                task.IsActive = isActive;
+            }
+
             await context.SaveChangesAsync(ct);
         }
 
