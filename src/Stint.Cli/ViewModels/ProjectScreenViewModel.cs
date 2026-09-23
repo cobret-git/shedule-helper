@@ -67,6 +67,8 @@ namespace Stint.Cli.ViewModels
             [
                 new KeyHint("select", MoveSelectionUpCommand, ConsoleKey.UpArrow),
                 new KeyHint("select", MoveSelectionDownCommand, ConsoleKey.DownArrow),
+                new KeyHint("page", PreviousPageCommand, ConsoleKey.LeftArrow),
+                new KeyHint("page", NextPageCommand, ConsoleKey.RightArrow),
                 new KeyHint("confirm", ConfirmCommand, ConsoleKey.Enter),
                 new KeyHint("cancel", CancelCommand, ConsoleKey.Escape),
                 new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
@@ -201,11 +203,22 @@ namespace Stint.Cli.ViewModels
 
         #region Commands
 
+        // Wraps around within the current page only (last row on the page -> down -> first row
+        // of that same page, and back) - Left/Right below is what moves between pages.
         [RelayCommand(CanExecute = nameof(CanMoveSelection))] private void MoveSelectionUp()
-            => SelectedIndex = Math.Max(0, SelectedIndex - 1);
+            => SelectedIndex = CurrentPageIndex * PageSize
+                + (SelectedIndexOnPage - 1 + CurrentPageTasks.Count) % CurrentPageTasks.Count;
 
         [RelayCommand(CanExecute = nameof(CanMoveSelection))] private void MoveSelectionDown()
-            => SelectedIndex = Math.Min(Tasks.Count - 1, SelectedIndex + 1);
+            => SelectedIndex = CurrentPageIndex * PageSize
+                + (SelectedIndexOnPage + 1) % CurrentPageTasks.Count;
+
+        // Jumps a full page at a time, keeping the same relative row within the page where
+        // possible (clamped down on a shorter final page). Wraps around at both ends, same as
+        // MoveSelectionUp/Down above - last page -> right -> first page, and back.
+        [RelayCommand(CanExecute = nameof(CanChangePage))] private void PreviousPage() => ChangePage(-1);
+
+        [RelayCommand(CanExecute = nameof(CanChangePage))] private void NextPage() => ChangePage(1);
 
         // Enter's behavior depends on Mode: commits the typed title while Creating/Editing, or
         // commits the batch delete while ConfirmingDelete. CanConfirm keeps it inert while Idle -
@@ -351,6 +364,8 @@ namespace Stint.Cli.ViewModels
 
         private bool CanMoveSelection() => Mode is ProjectMode.Idle or ProjectMode.ConfirmingDelete && Tasks.Count > 0;
 
+        private bool CanChangePage() => Mode is ProjectMode.Idle or ProjectMode.ConfirmingDelete && TotalPages > 1;
+
         private bool CanConfirm() => Mode switch
         {
             ProjectMode.Creating or ProjectMode.Editing => IsTitleValid,
@@ -375,6 +390,15 @@ namespace Stint.Cli.ViewModels
         #endregion
 
         #region Helpers
+
+        private void ChangePage(int direction)
+        {
+            var targetPageIndex = (CurrentPageIndex + direction + TotalPages) % TotalPages;
+            var itemsOnTargetPage = Math.Min(PageSize, Tasks.Count - targetPageIndex * PageSize);
+            var offsetOnPage = Math.Min(SelectedIndexOnPage, itemsOnTargetPage - 1);
+
+            SelectedIndex = targetPageIndex * PageSize + offsetOnPage;
+        }
 
         private async Task RefreshAsync(int? selectTaskId = null)
         {

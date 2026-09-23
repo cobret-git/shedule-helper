@@ -341,9 +341,13 @@ namespace Stint.Cli.ViewModels
         [RelayCommand(CanExecute = nameof(CanOpenProjects))] private void OpenProjects()
             => Navigation.NavigateTo<ProjectsScreenViewModel>();
 
-        [RelayCommand(CanExecute = nameof(CanGoToPreviousPage))] private void PreviousPage() => CurrentPageIndex--;
+        // Wraps around at both ends (last page -> right -> first page, first page -> left ->
+        // last page), same as the clock-in picker's own Up/Down above.
+        [RelayCommand(CanExecute = nameof(CanChangePage))] private void PreviousPage()
+            => CurrentPageIndex = (CurrentPageIndex - 1 + TotalPages) % TotalPages;
 
-        [RelayCommand(CanExecute = nameof(CanGoToNextPage))] private void NextPage() => CurrentPageIndex++;
+        [RelayCommand(CanExecute = nameof(CanChangePage))] private void NextPage()
+            => CurrentPageIndex = (CurrentPageIndex + 1) % TotalPages;
 
         [RelayCommand] private void Quit()
         {
@@ -372,9 +376,7 @@ namespace Stint.Cli.ViewModels
 
         private bool CanOpenProjects() => State == HomeState.ClockedIn && ProjectRows.Count == 0;
 
-        private bool CanGoToPreviousPage() => State == HomeState.ClockedOut && CurrentPageIndex > 0;
-
-        private bool CanGoToNextPage() => State == HomeState.ClockedOut && CurrentPageIndex < TotalPages - 1;
+        private bool CanChangePage() => State == HomeState.ClockedOut && TotalPages > 1;
 
         private bool IsCustomTimeComplete => TryParseCustomTime(out _);
 
