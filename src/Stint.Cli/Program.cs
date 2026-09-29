@@ -28,11 +28,13 @@ services.AddSingleton<ISettingsService<AppSettings>, SettingsService<AppSettings
 services.AddTransient<HomeScreenViewModel>();
 services.AddTransient<ProjectsScreenViewModel>();
 services.AddTransient<ProjectScreenViewModel>();
+services.AddTransient<SwitchScreenViewModel>();
 
 // One IScreenView per screen ViewModel above, plus the pipeline that resolves/drives them.
 services.AddSingleton<IScreenView, HomeScreen>();
 services.AddSingleton<IScreenView, ProjectsScreen>();
 services.AddSingleton<IScreenView, ProjectScreen>();
+services.AddSingleton<IScreenView, SwitchScreen>();
 services.AddSingleton<ScreenViewRegistry>();
 services.AddSingleton<ConsoleHost>();
 

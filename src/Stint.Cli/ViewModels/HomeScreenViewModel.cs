@@ -334,9 +334,7 @@ namespace Stint.Cli.ViewModels
         }
 
         [RelayCommand(CanExecute = nameof(CanSwitch))] private void Switch()
-        {
-            // TODO: Navigation.NavigateTo<SwitchScreenViewModel>() once that screen exists.
-        }
+            => Navigation.NavigateTo<SwitchScreenViewModel>();
 
         [RelayCommand(CanExecute = nameof(CanOpenProjects))] private void OpenProjects()
             => Navigation.NavigateTo<ProjectsScreenViewModel>();
@@ -372,9 +370,9 @@ namespace Stint.Cli.ViewModels
 
         private bool CanClockOut() => State == HomeState.ClockedIn;
 
-        private bool CanSwitch() => State == HomeState.ClockedIn && ProjectRows.Count > 0;
+        private bool CanSwitch() => State == HomeState.ClockedIn;
 
-        private bool CanOpenProjects() => State == HomeState.ClockedIn && ProjectRows.Count == 0;
+        private bool CanOpenProjects() => State == HomeState.ClockedIn;
 
         private bool CanChangePage() => State == HomeState.ClockedOut && TotalPages > 1;
 
