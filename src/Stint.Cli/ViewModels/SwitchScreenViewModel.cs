@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Stint.Cli.Models;
 using Stint.Cli.Services;
+using Stint.Cli.Components;
 using Stint.Core;
 
 namespace Stint.Cli.ViewModels
@@ -14,6 +15,12 @@ namespace Stint.Cli.ViewModels
     /// Reached from <see cref="HomeScreenViewModel.Switch"/> while clocked in. Loads today's
     /// attendance/open segment itself in <see cref="OnActivated"/> rather than taking it as a
     /// navigation context - same parameterless/root-style shape as <see cref="HomeScreenViewModel"/>.
+    /// Every action (switch target, pause, mark a task done) is only ever *marked* pending -
+    /// nothing reaches <see cref="IStintDataGateway"/> until <see cref="ConfirmAsync"/> commits
+    /// the whole batch at once, same mark-then-confirm shape as <see cref="ProjectScreenViewModel"/>'s
+    /// delete flow. The one added wrinkle here: whichever pending marks touch time logs (closing
+    /// the currently open segment, starting a new one) share a single <see cref="DateTime.Now"/>
+    /// snapshot, so there's never a gap between "stopped this" and "started that."
     /// </remarks>
     public sealed partial class SwitchScreenViewModel : ScreenViewModelBase
     {
@@ -25,11 +32,20 @@ namespace Stint.Cli.ViewModels
         private const int TreeRowBudget = 14;
 
         private readonly IStintDataGateway _gateway;
+
+        // Ids/target marked pending while Mode is Reviewing - never touched outside that mode,
+        // and always back to empty/null on the way out of it (Confirm clears them after the
+        // gateway calls, Cancel clears them and discards instead).
+        private readonly HashSet<int> _pendingDoneTaskIds = [];
+        private SwitchFlatRow? _pendingSwitchTarget;
+        private bool _pendingPause;
+
         private AttendanceLog? _attendanceLog;
         private ProjectTimeLog? _openLog;
         private IReadOnlyList<SwitchProjectRow> _projects = [];
         private List<SwitchFlatRow> _flatRows = [];
         private int _selectedIndex;
+        private SwitchMode _mode = SwitchMode.Idle;
         private string? _loadError;
         #endregion
 
@@ -50,10 +66,12 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("move", MoveSelectionDownCommand, ConsoleKey.DownArrow),
                 new KeyHint("page", PreviousPageCommand, ConsoleKey.LeftArrow),
                 new KeyHint("page", NextPageCommand, ConsoleKey.RightArrow),
-                new KeyHint("select", SelectCommand, ConsoleKey.Enter),
-                new KeyHint("pause", PauseCommand, ConsoleKey.P),
-                new KeyHint("done", DoneCommand, ConsoleKey.D),
+                new KeyHint("switch", ToggleSwitchTargetCommand, ConsoleKey.S),
+                new KeyHint("pause", TogglePauseCommand, ConsoleKey.P),
+                new KeyHint("done", ToggleDoneCommand, ConsoleKey.D),
+                new KeyHint("confirm", ConfirmCommand, ConsoleKey.Enter),
                 new KeyHint("new", BeginCreateProjectCommand, ConsoleKey.N),
+                new KeyHint("cancel", CancelCommand, ConsoleKey.Escape),
                 new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
                 new KeyHint("quit", QuitCommand, ConsoleKey.Q)
             ];
@@ -62,6 +80,19 @@ namespace Stint.Cli.ViewModels
         #endregion
 
         #region Properties
+
+        /// <summary>Which of Switch's two renders is current.</summary>
+        public SwitchMode Mode
+        {
+            get => _mode;
+            private set
+            {
+                if (SetProperty(ref _mode, value))
+                {
+                    Title = value == SwitchMode.Reviewing ? "SWITCH - REVIEW" : "SWITCH";
+                }
+            }
+        }
 
         /// <summary>Every active project/task, switchable target or not.</summary>
         public IReadOnlyList<SwitchProjectRow> Projects { get => _projects; private set => SetProperty(ref _projects, value); }
@@ -89,6 +120,18 @@ namespace Stint.Cli.ViewModels
         public int? SelectedTaskId => _selectedIndex >= 0 && _selectedIndex < _flatRows.Count
             ? _flatRows[_selectedIndex].TaskId
             : null;
+
+        /// <summary>The project id of the pending switch target, if anything is marked - only meaningful while <see cref="Mode"/> is Reviewing.</summary>
+        public int? PendingSwitchTargetProjectId => _pendingSwitchTarget?.ProjectId;
+
+        /// <summary>The task id of the pending switch target, or null if it's a project-level (no-task) target - only meaningful when <see cref="PendingSwitchTargetProjectId"/> is set.</summary>
+        public int? PendingSwitchTargetTaskId => _pendingSwitchTarget?.TaskId;
+
+        /// <summary>Whether "stop tracking entirely" is the pending resolution for the currently open segment.</summary>
+        public bool PendingPause => _pendingPause;
+
+        /// <summary>The task ids currently marked to be set Done on confirm - only meaningful while <see cref="Mode"/> is Reviewing.</summary>
+        public IReadOnlySet<int> PendingDoneTaskIds => _pendingDoneTaskIds;
 
         /// <summary>The error from the last failed <see cref="RefreshAsync"/>, if any.</summary>
         public string? LoadError { get => _loadError; private set => SetProperty(ref _loadError, value); }
@@ -142,7 +185,8 @@ namespace Stint.Cli.ViewModels
 
         // Wraps around within the current page only (last row on the page -> down -> first row
         // of that same page, and back) - Left/Right below is what moves between pages, same
-        // convention as Project's MoveSelectionUp/Down over CurrentPageTasks.
+        // convention as Project's MoveSelectionUp/Down over CurrentPageTasks. Available in both
+        // Idle and Reviewing - browsing to mark more rows is exactly what Reviewing is for.
         [RelayCommand(CanExecute = nameof(CanMoveSelection))] private void MoveSelectionUp() => MoveSelection(-1);
 
         [RelayCommand(CanExecute = nameof(CanMoveSelection))] private void MoveSelectionDown() => MoveSelection(1);
@@ -154,64 +198,105 @@ namespace Stint.Cli.ViewModels
 
         [RelayCommand(CanExecute = nameof(CanChangePage))] private void NextPage() => ChangePage(1);
 
-        // Switches tracking to whatever's selected. CanSelect already rules out the row that's
-        // already the running target, so getting here always means there's a real segment to
-        // close (if anything's open) and a new one to start.
-        [RelayCommand(CanExecute = nameof(CanSelect))] private async Task SelectAsync()
+        // Marks (or unmarks, pressing it again on the same row) the selected row as the pending
+        // switch target - a single slot, not a set, since only one thing can end up running.
+        // Marking a target clears any pending pause - the two are alternate resolutions for the
+        // same currently-open segment, never both at once.
+        [RelayCommand(CanExecute = nameof(CanToggleSwitchTarget))] private void ToggleSwitchTarget()
         {
             var selected = _flatRows[_selectedIndex];
 
-            if (_attendanceLog is not null)
+            _pendingSwitchTarget = _pendingSwitchTarget == selected ? null : selected;
+            if (_pendingSwitchTarget is not null)
             {
-                if (_openLog is not null)
-                {
-                    await _gateway.CloseTimeLogAsync(_openLog.Id, DateTime.Now, TimeLogCloseReason.Switched);
-                }
-
-                await _gateway.StartTimeLogAsync(_attendanceLog.Id, selected.ProjectId, selected.TaskId, DateTime.Now);
+                _pendingPause = false;
             }
 
-            Navigation.GoBack();
+            OnPendingChanged();
         }
 
-        // Stops tracking outright - closes whatever's open, starts nothing new, and leaves.
-        [RelayCommand(CanExecute = nameof(CanPause))] private async Task PauseAsync()
+        // Toggles "stop tracking entirely" as the pending resolution - mutually exclusive with a
+        // pending switch target for the same reason as above.
+        [RelayCommand(CanExecute = nameof(CanTogglePause))] private void TogglePause()
         {
-            if (_openLog is not null)
+            _pendingPause = !_pendingPause;
+            if (_pendingPause)
             {
-                await _gateway.CloseTimeLogAsync(_openLog.Id, DateTime.Now, TimeLogCloseReason.Stopped);
+                _pendingSwitchTarget = null;
             }
 
-            Navigation.GoBack();
+            OnPendingChanged();
         }
 
-        // Marks the selected task complete without leaving the screen, so a new target can be
-        // picked right after. Only stops tracking if that task happened to be the running one -
-        // marking some other task done shouldn't interrupt whatever's currently active.
-        [RelayCommand(CanExecute = nameof(CanDone))] private async Task DoneAsync()
+        // Marks (or unmarks) the selected task to be set Done on confirm - a set, not a single
+        // slot, since several tasks can be wrapped up in the same batch. Independent of the
+        // switch-target/pause slot above: marking a task done doesn't by itself say anything
+        // about what should be tracked next.
+        [RelayCommand(CanExecute = nameof(CanToggleDone))] private void ToggleDone()
         {
-            var selected = _flatRows[_selectedIndex];
-            if (selected.TaskId is not int taskId)
+            if (SelectedTaskId is not int taskId)
             {
                 return;
             }
 
-            await _gateway.UpdateTaskStatusAsync(taskId, TaskItemStatus.Done);
-
-            if (_openLog is not null && _openLog.TaskId == taskId)
+            if (!_pendingDoneTaskIds.Remove(taskId))
             {
-                await _gateway.CloseTimeLogAsync(_openLog.Id, DateTime.Now, TimeLogCloseReason.Stopped);
+                _pendingDoneTaskIds.Add(taskId);
             }
 
-            await RefreshAsync();
+            OnPendingChanged();
         }
+
+        // Commits every pending mark in one atomic batch. Every time-log operation this implies -
+        // closing whatever was open, starting whatever's newly targeted - shares one `now`
+        // snapshot, so a switch (or a pause, or marking the running task done) never leaves a
+        // gap between the old segment's end and the new one's start.
+        [RelayCommand(CanExecute = nameof(CanConfirm))] private async Task ConfirmAsync()
+        {
+            var now = DateTime.Now;
+
+            foreach (var taskId in _pendingDoneTaskIds)
+            {
+                await _gateway.UpdateTaskStatusAsync(taskId, TaskItemStatus.Done);
+            }
+
+            var activeTaskMarkedDone = _openLog?.TaskId is int activeTaskId && _pendingDoneTaskIds.Contains(activeTaskId);
+            var changesTracking = _pendingSwitchTarget is not null || _pendingPause;
+
+            if (_openLog is not null && (changesTracking || activeTaskMarkedDone))
+            {
+                var reason = _pendingSwitchTarget is not null ? TimeLogCloseReason.Switched : TimeLogCloseReason.Stopped;
+                await _gateway.CloseTimeLogAsync(_openLog.Id, now, reason);
+            }
+
+            if (_pendingSwitchTarget is SwitchFlatRow target && _attendanceLog is not null)
+            {
+                await _gateway.StartTimeLogAsync(_attendanceLog.Id, target.ProjectId, target.TaskId, now);
+            }
+
+            ClearPending();
+            await RefreshAsync();
+
+            // Only leave for Home if tracking itself actually changed - marking tasks done on
+            // their own (without a switch/pause alongside) stays on Switch, same as before this
+            // was folded into the batch, so another target can be picked right after.
+            if (changesTracking)
+            {
+                Navigation.GoBack();
+            }
+        }
+
+        // Esc while Reviewing: discards every pending mark (nothing was ever sent to the gateway)
+        // and drops back to Idle, staying on this screen. Esc again from Idle is what actually
+        // leaves - see GoBack - same two-presses-to-back-out shape as Project's Cancel/GoBack.
+        [RelayCommand(CanExecute = nameof(CanCancel))] private void Cancel() => ClearPending();
+
+        [RelayCommand(CanExecute = nameof(CanGoBack))] private void GoBack() => Navigation.GoBack();
 
         // Empty-state escape hatch, same idea as Home's own "[p] projects" when there's nothing
         // to show yet.
         [RelayCommand(CanExecute = nameof(CanBeginCreateProject))] private void BeginCreateProject()
             => Navigation.NavigateTo<ProjectsScreenViewModel>();
-
-        [RelayCommand(CanExecute = nameof(CanGoBack))] private void GoBack() => Navigation.GoBack();
 
         [RelayCommand] private void Quit()
         {
@@ -228,19 +313,20 @@ namespace Stint.Cli.ViewModels
 
         private bool CanChangePage() => TotalPages > 1;
 
-        // Blocks re-selecting the exact row that's already the running target (project-only
-        // active, or the specific active task) - every sibling row (the active project's own
-        // tasks, or the project row while one of its tasks is active) still has IsActive false
-        // and stays selectable, so switching between a project and its own tasks always works.
-        private bool CanSelect() => _selectedIndex >= 0 && _selectedIndex < _flatRows.Count && !_flatRows[_selectedIndex].IsActive;
+        // Can't mark the row that's already the exact running target - nothing to switch to.
+        private bool CanToggleSwitchTarget() => _flatRows.Count > 0 && !_flatRows[_selectedIndex].IsActive;
 
-        private bool CanPause() => _openLog is not null;
+        private bool CanTogglePause() => _openLog is not null;
 
-        private bool CanDone() => SelectedTaskId is not null;
+        private bool CanToggleDone() => SelectedTaskId is not null;
 
-        private bool CanBeginCreateProject() => Projects.Count == 0;
+        private bool CanConfirm() => _pendingSwitchTarget is not null || _pendingPause || _pendingDoneTaskIds.Count > 0;
 
-        private bool CanGoBack() => Navigation.CanGoBack;
+        private bool CanCancel() => Mode == SwitchMode.Reviewing;
+
+        private bool CanGoBack() => Mode == SwitchMode.Idle && Navigation.CanGoBack;
+
+        private bool CanBeginCreateProject() => Mode == SwitchMode.Idle && Projects.Count == 0;
 
         #endregion
 
@@ -306,6 +392,26 @@ namespace Stint.Cli.ViewModels
             }
 
             return starts;
+        }
+
+        private void ClearPending()
+        {
+            _pendingSwitchTarget = null;
+            _pendingPause = false;
+            _pendingDoneTaskIds.Clear();
+            OnPendingChanged();
+        }
+
+        private void OnPendingChanged()
+        {
+            Mode = _pendingSwitchTarget is not null || _pendingPause || _pendingDoneTaskIds.Count > 0
+                ? SwitchMode.Reviewing
+                : SwitchMode.Idle;
+
+            OnPropertyChanged(nameof(PendingSwitchTargetProjectId));
+            OnPropertyChanged(nameof(PendingSwitchTargetTaskId));
+            OnPropertyChanged(nameof(PendingPause));
+            OnPropertyChanged(nameof(PendingDoneTaskIds));
         }
 
         private async Task RefreshAsync()

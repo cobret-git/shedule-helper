@@ -16,6 +16,7 @@ namespace Stint.Cli.Views
     {
         #region Fields
 
+        private const int PendingPauseRow = 1;
         private const int HeaderRow = 2;
         private const int RuleRow = 3;
         private const int ListStartRow = 4;
@@ -29,6 +30,14 @@ namespace Stint.Cli.Views
         /// <inheritdoc />
         public override void Render(SwitchScreenViewModel viewModel, ScreenBuffer buffer)
         {
+            if (viewModel.PendingPause)
+            {
+                // The one pending action that isn't tied to a specific row - called out on its
+                // own line rather than as a per-row marker, same reason Home's own status lines
+                // sit above the tree instead of inside it.
+                buffer.SetLine(PendingPauseRow, "Pending: pause tracking");
+            }
+
             buffer.SetLine(HeaderRow, "Choose a project or task to switch to:");
             buffer.SetLine(RuleRow, new string('-', ScreenBuffer.Width));
 
@@ -72,36 +81,63 @@ namespace Stint.Cli.Views
         private static void RenderProjectRow(ScreenBuffer buffer, int row, SwitchProjectRow project, SwitchScreenViewModel viewModel)
         {
             var isSelected = viewModel.SelectedProjectId == project.Id && viewModel.SelectedTaskId is null;
+            var isPendingTarget = viewModel.PendingSwitchTargetProjectId == project.Id && viewModel.PendingSwitchTargetTaskId is null;
+            var isPendingPause = viewModel.PendingPause && project.IsActive;
             var marker = isSelected ? "> " : "  ";
 
-            RenderRow(buffer, row, marker, project.Name, project.IsActive, isSelected);
+            RenderRow(buffer, row, marker, project.Name, project.IsActive, isPendingTarget, isPendingDone: false, isPendingPause, isSelected);
         }
 
         private static void RenderTaskRow(ScreenBuffer buffer, int row, SwitchProjectRow project, SwitchTaskRow task, SwitchScreenViewModel viewModel)
         {
             var isSelected = viewModel.SelectedProjectId == project.Id && viewModel.SelectedTaskId == task.Id;
+            var isPendingTarget = viewModel.PendingSwitchTargetProjectId == project.Id && viewModel.PendingSwitchTargetTaskId == task.Id;
+            var isPendingDone = viewModel.PendingDoneTaskIds.Contains(task.Id);
+            var isPendingPause = viewModel.PendingPause && task.IsActive;
             var marker = isSelected ? "  > " : "    ";
 
-            RenderRow(buffer, row, marker, task.Name, task.IsActive, isSelected);
+            RenderRow(buffer, row, marker, task.Name, task.IsActive, isPendingTarget, isPendingDone, isPendingPause, isSelected);
         }
 
-        // Shared by project and task rows: an active row gets a dot-leader over to "ACTIVE" (the
-        // only value Switch ever shows - there's no duration here, unlike Home); every other row
-        // is plain marker + name with no trailing dots at all, matching the mockup exactly.
-        private static void RenderRow(ScreenBuffer buffer, int row, string marker, string name, bool isActive, bool isSelected)
+        // Shared by project and task rows. Right-side label priority when more than one applies
+        // (the running row can be both currently active and pending-paused, or a task can be both
+        // active and marked pending-done): pending-done wins, since that's the imminent state the
+        // user is about to confirm, then pending switch-target, then pending-pause (only ever the
+        // one row that's actually running), then the plain "ACTIVE" label Home also uses - every
+        // other row is plain marker + name with no trailing dots at all, matching the mockup's
+        // idle rows exactly.
+        private static void RenderRow(ScreenBuffer buffer, int row, string marker, string name, bool isActive, bool isPendingTarget, bool isPendingDone, bool isPendingPause, bool isSelected)
         {
-            if (isActive)
+            var (label, labelBackground) = isPendingDone
+                ? ("DONE", (ConsoleColor?)ConsoleColor.Magenta)
+                : isPendingTarget
+                    ? ("NEXT", (ConsoleColor?)ConsoleColor.Green)
+                    : isPendingPause
+                        ? ("PAUSE", (ConsoleColor?)ConsoleColor.Yellow)
+                        : isActive
+                            ? ("ACTIVE", (ConsoleColor?)null)
+                            : (string.Empty, (ConsoleColor?)null);
+
+            string line;
+            if (label.Length > 0)
             {
-                buffer.SetLine(row, marker + LineFormat.DotLeader(name, "ACTIVE", ScreenBuffer.Width - marker.Length));
+                line = marker + LineFormat.DotLeader(name, label, ScreenBuffer.Width - marker.Length);
             }
             else
             {
-                buffer.SetLine(row, marker + name);
+                line = marker + name;
             }
+
+            buffer.SetLine(row, line);
 
             if (isSelected)
             {
                 buffer.AddColorSpan(row, marker.Length, name.Length, ConsoleColor.Black, ConsoleColor.White);
+            }
+
+            if (labelBackground is ConsoleColor background)
+            {
+                buffer.AddColorSpan(row, line.Length - label.Length, label.Length, ConsoleColor.Black, background);
             }
         }
 
