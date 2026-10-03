@@ -5,8 +5,8 @@
     Size                                  1.2 MB
 
   ACTIONS
-  > Create backup
-    Restore from backup
+    Create backup
+  > Restore from backup
 
 
 
@@ -16,8 +16,8 @@
 
 
 
-
-
+The local data will be cleared. A safety copy
+is saved first.
 ------------------------------------------------
 
-[^v] move  [enter] select  [esc] back
+[enter] clear and restore  [esc] cancel

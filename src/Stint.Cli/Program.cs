@@ -18,6 +18,8 @@ services.AddDbContextFactory<LocalDbContext>((serviceProvider, options) =>
 });
 
 services.AddSingleton<IDatabaseMigrator, DatabaseMigrator>();
+services.AddSingleton<IDatabaseBackupService, DatabaseBackupService>();
+services.AddSingleton<IFileDialogService, FileDialogService>();
 services.AddSingleton<IStintDataGateway, StintDataGateway>();
 
 services.AddSingleton<ISettingsService<AppSettings>, SettingsService<AppSettings>>();

@@ -16,6 +16,7 @@ namespace Stint.Cli.Views
         private const int ActionsHeadingRow = 6;
         private const int ActionsStartRow = 7;
         private const int MessageRow = ScreenBuffer.Height - 4;
+        private const int MaxMessageLines = 3;
 
         #endregion
 
@@ -45,13 +46,48 @@ namespace Stint.Cli.Views
 
             if (viewModel.Message is { } message)
             {
-                buffer.SetLine(MessageRow, message);
+                // Outcomes/errors can run past one line - wrap, keeping the last line on
+                // MessageRow so a one-line message sits exactly where it always did.
+                var lines = Wrap(message, ScreenBuffer.Width, MaxMessageLines);
+                for (var i = 0; i < lines.Count; i++)
+                {
+                    buffer.SetLine(MessageRow - (lines.Count - 1 - i), lines[i]);
+                }
             }
         }
 
         #endregion
 
         #region Helpers
+
+        // Greedy word wrap; whatever doesn't fit in maxLines is cut off (SetLine truncates a
+        // single over-long word the same way).
+        private static List<string> Wrap(string text, int width, int maxLines)
+        {
+            var lines = new List<string>();
+            var line = string.Empty;
+
+            foreach (var word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var candidate = line.Length == 0 ? word : line + " " + word;
+                if (candidate.Length > width && line.Length > 0)
+                {
+                    lines.Add(line);
+                    line = word;
+                }
+                else
+                {
+                    line = candidate;
+                }
+            }
+
+            if (line.Length > 0)
+            {
+                lines.Add(line);
+            }
+
+            return lines.Take(maxLines).ToList();
+        }
 
         private static string GetLabel(DatabaseAction action) => action switch
         {
