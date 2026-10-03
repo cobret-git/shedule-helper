@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Stint.Cli.Services
 {
@@ -12,9 +13,13 @@ namespace Stint.Cli.Services
     {
         #region Fields
 
+        // Enums are written as their names rather than numbers, so reordering/inserting enum
+        // members later can't silently change what an existing settings file means. Numbers are
+        // still accepted on read, so a file written before this was added keeps loading.
         private static readonly JsonSerializerOptions SerializerOptions = new()
         {
-            WriteIndented = true
+            WriteIndented = true,
+            Converters = { new JsonStringEnumConverter() }
         };
 
         private readonly string _filePath;

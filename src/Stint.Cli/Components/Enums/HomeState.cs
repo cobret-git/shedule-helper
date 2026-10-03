@@ -1,7 +1,7 @@
 namespace Stint.Cli.Components
 {
     /// <summary>
-    /// Which of Home's three renders is current, driven by today's <see cref="Core.AttendanceLog"/>.
+    /// Which of Home's renders is current, driven by today's <see cref="Core.AttendanceLog"/>.
     /// </summary>
     public enum HomeState
     {
@@ -11,7 +11,10 @@ namespace Stint.Cli.Components
         /// <summary>Clocked in and the day isn't over - showing the live shift/project tree.</summary>
         ClockedIn,
 
-        /// <summary>Clocked out for the day - showing the final tally/project tree.</summary>
+        /// <summary>Clocked in, and the clock-out time picker is open on top of the live shift.</summary>
+        ClockingOut,
+
+        /// <summary>Clocked out for the day - showing the final tally/project tree. Final: there is no second clock-in the same day.</summary>
         ClockedOut
     }
 }

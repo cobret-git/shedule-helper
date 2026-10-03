@@ -20,6 +20,13 @@ public class AppSettings
     public TimeOnly DefaultClockOutTime { get; set; } = new(17, 0);
 
     /// <summary>
+    /// How a "Now" clock-in/clock-out is rounded before it's stored (see <see cref="ClockRounder"/>).
+    /// Only applies to the "Now" option - Default and Custom times are stored exactly as given -
+    /// and the original, unrounded time is never stored anywhere.
+    /// </summary>
+    public ClockRoundingInterval ClockRounding { get; set; } = ClockRoundingInterval.Off;
+
+    /// <summary>
     /// Defines the user's lunch break strategy.
     /// </summary>
     public LunchStrategy LunchStrategy { get; set; } = LunchStrategy.FixedWindow;

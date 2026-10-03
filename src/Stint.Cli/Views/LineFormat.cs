@@ -17,6 +17,13 @@ namespace Stint.Cli.Views
             return $"{left} {new string('.', dotsCount)} {right}";
         }
 
+        /// <summary>
+        /// A left label and a right-aligned value joined by plain spaces (no dot leader), e.g. the
+        /// rows of a settings page.
+        /// </summary>
+        public static string Spaced(string left, string right, int width = ScreenBuffer.Width)
+            => left + new string(' ', Math.Max(1, width - left.Length - right.Length)) + right;
+
         /// <summary>Formats a duration as <c>Xh MMm</c>.</summary>
         public static string FormatDuration(TimeSpan value)
         {

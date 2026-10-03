@@ -25,6 +25,7 @@ namespace Stint.Cli.Services
 #endif
 
             DataDirectory = Path.Combine(RootDirectory, "data");
+            DatabasePath = Path.Combine(DataDirectory, "data.db");
             SettingsDirectory = Path.Combine(RootDirectory, "settings");
             LogsDirectory = Path.Combine(RootDirectory, "logs");
 
@@ -42,6 +43,9 @@ namespace Stint.Cli.Services
 
         /// <inheritdoc />
         public string DataDirectory { get; }
+
+        /// <inheritdoc />
+        public string DatabasePath { get; }
 
         /// <inheritdoc />
         public string SettingsDirectory { get; }

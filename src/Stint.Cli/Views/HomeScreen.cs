@@ -5,7 +5,7 @@ namespace Stint.Cli.Views
 {
     /// <summary>
     /// Draws <see cref="HomeScreenViewModel"/>'s body content and intercepts the keys its
-    /// custom clock-in time mask needs that no fixed <see cref="KeyHint"/> could represent.
+    /// custom clock-in/clock-out time mask needs that no fixed <see cref="KeyHint"/> could represent.
     /// </summary>
     /// <remarks>
     /// Row positions/how many project rows fit are approximate for now - tune once this is
@@ -27,9 +27,9 @@ namespace Stint.Cli.Views
         /// <inheritdoc />
         public override void Render(HomeScreenViewModel viewModel, ScreenBuffer buffer)
         {
-            if (viewModel.State == HomeState.NotClockedIn)
+            if (viewModel.IsPickerOpen)
             {
-                RenderClockInPicker(viewModel, buffer);
+                RenderClockPicker(viewModel, buffer);
             }
             else
             {
@@ -64,19 +64,23 @@ namespace Stint.Cli.Views
 
         #region Helpers
 
-        private static void RenderClockInPicker(HomeScreenViewModel viewModel, ScreenBuffer buffer)
+        // One picker for both directions: clock-in while not clocked in, clock-out (over the live
+        // shift's own "Clock-in:" line) while clocking out.
+        private static void RenderClockPicker(HomeScreenViewModel viewModel, ScreenBuffer buffer)
         {
+            var isClockingOut = viewModel.State == HomeState.ClockingOut;
+
             buffer.SetLine(2, $"Date: {DateTime.Now:dd-MMM-yyyy  HH:mm}");
-            buffer.SetLine(3, "Status: not clocked in");
-            buffer.SetLine(5, "Clock in at:");
+            buffer.SetLine(3, isClockingOut ? $"Clock-in: {viewModel.ClockInTime:HH:mm}" : "Status: not clocked in");
+            buffer.SetLine(5, isClockingOut ? "Clock out at:" : "Clock in at:");
 
             var row = 6;
-            foreach (var option in viewModel.ClockInOptions)
+            foreach (var option in viewModel.ClockOptions)
             {
-                var isSelected = option == viewModel.SelectedClockInOption;
+                var isSelected = option == viewModel.SelectedClockOption;
                 var marker = isSelected ? "> " : "  ";
-                var isTyping = isSelected && option == ClockInOption.Custom && viewModel.IsEditingCustomTime;
-                var preview = viewModel.GetClockInPreview(option);
+                var isTyping = isSelected && option == ClockTimeOption.Custom && viewModel.IsEditingCustomTime;
+                var preview = viewModel.GetClockPreview(option);
                 var line = marker + LineFormat.DotLeader(option.ToString(), preview, ScreenBuffer.Width - 2);
 
                 if (isTyping)
@@ -85,7 +89,7 @@ namespace Stint.Cli.Views
                     // mask itself - it's the value being edited now, not the selection. The next
                     // digit's own column is left un-inverted so it reads as a cursor sitting
                     // inside the otherwise-highlighted mask.
-                    RenderCustomTimeMask(buffer, row, line, preview, viewModel.CustomTimeCursorIndex);
+                    TimeMask.Render(buffer, row, line, preview, viewModel.CustomTimeCursorIndex);
                 }
                 else if (isSelected)
                 {
@@ -100,29 +104,14 @@ namespace Stint.Cli.Views
 
                 row++;
             }
-        }
 
-        private static void RenderCustomTimeMask(ScreenBuffer buffer, int row, string line, string preview, int? cursorIndex)
-        {
-            buffer.SetLine(row, line);
-
-            var previewStart = line.Length - preview.Length;
-
-            if (cursorIndex is not int cursor)
+            if (viewModel.ClockError is { } error)
             {
-                buffer.AddColorSpan(row, previewStart, preview.Length, ConsoleColor.Black, ConsoleColor.White);
-                return;
-            }
-
-            if (cursor > 0)
-            {
-                buffer.AddColorSpan(row, previewStart, cursor, ConsoleColor.Black, ConsoleColor.White);
-            }
-
-            var afterCursor = cursor + 1;
-            if (afterCursor < preview.Length)
-            {
-                buffer.AddColorSpan(row, previewStart + afterCursor, preview.Length - afterCursor, ConsoleColor.Black, ConsoleColor.White);
+                // A refused clock-out time (see HomeScreenViewModel.ClockError) - one line under
+                // the options, in red, until the next key changes anything.
+                var errorRow = row + 1;
+                buffer.SetLine(errorRow, error);
+                buffer.AddColorSpan(errorRow, 0, error.Length, ConsoleColor.Red);
             }
         }
 

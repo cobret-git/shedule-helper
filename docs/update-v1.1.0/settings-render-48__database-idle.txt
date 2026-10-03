@@ -1,0 +1,23 @@
+******************* SETTINGS > DATABASE ****
+
+------------------------------------------------
+  FILE
+    Size                                  1.2 MB
+
+  ACTIONS
+  > Create backup
+    Restore from backup
+
+
+
+
+
+
+
+
+
+
+Not available yet
+------------------------------------------------
+
+[^v] move  [enter] select  [esc] back

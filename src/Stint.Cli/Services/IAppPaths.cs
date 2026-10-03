@@ -20,6 +20,11 @@ namespace Stint.Cli.Services
         string DataDirectory { get; }
 
         /// <summary>
+        /// <c>DataDirectory/data.db</c> - the SQLite database file itself.
+        /// </summary>
+        string DatabasePath { get; }
+
+        /// <summary>
         /// <c>RootDirectory/settings</c> - holds <c>settings.json</c>.
         /// </summary>
         string SettingsDirectory { get; }

@@ -253,7 +253,13 @@ namespace Stint.Cli.ViewModels
         // gap between the old segment's end and the new one's start.
         [RelayCommand(CanExecute = nameof(CanConfirm))] private async Task ConfirmAsync()
         {
+            // Never earlier than the clock-in: a "Now" clock-in rounded forward can still be in the
+            // future for a few minutes, and no segment may start (or end) before the day did.
             var now = DateTime.Now;
+            if (_attendanceLog?.ClockIn is DateTime clockIn && clockIn > now)
+            {
+                now = clockIn;
+            }
 
             foreach (var taskId in _pendingDoneTaskIds)
             {

@@ -14,8 +14,7 @@ services.AddSingleton<IAppPaths, AppPaths>();
 services.AddDbContextFactory<LocalDbContext>((serviceProvider, options) =>
 {
     var appPaths = serviceProvider.GetRequiredService<IAppPaths>();
-    var databasePath = Path.Combine(appPaths.DataDirectory, "data.db");
-    options.UseSqlite($"Data Source={databasePath}");
+    options.UseSqlite($"Data Source={appPaths.DatabasePath}");
 });
 
 services.AddSingleton<IDatabaseMigrator, DatabaseMigrator>();
@@ -29,12 +28,18 @@ services.AddTransient<HomeScreenViewModel>();
 services.AddTransient<ProjectsScreenViewModel>();
 services.AddTransient<ProjectScreenViewModel>();
 services.AddTransient<SwitchScreenViewModel>();
+services.AddTransient<SettingsScreenViewModel>();
+services.AddTransient<SettingsGeneralScreenViewModel>();
+services.AddTransient<SettingsDatabaseScreenViewModel>();
 
 // One IScreenView per screen ViewModel above, plus the pipeline that resolves/drives them.
 services.AddSingleton<IScreenView, HomeScreen>();
 services.AddSingleton<IScreenView, ProjectsScreen>();
 services.AddSingleton<IScreenView, ProjectScreen>();
 services.AddSingleton<IScreenView, SwitchScreen>();
+services.AddSingleton<IScreenView, SettingsScreen>();
+services.AddSingleton<IScreenView, SettingsGeneralScreen>();
+services.AddSingleton<IScreenView, SettingsDatabaseScreen>();
 services.AddSingleton<ScreenViewRegistry>();
 services.AddSingleton<ConsoleHost>();
 
