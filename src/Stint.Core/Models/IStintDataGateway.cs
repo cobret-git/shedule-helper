@@ -114,6 +114,35 @@ namespace Stint.Core
 
         #endregion
 
+        #region Away
+
+        /// <summary>
+        /// Returns the still-open part-day absence (<see cref="AwayLog.EndTime"/> is <see langword="null"/>)
+        /// for the given attendance session, if the user is away right now, with
+        /// <see cref="AwayLog.PausedTimeLog"/> and its project/task eager-loaded.
+        /// </summary>
+        Task<AwayLog?> GetOpenAwayLogAsync(int attendanceLogId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Starts a part-day absence at <paramref name="startTime"/>, in one atomic save: whatever
+        /// project segment is running is closed at that moment (as <see cref="TimeLogCloseReason.Switched"/>)
+        /// and remembered as the segment to resume. Throws <see cref="InvalidOperationException"/> if the
+        /// session doesn't exist or is already clocked out, an absence is already open, or
+        /// <paramref name="startTime"/> is before the clock-in or the running segment's start.
+        /// </summary>
+        Task<AwayLog> StartAwayAsync(int attendanceLogId, AwayKind kind, DateTime startTime, CancellationToken ct = default);
+
+        /// <summary>
+        /// Ends the given absence at <paramref name="endTime"/>, in one atomic save, and resumes the
+        /// project/task that was paused when it started with a new segment beginning at that same
+        /// moment - unless that project or task has since been removed or marked done. Throws
+        /// <see cref="InvalidOperationException"/> if the absence doesn't exist, has already ended, or
+        /// <paramref name="endTime"/> is before it started.
+        /// </summary>
+        Task EndAwayAsync(int awayLogId, DateTime endTime, CancellationToken ct = default);
+
+        #endregion
+
         #region Planned Events
 
         /// <summary>

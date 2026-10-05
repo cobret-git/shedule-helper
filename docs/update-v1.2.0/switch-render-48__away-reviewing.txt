@@ -1,0 +1,23 @@
+*************** SWITCH - REVIEW ****************
+
+Choose what to switch to:   PROJECTS  [ AWAY ]
+------------------------------------------------
+> DOCTOR / DENTAL ......................... NEXT
+  FAMILY / PERSONAL
+  OTHER
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------
+[^v] move  [s] switch  [enter] confirm
+[esc] cancel  [q] quit

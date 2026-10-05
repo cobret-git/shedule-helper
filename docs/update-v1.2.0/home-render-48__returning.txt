@@ -1,0 +1,23 @@
+********************* HOME *********************
+
+Date: 21-Aug-2026  12:48
+Clock-in: 08:15
+
+Back from DOCTOR / DENTAL at:
+> Now .................................... 12:48
+  Custom ................................. --:--
+
+
+
+Event started 10:20. Can't be in the future.
+STINT CLI / FIX ARG PARSER resumes then.
+
+
+
+
+
+
+
+------------------------------------------------
+[^v] select  [enter] confirm  [esc] cancel
+[q] quit

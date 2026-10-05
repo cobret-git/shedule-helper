@@ -11,7 +11,7 @@ using Stint.Core;
 namespace Stint.Core.Migrations
 {
     [DbContext(typeof(LocalDbContext))]
-    [Migration("20261005165834_InitialMigration")]
+    [Migration("20261005171654_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -54,6 +54,42 @@ namespace Stint.Core.Migrations
                         .IsUnique();
 
                     b.ToTable("AttendanceLogs");
+                });
+
+            modelBuilder.Entity("Stint.Core.AwayLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("Id");
+
+                    b.Property<int>("AttendanceLogId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("AttendanceLogId");
+
+                    b.Property<DateTime?>("EndTime")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("EndTime");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("Kind");
+
+                    b.Property<int?>("PausedTimeLogId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("PausedTimeLogId");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("StartTime");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttendanceLogId");
+
+                    b.HasIndex("PausedTimeLogId");
+
+                    b.ToTable("AwayLogs");
                 });
 
             modelBuilder.Entity("Stint.Core.PlannedEvent", b =>
@@ -197,6 +233,24 @@ namespace Stint.Core.Migrations
                     b.HasIndex("ProjectId");
 
                     b.ToTable("Tasks");
+                });
+
+            modelBuilder.Entity("Stint.Core.AwayLog", b =>
+                {
+                    b.HasOne("Stint.Core.AttendanceLog", "AttendanceLog")
+                        .WithMany()
+                        .HasForeignKey("AttendanceLogId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Stint.Core.ProjectTimeLog", "PausedTimeLog")
+                        .WithMany()
+                        .HasForeignKey("PausedTimeLogId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AttendanceLog");
+
+                    b.Navigation("PausedTimeLog");
                 });
 
             modelBuilder.Entity("Stint.Core.ProjectTimeLog", b =>

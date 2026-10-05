@@ -229,6 +229,105 @@ namespace Stint.Core
             await context.SaveChangesAsync(ct);
         }
 
+        // Away
+
+        public async Task<AwayLog?> GetOpenAwayLogAsync(int attendanceLogId, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            return await context.AwayLogs
+                .Include(a => a.PausedTimeLog!).ThenInclude(l => l.Project)
+                .Include(a => a.PausedTimeLog!).ThenInclude(l => l.Task)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.AttendanceLogId == attendanceLogId && a.EndTime == null, ct);
+        }
+
+        public async Task<AwayLog> StartAwayAsync(int attendanceLogId, AwayKind kind, DateTime startTime, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+
+            var attendanceLog = await context.AttendanceLogs.FirstOrDefaultAsync(a => a.Id == attendanceLogId, ct)
+                ?? throw new InvalidOperationException($"Attendance log {attendanceLogId} was not found.");
+
+            if (attendanceLog.ClockOut is not null)
+                throw new InvalidOperationException("The day is already clocked out.");
+
+            if (attendanceLog.ClockIn is DateTime clockIn && startTime < clockIn)
+                throw new InvalidOperationException("Can't go away before clocking in.");
+
+            if (await context.AwayLogs.AnyAsync(a => a.AttendanceLogId == attendanceLogId && a.EndTime == null, ct))
+                throw new InvalidOperationException("An away event is already open.");
+
+            // Same save closes the running segment and records the absence, so there is never a
+            // moment with neither (or both) - the segment is remembered to be resumed on return.
+            var openLog = await context.ProjectTimeLogs
+                .FirstOrDefaultAsync(l => l.AttendanceLogId == attendanceLogId && l.EndTime == null, ct);
+
+            if (openLog is not null)
+            {
+                if (startTime < openLog.StartTime)
+                    throw new InvalidOperationException("Can't go away before the running segment started.");
+
+                openLog.EndTime = startTime;
+                openLog.ClosedReason = TimeLogCloseReason.Switched;
+            }
+
+            var awayLog = new AwayLog
+            {
+                AttendanceLogId = attendanceLogId,
+                Kind = kind,
+                StartTime = startTime,
+                PausedTimeLogId = openLog?.Id
+            };
+
+            context.AwayLogs.Add(awayLog);
+            await context.SaveChangesAsync(ct);
+            return awayLog;
+        }
+
+        public async Task EndAwayAsync(int awayLogId, DateTime endTime, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+
+            var awayLog = await context.AwayLogs
+                .Include(a => a.PausedTimeLog)
+                .FirstOrDefaultAsync(a => a.Id == awayLogId, ct)
+                ?? throw new InvalidOperationException($"Away log {awayLogId} was not found.");
+
+            if (awayLog.EndTime is not null)
+                throw new InvalidOperationException("The away event has already ended.");
+
+            if (endTime < awayLog.StartTime)
+                throw new InvalidOperationException("Can't come back before going away.");
+
+            awayLog.EndTime = endTime;
+
+            if (awayLog.PausedTimeLog is { } paused)
+            {
+                // Resume only what can still be tracked: the project (and task) may have been
+                // removed, or the task marked done, while the user was away.
+                var project = await context.Projects.FirstOrDefaultAsync(p => p.Id == paused.ProjectId, ct);
+                var task = paused.TaskId is int taskId
+                    ? await context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId, ct)
+                    : null;
+
+                var canResume = project is { IsActive: true }
+                    && (paused.TaskId is null || task is { IsActive: true, Status: not TaskItemStatus.Done });
+
+                if (canResume)
+                {
+                    context.ProjectTimeLogs.Add(new ProjectTimeLog
+                    {
+                        AttendanceLogId = awayLog.AttendanceLogId,
+                        ProjectId = paused.ProjectId,
+                        TaskId = paused.TaskId,
+                        StartTime = endTime
+                    });
+                }
+            }
+
+            await context.SaveChangesAsync(ct);
+        }
+
         // Planned Events
 
         public async Task<List<PlannedEvent>> GetPlannedEventsAsync(DateOnly rangeStart, DateOnly rangeEnd, CancellationToken ct = default)

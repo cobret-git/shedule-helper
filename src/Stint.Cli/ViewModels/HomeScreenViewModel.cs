@@ -40,6 +40,13 @@ namespace Stint.Cli.ViewModels
             ClockTimeOption.Default,
             ClockTimeOption.Custom
         ];
+        // Coming back from an absence has no "Default" - there is no usual time to return at - so
+        // its picker is just Now and Custom.
+        private static readonly IReadOnlyList<ClockTimeOption> ReturnClockOptions =
+        [
+            ClockTimeOption.Now,
+            ClockTimeOption.Custom
+        ];
         // How many project rows the clocked-out pager shows per page. A rendering-layout
         // assumption, not a setting - keep in sync with the actual renderer once it exists.
         private const int ProjectRowsPerPage = 5;
@@ -47,6 +54,9 @@ namespace Stint.Cli.ViewModels
         private readonly ISettingsService<AppSettings> _settingsService;
         private readonly TimeDigitsInput _customTime = new();
         private AttendanceLog? _attendanceLog;
+        // The part-day absence the user is away for right now, if any - loaded alongside the
+        // attendance log. Its paused segment (project/task) is what coming back resumes.
+        private AwayLog? _openAway;
         private HomeState _state = HomeState.NotClockedIn;
         private int _selectedClockOptionIndex;
         private bool _isEditingCustomTime;
@@ -82,6 +92,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("confirm", ConfirmClockCommand, ConsoleKey.Enter),
                 new KeyHint("cancel", CancelClockPickerCommand, ConsoleKey.Escape),
                 new KeyHint("out", BeginClockOutCommand, ConsoleKey.O),
+                new KeyHint("back", BeginReturnCommand, ConsoleKey.R),
                 new KeyHint("switch", SwitchCommand, ConsoleKey.S),
                 new KeyHint("projects", OpenProjectsCommand, ConsoleKey.P),
                 new KeyHint("plan", OpenPlanCommand, ConsoleKey.L),
@@ -117,11 +128,28 @@ namespace Stint.Cli.ViewModels
         /// <summary>The error from the last failed <see cref="RefreshAsync"/>, if any.</summary>
         public string? LoadError { get => _loadError; private set => SetProperty(ref _loadError, value); }
 
-        /// <summary>Whether the clock-in or clock-out time picker is what Home is showing.</summary>
-        public bool IsPickerOpen => State is HomeState.NotClockedIn or HomeState.ClockingOut;
+        /// <summary>Whether the clock-in, clock-out or "back at" time picker is what Home is showing.</summary>
+        public bool IsPickerOpen => State is HomeState.NotClockedIn or HomeState.ClockingOut or HomeState.Returning;
 
-        /// <summary>The rows of Home's clock-in/clock-out time picker, in display order.</summary>
-        public IReadOnlyList<ClockTimeOption> ClockOptions => AllClockOptions;
+        /// <summary>Whether the user is away right now (a part-day absence is open).</summary>
+        public bool IsAway => _openAway is not null;
+
+        /// <summary>What the open absence is for, e.g. "Doctor / dental" - empty when not away.</summary>
+        public string AwayName => _openAway is { } away ? AwayKindNames.GetName(away.Kind) : string.Empty;
+
+        /// <summary>When the open absence started, or null when not away.</summary>
+        public DateTime? AwayStart => _openAway?.StartTime;
+
+        /// <summary>
+        /// The project (and task) that was running when the user went away - "PROJECT / TASK" - and will
+        /// resume on return, or null when nothing was being tracked (or not away).
+        /// </summary>
+        public string? PausedLabel => _openAway?.PausedTimeLog is { } paused
+            ? (paused.Task is { } task ? $"{paused.Project.Name} / {task.Title}" : paused.Project.Name)
+            : null;
+
+        /// <summary>The rows of Home's clock-in/clock-out/"back at" time picker, in display order.</summary>
+        public IReadOnlyList<ClockTimeOption> ClockOptions => State == HomeState.Returning ? ReturnClockOptions : AllClockOptions;
 
         /// <summary>The currently highlighted row of the time picker.</summary>
         public ClockTimeOption SelectedClockOption => ClockOptions[SelectedClockOptionIndex];
@@ -142,7 +170,7 @@ namespace Stint.Cli.ViewModels
         /// </summary>
         public TimeSpan Elapsed => State switch
         {
-            HomeState.ClockedIn or HomeState.ClockingOut => Max(DateTime.Now - (_attendanceLog?.ClockIn ?? DateTime.Now), TimeSpan.Zero),
+            HomeState.ClockedIn or HomeState.ClockingOut or HomeState.Returning => Max(DateTime.Now - (_attendanceLog?.ClockIn ?? DateTime.Now), TimeSpan.Zero),
             HomeState.ClockedOut => (_attendanceLog?.ClockOut ?? DateTime.Now) - (_attendanceLog?.ClockIn ?? DateTime.Now),
             _ => TimeSpan.Zero
         };
@@ -259,7 +287,8 @@ namespace Stint.Cli.ViewModels
 
             return option switch
             {
-                ClockTimeOption.Now => FormatNowPreview(),
+                // Coming back isn't rounded: like a Switch, it simply happens when it happens.
+                ClockTimeOption.Now => State == HomeState.Returning ? DateTime.Now.ToString("HH:mm") : FormatNowPreview(),
                 ClockTimeOption.Default => (State == HomeState.ClockingOut ? settings.DefaultClockOutTime : settings.DefaultClockInTime).ToString("HH:mm"),
                 ClockTimeOption.Custom => CustomTimeDisplay,
                 _ => string.Empty
@@ -295,13 +324,19 @@ namespace Stint.Cli.ViewModels
                 return;
             }
 
-            if (State == HomeState.ClockingOut)
+            switch (State)
             {
-                await ClockOutAsync();
-            }
-            else
-            {
-                await ClockInAsync();
+                case HomeState.ClockingOut:
+                    await ClockOutAsync();
+                    break;
+
+                case HomeState.Returning:
+                    await ReturnAsync();
+                    break;
+
+                default:
+                    await ClockInAsync();
+                    break;
             }
         }
 
@@ -350,6 +385,18 @@ namespace Stint.Cli.ViewModels
             State = HomeState.ClockingOut;
         }
 
+        // Opens the Now/Custom picker for the time the user is back at, rather than ending the
+        // absence instantly - nobody knows in advance how long an appointment takes, so the time
+        // is given afterwards.
+        [RelayCommand(CanExecute = nameof(CanBeginReturn))] private void BeginReturn()
+        {
+            SelectedClockOptionIndex = 0;
+            ClockError = null;
+            IsEditingCustomTime = false;
+            _customTime.Clear();
+            State = HomeState.Returning;
+        }
+
         [RelayCommand(CanExecute = nameof(CanSwitch))] private void Switch()
             => Navigation.NavigateTo<SwitchScreenViewModel>();
 
@@ -387,20 +434,24 @@ namespace Stint.Cli.ViewModels
             => IsPickerOpen
                && (SelectedClockOption != ClockTimeOption.Custom || !IsEditingCustomTime || _customTime.IsComplete);
 
-        private bool CanCancelClockPicker() => IsEditingCustomTime || State == HomeState.ClockingOut;
+        private bool CanCancelClockPicker() => IsEditingCustomTime || State is HomeState.ClockingOut or HomeState.Returning;
 
-        private bool CanBeginClockOut() => State == HomeState.ClockedIn;
+        // Clocking out or switching while away would leave the absence dangling - coming back
+        // ([r]) is what ends it, so both wait until the user has.
+        private bool CanBeginClockOut() => State == HomeState.ClockedIn && !IsAway;
 
-        private bool CanSwitch() => State == HomeState.ClockedIn;
+        private bool CanBeginReturn() => State == HomeState.ClockedIn && IsAway;
+
+        private bool CanSwitch() => State == HomeState.ClockedIn && !IsAway;
 
         private bool CanOpenProjects() => State == HomeState.ClockedIn;
 
         // Planning ahead has nothing to do with today's shift, so it's open whether or not clocked
         // in - same availability as Settings: not mid-way through typing a custom time or choosing
         // a clock-out.
-        private bool CanOpenPlan() => !IsEditingCustomTime && State != HomeState.ClockingOut;
+        private bool CanOpenPlan() => !IsEditingCustomTime && State is not (HomeState.ClockingOut or HomeState.Returning);
 
-        private bool CanOpenSettings() => !IsEditingCustomTime && State != HomeState.ClockingOut;
+        private bool CanOpenSettings() => !IsEditingCustomTime && State is not (HomeState.ClockingOut or HomeState.Returning);
 
         private bool CanChangePage() => State == HomeState.ClockedOut && TotalPages > 1;
 
@@ -424,6 +475,15 @@ namespace Stint.Cli.ViewModels
                 ProjectRows = _attendanceLog is null
                     ? []
                     : HomeProjectRowBuilder.Build(await _gateway.GetTimeLogsForAttendanceAsync(_attendanceLog.Id));
+
+                // An absence can only be open on a live shift - clocking out is refused while away.
+                _openAway = State == HomeState.ClockedIn && _attendanceLog is not null
+                    ? await _gateway.GetOpenAwayLogAsync(_attendanceLog.Id)
+                    : null;
+                OnPropertyChanged(nameof(IsAway));
+                OnPropertyChanged(nameof(AwayName));
+                OnPropertyChanged(nameof(AwayStart));
+                OnPropertyChanged(nameof(PausedLabel));
 
                 CurrentPageIndex = 0;
                 LoadError = null;
@@ -492,6 +552,41 @@ namespace Stint.Cli.ViewModels
             }
 
             await _gateway.ClockOutAsync(_attendanceLog.Id, clockOutTime);
+
+            IsEditingCustomTime = false;
+            _customTime.Clear();
+            ClockError = null;
+
+            await RefreshAsync();
+        }
+
+        // Ends the open absence at the chosen time; the gateway reopens the paused project/task at that
+        // same moment. Custom is the user's own explicit choice, so a time that can't work is refused
+        // with a reason; Now just never lands before the absence began.
+        private async Task ReturnAsync()
+        {
+            if (_openAway is not { } away)
+            {
+                return;
+            }
+
+            var returnTime = SelectedClockOption == ClockTimeOption.Custom
+                ? DateTime.Today + ParseCustomTime().ToTimeSpan()
+                : (DateTime.Now > away.StartTime ? DateTime.Now : away.StartTime);
+
+            if (returnTime > DateTime.Now)
+            {
+                ClockError = "Back time can't be in the future";
+                return;
+            }
+
+            if (returnTime < away.StartTime)
+            {
+                ClockError = $"Back time can't be before the start ({away.StartTime:HH:mm})";
+                return;
+            }
+
+            await _gateway.EndAwayAsync(away.Id, returnTime);
 
             IsEditingCustomTime = false;
             _customTime.Clear();

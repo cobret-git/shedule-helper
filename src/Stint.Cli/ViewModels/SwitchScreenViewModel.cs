@@ -12,6 +12,9 @@ namespace Stint.Cli.ViewModels
     /// layout/labels from.
     /// </summary>
     /// <remarks>
+    /// Toggled with Tab between two lists: the project tree and the part-day absences (doctor,
+    /// errand, ...) - going away is just another thing to switch to, marked and confirmed the same
+    /// way, and it pauses whatever is running until the user comes back from Home.
     /// Reached from <see cref="HomeScreenViewModel.Switch"/> while clocked in. Loads today's
     /// attendance/open segment itself in <see cref="OnActivated"/> rather than taking it as a
     /// navigation context - same parameterless/root-style shape as <see cref="HomeScreenViewModel"/>.
@@ -31,6 +34,9 @@ namespace Stint.Cli.ViewModels
         // 19 is the pager line). A rough layout guess, same caveat as Home's ProjectRowsPerPage.
         private const int TreeRowBudget = 14;
 
+        // The part-day absences the Away view lists, in display order.
+        private static readonly IReadOnlyList<AwayKind> AllAwayKinds = Enum.GetValues<AwayKind>();
+
         private readonly IStintDataGateway _gateway;
 
         // Ids/target marked pending while Mode is Reviewing - never touched outside that mode,
@@ -38,6 +44,7 @@ namespace Stint.Cli.ViewModels
         // gateway calls, Cancel clears them and discards instead).
         private readonly HashSet<int> _pendingDoneTaskIds = [];
         private SwitchFlatRow? _pendingSwitchTarget;
+        private AwayKind? _pendingAwayKind;
         private bool _pendingPause;
 
         private AttendanceLog? _attendanceLog;
@@ -45,6 +52,8 @@ namespace Stint.Cli.ViewModels
         private IReadOnlyList<SwitchProjectRow> _projects = [];
         private List<SwitchFlatRow> _flatRows = [];
         private int _selectedIndex;
+        private int _selectedAwayIndex;
+        private SwitchView _view = SwitchView.Projects;
         private SwitchMode _mode = SwitchMode.Idle;
         private string? _loadError;
         #endregion
@@ -66,6 +75,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("move", MoveSelectionDownCommand, ConsoleKey.DownArrow),
                 new KeyHint("page", PreviousPageCommand, ConsoleKey.LeftArrow),
                 new KeyHint("page", NextPageCommand, ConsoleKey.RightArrow),
+                new KeyHint("view", ToggleViewCommand, ConsoleKey.Tab),
                 new KeyHint("switch", ToggleSwitchTargetCommand, ConsoleKey.S),
                 new KeyHint("pause", TogglePauseCommand, ConsoleKey.P),
                 new KeyHint("done", ToggleDoneCommand, ConsoleKey.D),
@@ -93,6 +103,18 @@ namespace Stint.Cli.ViewModels
                 }
             }
         }
+
+        /// <summary>What is being listed to switch to - the project tree, or the part-day absences.</summary>
+        public SwitchView View { get => _view; private set => SetProperty(ref _view, value); }
+
+        /// <summary>The part-day absences the Away view lists.</summary>
+        public IReadOnlyList<AwayKind> AwayKinds => AllAwayKinds;
+
+        /// <summary>The currently highlighted index into <see cref="AwayKinds"/>, in the Away view.</summary>
+        public int SelectedAwayIndex { get => _selectedAwayIndex; private set => SetProperty(ref _selectedAwayIndex, value); }
+
+        /// <summary>The absence marked to go away for on confirm, if any - only meaningful while <see cref="Mode"/> is Reviewing.</summary>
+        public AwayKind? PendingAwayKind => _pendingAwayKind;
 
         /// <summary>Every active project/task, switchable target or not.</summary>
         public IReadOnlyList<SwitchProjectRow> Projects { get => _projects; private set => SetProperty(ref _projects, value); }
@@ -198,18 +220,38 @@ namespace Stint.Cli.ViewModels
 
         [RelayCommand(CanExecute = nameof(CanChangePage))] private void NextPage() => ChangePage(1);
 
+        // Flips between the project tree and the part-day absences. Only while nothing is marked:
+        // a pending mark belongs to the list it was made in, so finish or cancel it first.
+        [RelayCommand(CanExecute = nameof(CanToggleView))] private void ToggleView()
+            => View = View == SwitchView.Projects ? SwitchView.Away : SwitchView.Projects;
+
         // Marks (or unmarks, pressing it again on the same row) the selected row as the pending
-        // switch target - a single slot, not a set, since only one thing can end up running.
+        // switch target - a single slot, not a set, since only one thing can end up running. In
+        // the Away view the row is a part-day absence instead of a project/task; either way the
+        // slot is shared, so marking one clears the other.
         // Marking a target clears any pending pause - the two are alternate resolutions for the
         // same currently-open segment, never both at once.
         [RelayCommand(CanExecute = nameof(CanToggleSwitchTarget))] private void ToggleSwitchTarget()
         {
+            if (View == SwitchView.Away)
+            {
+                var kind = AwayKinds[SelectedAwayIndex];
+
+                _pendingAwayKind = _pendingAwayKind == kind ? null : kind;
+                _pendingSwitchTarget = null;
+                _pendingPause = false;
+
+                OnPendingChanged();
+                return;
+            }
+
             var selected = _flatRows[_selectedIndex];
 
             _pendingSwitchTarget = _pendingSwitchTarget == selected ? null : selected;
             if (_pendingSwitchTarget is not null)
             {
                 _pendingPause = false;
+                _pendingAwayKind = null;
             }
 
             OnPendingChanged();
@@ -223,6 +265,7 @@ namespace Stint.Cli.ViewModels
             if (_pendingPause)
             {
                 _pendingSwitchTarget = null;
+                _pendingAwayKind = null;
             }
 
             OnPendingChanged();
@@ -259,6 +302,25 @@ namespace Stint.Cli.ViewModels
             if (_attendanceLog?.ClockIn is DateTime clockIn && clockIn > now)
             {
                 now = clockIn;
+            }
+
+            // Going away is its own batch - Switch's other marks can't be pending alongside it - and
+            // the gateway closes whatever is running (to be resumed on return) in the same save.
+            if (_pendingAwayKind is AwayKind awayKind && _attendanceLog is not null)
+            {
+                try
+                {
+                    await _gateway.StartAwayAsync(_attendanceLog.Id, awayKind, now);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    LoadError = ex.Message;
+                    return;
+                }
+
+                ClearPending();
+                Navigation.GoBack();
+                return;
             }
 
             foreach (var taskId in _pendingDoneTaskIds)
@@ -315,24 +377,29 @@ namespace Stint.Cli.ViewModels
 
         #region CanExecute
 
-        private bool CanMoveSelection() => _flatRows.Count > 0;
+        private bool CanMoveSelection() => View == SwitchView.Away || _flatRows.Count > 0;
 
-        private bool CanChangePage() => TotalPages > 1;
+        private bool CanChangePage() => View == SwitchView.Projects && TotalPages > 1;
 
-        // Can't mark the row that's already the exact running target - nothing to switch to.
-        private bool CanToggleSwitchTarget() => _flatRows.Count > 0 && !_flatRows[_selectedIndex].IsActive;
+        private bool CanToggleView() => Mode == SwitchMode.Idle;
 
-        private bool CanTogglePause() => _openLog is not null;
+        // Can't mark the row that's already the exact running target - nothing to switch to. Going
+        // away needs a clocked-in day to go away from.
+        private bool CanToggleSwitchTarget() => View == SwitchView.Away
+            ? _attendanceLog is not null
+            : _flatRows.Count > 0 && !_flatRows[_selectedIndex].IsActive;
 
-        private bool CanToggleDone() => SelectedTaskId is not null;
+        private bool CanTogglePause() => View == SwitchView.Projects && _openLog is not null;
 
-        private bool CanConfirm() => _pendingSwitchTarget is not null || _pendingPause || _pendingDoneTaskIds.Count > 0;
+        private bool CanToggleDone() => View == SwitchView.Projects && SelectedTaskId is not null;
+
+        private bool CanConfirm() => _pendingSwitchTarget is not null || _pendingAwayKind is not null || _pendingPause || _pendingDoneTaskIds.Count > 0;
 
         private bool CanCancel() => Mode == SwitchMode.Reviewing;
 
         private bool CanGoBack() => Mode == SwitchMode.Idle && Navigation.CanGoBack;
 
-        private bool CanBeginCreateProject() => Mode == SwitchMode.Idle && Projects.Count == 0;
+        private bool CanBeginCreateProject() => Mode == SwitchMode.Idle && View == SwitchView.Projects && Projects.Count == 0;
 
         #endregion
 
@@ -340,6 +407,12 @@ namespace Stint.Cli.ViewModels
 
         private void MoveSelection(int direction)
         {
+            if (View == SwitchView.Away)
+            {
+                SelectedAwayIndex = (SelectedAwayIndex + direction + AwayKinds.Count) % AwayKinds.Count;
+                return;
+            }
+
             var starts = BuildPageStartProjectIndices();
             var pageIndex = CurrentPageIndex;
             var pageStartProjectIndex = starts[pageIndex];
@@ -403,6 +476,7 @@ namespace Stint.Cli.ViewModels
         private void ClearPending()
         {
             _pendingSwitchTarget = null;
+            _pendingAwayKind = null;
             _pendingPause = false;
             _pendingDoneTaskIds.Clear();
             OnPendingChanged();
@@ -410,10 +484,11 @@ namespace Stint.Cli.ViewModels
 
         private void OnPendingChanged()
         {
-            Mode = _pendingSwitchTarget is not null || _pendingPause || _pendingDoneTaskIds.Count > 0
+            Mode = _pendingSwitchTarget is not null || _pendingAwayKind is not null || _pendingPause || _pendingDoneTaskIds.Count > 0
                 ? SwitchMode.Reviewing
                 : SwitchMode.Idle;
 
+            OnPropertyChanged(nameof(PendingAwayKind));
             OnPropertyChanged(nameof(PendingSwitchTargetProjectId));
             OnPropertyChanged(nameof(PendingSwitchTargetTaskId));
             OnPropertyChanged(nameof(PendingPause));

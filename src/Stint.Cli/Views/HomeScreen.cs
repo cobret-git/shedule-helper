@@ -20,6 +20,13 @@ namespace Stint.Cli.Views
         private const int MaxVisibleProjects = 3;
         private const int NoProjectsMessageRow = 14;
 
+        // The away block takes the first rows of the tree's space (two lines and a blank one), so
+        // while away the tree starts three rows lower and shows one project fewer.
+        private const int AwayRow = 9;
+        private const int DefaultTreeRow = 9;
+        private const int TreeRowWhileAway = 12;
+        private const int MaxVisibleProjectsWhileAway = 2;
+
         #endregion
 
         #region Methods
@@ -69,10 +76,13 @@ namespace Stint.Cli.Views
         private static void RenderClockPicker(HomeScreenViewModel viewModel, ScreenBuffer buffer)
         {
             var isClockingOut = viewModel.State == HomeState.ClockingOut;
+            var isReturning = viewModel.State == HomeState.Returning;
 
             buffer.SetLine(2, $"Date: {DateTime.Now:dd-MMM-yyyy  HH:mm}");
-            buffer.SetLine(3, isClockingOut ? $"Clock-in: {viewModel.ClockInTime:HH:mm}" : "Status: not clocked in");
-            buffer.SetLine(5, isClockingOut ? "Clock out at:" : "Clock in at:");
+            buffer.SetLine(3, isClockingOut || isReturning ? $"Clock-in: {viewModel.ClockInTime:HH:mm}" : "Status: not clocked in");
+            buffer.SetLine(5, isReturning
+                ? $"Back from {viewModel.AwayName.ToUpperInvariant()} at:"
+                : isClockingOut ? "Clock out at:" : "Clock in at:");
 
             var row = 6;
             foreach (var option in viewModel.ClockOptions)
@@ -113,6 +123,18 @@ namespace Stint.Cli.Views
                 buffer.SetLine(errorRow, error);
                 buffer.AddColorSpan(errorRow, 0, error.Length, ConsoleColor.Red);
             }
+
+            if (isReturning)
+            {
+                // What the answer is measured against, and what happens once it's given.
+                var infoRow = row + 3;
+                buffer.SetLine(infoRow, $"Event started {viewModel.AwayStart:HH:mm}. Can't be in the future.");
+
+                if (viewModel.PausedLabel is { } paused)
+                {
+                    buffer.SetLine(infoRow + 1, $"{paused} resumes then.");
+                }
+            }
         }
 
         private static void RenderShift(HomeScreenViewModel viewModel, ScreenBuffer buffer)
@@ -123,6 +145,7 @@ namespace Stint.Cli.Views
                 : $"Shift: {viewModel.ClockInTime:HH:mm} - {viewModel.ClockOutTime:HH:mm}");
 
             RenderProgress(viewModel, buffer);
+            RenderAway(viewModel, buffer);
             RenderProjectTree(viewModel, buffer);
 
             // No separator of Home's own here - the pipeline already draws one rule above the
@@ -154,10 +177,32 @@ namespace Stint.Cli.Views
             buffer.AddColorSpan(barRow, normalCells + overtimeCells, emptyCells, ConsoleColor.DarkGray);
         }
 
+        // While away: what the user is away for and since when, and the project/task that resumes on
+        // return, in a block of its own above the tree (which makes room, see RenderProjectTree).
+        private static void RenderAway(HomeScreenViewModel viewModel, ScreenBuffer buffer)
+        {
+            if (!viewModel.IsAway)
+            {
+                return;
+            }
+
+            var label = $"AWAY: {viewModel.AwayName.ToUpperInvariant()}";
+            var value = $"since {viewModel.AwayStart:HH:mm}";
+            buffer.SetLine(AwayRow, LineFormat.DotLeader(label, value));
+            buffer.AddColorSpan(AwayRow, 0, label.Length, ConsoleColor.Black, ConsoleColor.Yellow);
+
+            if (viewModel.PausedLabel is { } paused)
+            {
+                buffer.SetLine(AwayRow + 1, $"  Paused: {paused}");
+            }
+        }
+
         private static void RenderProjectTree(HomeScreenViewModel viewModel, ScreenBuffer buffer)
         {
             var isClockedIn = viewModel.State == HomeState.ClockedIn;
             var rows = isClockedIn ? viewModel.ProjectRows : viewModel.CurrentPageProjectRows;
+            var startRow = viewModel.IsAway ? TreeRowWhileAway : DefaultTreeRow;
+            var maxVisibleProjects = viewModel.IsAway ? MaxVisibleProjectsWhileAway : MaxVisibleProjects;
 
             if (rows.Count == 0)
             {
@@ -165,8 +210,8 @@ namespace Stint.Cli.Views
                 return;
             }
 
-            var row = 9;
-            var visibleCount = Math.Min(rows.Count, MaxVisibleProjects);
+            var row = startRow;
+            var visibleCount = Math.Min(rows.Count, maxVisibleProjects);
 
             for (var i = 0; i < visibleCount; i++)
             {

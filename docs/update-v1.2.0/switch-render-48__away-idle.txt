@@ -1,0 +1,23 @@
+******************** SWITCH ********************
+
+Choose what to switch to:   PROJECTS  [ AWAY ]
+------------------------------------------------
+> DOCTOR / DENTAL
+  FAMILY / PERSONAL
+  OTHER
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------
+[^v] move  [tab] view  [s] switch  [esc] back
+[q] quit

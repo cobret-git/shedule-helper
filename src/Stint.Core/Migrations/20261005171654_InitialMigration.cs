@@ -119,11 +119,50 @@ namespace Stint.Core.Migrations
                         onDelete: ReferentialAction.SetNull);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "AwayLogs",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    AttendanceLogId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Kind = table.Column<int>(type: "INTEGER", nullable: false),
+                    StartTime = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    EndTime = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    PausedTimeLogId = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AwayLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AwayLogs_AttendanceLogs_AttendanceLogId",
+                        column: x => x.AttendanceLogId,
+                        principalTable: "AttendanceLogs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AwayLogs_ProjectTimeLogs_PausedTimeLogId",
+                        column: x => x.PausedTimeLogId,
+                        principalTable: "ProjectTimeLogs",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AttendanceLogs_WorkDate",
                 table: "AttendanceLogs",
                 column: "WorkDate",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AwayLogs_AttendanceLogId",
+                table: "AwayLogs",
+                column: "AttendanceLogId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AwayLogs_PausedTimeLogId",
+                table: "AwayLogs",
+                column: "PausedTimeLogId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PlannedEvents_StartDate_EndDate",
@@ -161,6 +200,9 @@ namespace Stint.Core.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AwayLogs");
+
             migrationBuilder.DropTable(
                 name: "PlannedEvents");
 

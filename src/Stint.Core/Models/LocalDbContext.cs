@@ -22,6 +22,7 @@ namespace Stint.Core
         public DbSet<AttendanceLog> AttendanceLogs { get; set; } = null!;
         public DbSet<ProjectTimeLog> ProjectTimeLogs { get; set; } = null!;
         public DbSet<PlannedEvent> PlannedEvents { get; set; } = null!;
+        public DbSet<AwayLog> AwayLogs { get; set; } = null!;
         #endregion
 
         #region Handlers
@@ -68,6 +69,21 @@ namespace Stint.Core
                 .WithOne(l => l.AttendanceLog)
                 .HasForeignKey(l => l.AttendanceLogId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // AttendanceLog 1:N AwayLogs
+            modelBuilder.Entity<AwayLog>()
+                .HasOne(a => a.AttendanceLog)
+                .WithMany()
+                .HasForeignKey(a => a.AttendanceLogId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // AwayLog 0..1:1 paused ProjectTimeLog - just a pointer to what coming back resumes, so
+            // losing the segment must not take the away record with it.
+            modelBuilder.Entity<AwayLog>()
+                .HasOne(a => a.PausedTimeLog)
+                .WithMany()
+                .HasForeignKey(a => a.PausedTimeLogId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // TaskItem 0..1:N ProjectTimeLogs
             modelBuilder.Entity<TaskItem>()

@@ -1,3 +1,4 @@
+using Stint.Cli.Components;
 using Stint.Cli.Models;
 using Stint.Cli.ViewModels;
 
@@ -22,6 +23,7 @@ namespace Stint.Cli.Views
         private const int ListStartRow = 4;
         private const int PagerRow = 18;
         private const int NoTargetsMessageRow = 12;
+        private const int ErrorRow = ScreenBuffer.Height - 4;
 
         #endregion
 
@@ -38,8 +40,20 @@ namespace Stint.Cli.Views
                 buffer.SetLine(PendingPauseRow, "Pending: pause tracking");
             }
 
-            buffer.SetLine(HeaderRow, "Choose a project or task to switch to:");
+            RenderHeader(viewModel, buffer);
             buffer.SetLine(RuleRow, new string('-', ScreenBuffer.Width));
+
+            if (viewModel.LoadError is { } error)
+            {
+                buffer.SetLine(ErrorRow, error);
+                buffer.AddColorSpan(ErrorRow, 0, Math.Min(error.Length, ScreenBuffer.Width), ConsoleColor.Red);
+            }
+
+            if (viewModel.View == SwitchView.Away)
+            {
+                RenderAwayList(viewModel, buffer);
+                return;
+            }
 
             if (viewModel.Projects.Count == 0)
             {
@@ -53,6 +67,41 @@ namespace Stint.Cli.Views
         #endregion
 
         #region Helpers
+
+        // One line for both views: the prompt, then the two views side by side with the current one
+        // inverted - the same contrast the selected row gets - so Tab's effect is visible at a glance.
+        private static void RenderHeader(SwitchScreenViewModel viewModel, ScreenBuffer buffer)
+        {
+            const string prompt = "Choose what to switch to:";
+            const string projectsTab = " PROJECTS ";
+            const string awayTab = " AWAY ";
+
+            var projectsStart = prompt.Length + 2;
+            var awayStart = projectsStart + projectsTab.Length + 1;
+
+            buffer.SetLine(HeaderRow, $"{prompt}  {projectsTab} {awayTab}");
+
+            var (activeStart, activeLength) = viewModel.View == SwitchView.Projects
+                ? (projectsStart, projectsTab.Length)
+                : (awayStart, awayTab.Length);
+
+            buffer.AddColorSpan(HeaderRow, activeStart, activeLength, ConsoleColor.Black, ConsoleColor.White);
+        }
+
+        private static void RenderAwayList(SwitchScreenViewModel viewModel, ScreenBuffer buffer)
+        {
+            var row = ListStartRow;
+
+            for (var i = 0; i < viewModel.AwayKinds.Count; i++)
+            {
+                var kind = viewModel.AwayKinds[i];
+                var isSelected = i == viewModel.SelectedAwayIndex;
+                var isPendingTarget = viewModel.PendingAwayKind == kind;
+                var marker = isSelected ? "> " : "  ";
+
+                RenderRow(buffer, row++, marker, AwayKindNames.GetName(kind).ToUpperInvariant(), isActive: false, isPendingTarget, isPendingDone: false, isPendingPause: false, isSelected);
+            }
+        }
 
         private static void RenderTree(SwitchScreenViewModel viewModel, ScreenBuffer buffer)
         {
