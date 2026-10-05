@@ -33,6 +33,7 @@ services.AddTransient<SwitchScreenViewModel>();
 services.AddTransient<SettingsScreenViewModel>();
 services.AddTransient<SettingsGeneralScreenViewModel>();
 services.AddTransient<SettingsDatabaseScreenViewModel>();
+services.AddTransient<DatePickerScreenViewModel>();
 
 // One IScreenView per screen ViewModel above, plus the pipeline that resolves/drives them.
 services.AddSingleton<IScreenView, HomeScreen>();
@@ -42,6 +43,7 @@ services.AddSingleton<IScreenView, SwitchScreen>();
 services.AddSingleton<IScreenView, SettingsScreen>();
 services.AddSingleton<IScreenView, SettingsGeneralScreen>();
 services.AddSingleton<IScreenView, SettingsDatabaseScreen>();
+services.AddSingleton<IScreenView, DatePickerScreen>();
 services.AddSingleton<ScreenViewRegistry>();
 services.AddSingleton<ConsoleHost>();
 

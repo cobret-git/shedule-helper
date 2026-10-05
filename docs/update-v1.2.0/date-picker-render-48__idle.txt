@@ -1,0 +1,23 @@
+**************** VACATION FROM *****************
+
+> Year                                  < 2026 >
+  Month                             [ November ]
+  Day                               [ 09 - Mon ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------
+[^v] select  [<>] change  [enter] confirm
+[esc] cancel
