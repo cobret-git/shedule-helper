@@ -70,6 +70,24 @@ namespace Stint.Cli.Services
         }
 
         /// <inheritdoc />
+        public async Task<TResult> ShowDialogAsync<TDialog, TContext, TResult>(TContext context) where TDialog : IDialogScreenViewModel<TContext, TResult>
+        {
+            var dialog = _services.GetRequiredService<TDialog>();
+            dialog.Initialize(context);
+            Push(dialog);
+
+            // Resumes inline, inside the dialog's own Close call (no SynchronizationContext, and the
+            // source is not completed asynchronously) - so everything below, and the caller's code
+            // after it, runs on the console loop's thread, not concurrently with the render loop.
+            await dialog.Closed;
+
+            // A dialog can't navigate, so it is still the top of the stack here.
+            GoBack();
+
+            return dialog.Result;
+        }
+
+        /// <inheritdoc />
         public bool GoBack()
         {
             if (!CanGoBack)

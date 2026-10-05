@@ -53,6 +53,27 @@ namespace Stint.Cli.Services
         void NavigateTo<TScreen, TContext>(TContext context) where TScreen : IScreenViewModel<TContext>;
 
         /// <summary>
+        /// Opens a fresh <typeparamref name="TDialog"/> on top of the stack, hands it
+        /// <paramref name="context"/>, and waits until the dialog closes itself: it is then popped
+        /// and disposed, and its <see cref="IDialogScreenViewModel{TContext, TResult}.Result"/> is
+        /// returned - <c>MessageBox.Show</c> for the console.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The generic arguments can't be inferred from the dialog type, so they're all spelled out:
+        /// <c>await Navigation.ShowDialogAsync&lt;DatePickerScreenViewModel, DatePickerRequest, DatePickerResult&gt;(request)</c>.
+        /// Wrap a frequently used dialog in a small extension method to hide that.
+        /// </para>
+        /// <para>
+        /// The caller resumes synchronously inside the dialog's closing command, on the console
+        /// loop's own thread and with the caller's screen already current again, so it may
+        /// navigate onward straight away. If the app shuts down while a dialog is open, the task
+        /// simply never completes.
+        /// </para>
+        /// </remarks>
+        Task<TResult> ShowDialogAsync<TDialog, TContext, TResult>(TContext context) where TDialog : IDialogScreenViewModel<TContext, TResult>;
+
+        /// <summary>
         /// Pops the current screen off the stack and disposes it, revealing the screen
         /// beneath it. Does nothing and returns <c>false</c> if already at the root.
         /// </summary>
