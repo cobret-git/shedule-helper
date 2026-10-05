@@ -77,8 +77,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("edit", BeginEditCommand, ConsoleKey.E),
                 new KeyHint("delete", BeginDeleteCommand, ConsoleKey.D),
                 new KeyHint("mark", ToggleMarkForDeleteCommand, ConsoleKey.D),
-                new KeyHint("new", BeginCreateCommand, ConsoleKey.N),
-                new KeyHint("quit", QuitCommand, ConsoleKey.Q)
+                new KeyHint("new", BeginCreateCommand, ConsoleKey.N)
             ];
         }
 
@@ -354,13 +353,6 @@ namespace Stint.Cli.ViewModels
             }
 
             OnPropertyChanged(nameof(PendingDeleteIds));
-        }
-
-        [RelayCommand] private void Quit()
-        {
-            // TODO: replace with a proper shutdown hook (flush logs, dispose the DI container)
-            // once the render pipeline/host loop exists - same TODO as Projects' Quit.
-            Environment.Exit(0);
         }
 
         #endregion

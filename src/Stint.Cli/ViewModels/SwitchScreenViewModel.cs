@@ -84,8 +84,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("new", BeginCreateProjectCommand, ConsoleKey.N),
                 new KeyHint("cancel", CancelCommand, ConsoleKey.Escape),
                 new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
-                new KeyHint("menu", OpenMenuCommand, ConsoleKey.Tab),
-                new KeyHint("quit", QuitCommand, ConsoleKey.Q)
+                new KeyHint("menu", OpenMenuCommand, ConsoleKey.Tab)
             ];
         }
 
@@ -370,13 +369,6 @@ namespace Stint.Cli.ViewModels
         // to show yet.
         [RelayCommand(CanExecute = nameof(CanBeginCreateProject))] private void BeginCreateProject()
             => Navigation.NavigateTo<ProjectsScreenViewModel>();
-
-        [RelayCommand] private void Quit()
-        {
-            // TODO: replace with a proper shutdown hook (flush logs, dispose the DI container)
-            // once the render pipeline/host loop exists - same TODO as every other screen's Quit.
-            Environment.Exit(0);
-        }
 
         #endregion
 

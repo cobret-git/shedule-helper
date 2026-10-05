@@ -53,7 +53,8 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("move", MoveSelectionUpCommand, ConsoleKey.UpArrow),
                 new KeyHint("move", MoveSelectionDownCommand, ConsoleKey.DownArrow),
                 new KeyHint("go", GoCommand, ConsoleKey.Enter),
-                new KeyHint("close", CloseMenuCommand, ConsoleKey.Tab, ConsoleKey.Escape)
+                new KeyHint("close", CloseMenuCommand, ConsoleKey.Tab, ConsoleKey.Escape),
+                new KeyHint("quit", QuitCommand, ConsoleKey.Q)
             ];
         }
 
@@ -118,6 +119,14 @@ namespace Stint.Cli.ViewModels
         [RelayCommand(CanExecute = nameof(CanGo))] private void Go() => Close(MenuResult.Go(Destinations[SelectedIndex]));
 
         [RelayCommand] private void CloseMenu() => Close(MenuResult.Cancelled);
+
+        // Quitting is only offered here and on Home, so it's reachable from anywhere in two keys.
+        [RelayCommand] private void Quit()
+        {
+            // TODO: replace with a proper shutdown hook (flush logs, dispose the DI container)
+            // once the render pipeline/host loop exists - same TODO as Home's Quit.
+            Environment.Exit(0);
+        }
 
         #endregion
 
