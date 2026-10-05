@@ -1,0 +1,23 @@
+**************** PLAN - DELETE *****************
+
+------------------------------------------------
+  UPCOMING
+> 09-Nov..13-Nov  Vacation ........ 5d / 37h 30m
+  24-Dec  Day off in lieu .......... 1d / 7h 30m
+
+  EARLIER THIS MONTH
+  01-Oct..02-Oct  Sick leave ...... 2d / 15h 00m
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------
+[^v] select  [enter] confirm  [esc] cancel

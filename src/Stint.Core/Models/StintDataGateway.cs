@@ -390,7 +390,7 @@ namespace Stint.Core
                 && e.EndDate >= plannedEvent.StartDate, ct);
 
             if (overlaps)
-                throw new InvalidOperationException("Another planned event already covers some of these days.");
+                throw new InvalidOperationException("These days overlap another planned event.");
         }
 
         // Loads every closed segment in the range, joined to its project name, with lunch already

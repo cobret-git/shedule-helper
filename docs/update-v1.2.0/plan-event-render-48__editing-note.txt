@@ -1,0 +1,23 @@
+*************** PLAN > VACATION ****************
+
+------------------------------------------------
+  From                                Mon 09-Nov
+  To                                  Fri 13-Nov
+> Note                                   Skiing_
+
+  5 working days  -  37h 30m
+  Sat and Sun are skipped automatically.
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------
+[enter] done  [esc] cancel

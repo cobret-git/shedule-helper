@@ -1,0 +1,23 @@
+*************** PLAN > VACATION ****************
+
+------------------------------------------------
+> From                                Sat 14-Nov
+  To                                  Sun 15-Nov
+  Note                                (optional)
+
+  No working days in this range
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------
+[^v] select  [enter] edit  [esc] back

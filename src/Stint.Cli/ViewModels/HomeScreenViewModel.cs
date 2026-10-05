@@ -84,6 +84,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("out", BeginClockOutCommand, ConsoleKey.O),
                 new KeyHint("switch", SwitchCommand, ConsoleKey.S),
                 new KeyHint("projects", OpenProjectsCommand, ConsoleKey.P),
+                new KeyHint("plan", OpenPlanCommand, ConsoleKey.L),
                 new KeyHint("settings", OpenSettingsCommand, ConsoleKey.F1),
                 new KeyHint("page", PreviousPageCommand, ConsoleKey.LeftArrow),
                 new KeyHint("page", NextPageCommand, ConsoleKey.RightArrow),
@@ -355,6 +356,9 @@ namespace Stint.Cli.ViewModels
         [RelayCommand(CanExecute = nameof(CanOpenProjects))] private void OpenProjects()
             => Navigation.NavigateTo<ProjectsScreenViewModel>();
 
+        [RelayCommand(CanExecute = nameof(CanOpenPlan))] private void OpenPlan()
+            => Navigation.NavigateTo<PlanScreenViewModel>();
+
         [RelayCommand(CanExecute = nameof(CanOpenSettings))] private void OpenSettings()
             => Navigation.NavigateTo<SettingsScreenViewModel>();
 
@@ -390,6 +394,11 @@ namespace Stint.Cli.ViewModels
         private bool CanSwitch() => State == HomeState.ClockedIn;
 
         private bool CanOpenProjects() => State == HomeState.ClockedIn;
+
+        // Planning ahead has nothing to do with today's shift, so it's open whether or not clocked
+        // in - same availability as Settings: not mid-way through typing a custom time or choosing
+        // a clock-out.
+        private bool CanOpenPlan() => !IsEditingCustomTime && State != HomeState.ClockingOut;
 
         private bool CanOpenSettings() => !IsEditingCustomTime && State != HomeState.ClockingOut;
 

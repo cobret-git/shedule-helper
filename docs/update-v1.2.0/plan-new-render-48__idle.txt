@@ -1,0 +1,23 @@
+****************** PLAN > NEW ******************
+
+------------------------------------------------
+> Vacation
+  Sick leave
+  Public holiday
+  Unpaid leave
+  Day off in lieu
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------
+[^v] select  [enter] confirm  [esc] cancel

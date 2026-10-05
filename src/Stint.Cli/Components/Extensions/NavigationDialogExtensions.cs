@@ -1,6 +1,7 @@
 using Stint.Cli.Components;
 using Stint.Cli.Services;
 using Stint.Cli.ViewModels;
+using Stint.Core;
 
 namespace Stint.Cli.Components.Extensions
 {
@@ -19,6 +20,13 @@ namespace Stint.Cli.Components.Extensions
         /// </summary>
         public static Task<DatePickerResult> PickDateAsync(this INavigationService navigation, string label, DateOnly initial)
             => navigation.ShowDialogAsync<DatePickerScreenViewModel, DatePickerRequest, DatePickerResult>(new DatePickerRequest(label, initial));
+
+        /// <summary>
+        /// Opens the kind chooser on <paramref name="options"/> and waits for the user to pick one or
+        /// cancel. <paramref name="title"/> says what the choice is for ("Plan &gt; new").
+        /// </summary>
+        public static Task<DayTypePickerResult> PickDayTypeAsync(this INavigationService navigation, string title, IReadOnlyList<DayType> options)
+            => navigation.ShowDialogAsync<DayTypePickerScreenViewModel, DayTypePickerRequest, DayTypePickerResult>(new DayTypePickerRequest(title, options));
 
         #endregion
     }
