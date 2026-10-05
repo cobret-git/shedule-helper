@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Input;
 using Stint.Cli.Models;
 using Stint.Cli.Services;
 using Stint.Cli.Components;
+using Stint.Cli.Components.Extensions;
 using Stint.Core;
 
 namespace Stint.Cli.ViewModels
@@ -93,10 +94,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("cancel", CancelClockPickerCommand, ConsoleKey.Escape),
                 new KeyHint("out", BeginClockOutCommand, ConsoleKey.O),
                 new KeyHint("back", BeginReturnCommand, ConsoleKey.R),
-                new KeyHint("switch", SwitchCommand, ConsoleKey.S),
-                new KeyHint("projects", OpenProjectsCommand, ConsoleKey.P),
-                new KeyHint("plan", OpenPlanCommand, ConsoleKey.L),
-                new KeyHint("settings", OpenSettingsCommand, ConsoleKey.F1),
+                new KeyHint("menu", OpenMenuCommand, ConsoleKey.Tab),
                 new KeyHint("page", PreviousPageCommand, ConsoleKey.LeftArrow),
                 new KeyHint("page", NextPageCommand, ConsoleKey.RightArrow),
                 new KeyHint("quit", QuitCommand, ConsoleKey.Q)
@@ -397,17 +395,9 @@ namespace Stint.Cli.ViewModels
             State = HomeState.Returning;
         }
 
-        [RelayCommand(CanExecute = nameof(CanSwitch))] private void Switch()
-            => Navigation.NavigateTo<SwitchScreenViewModel>();
-
-        [RelayCommand(CanExecute = nameof(CanOpenProjects))] private void OpenProjects()
-            => Navigation.NavigateTo<ProjectsScreenViewModel>();
-
-        [RelayCommand(CanExecute = nameof(CanOpenPlan))] private void OpenPlan()
-            => Navigation.NavigateTo<PlanScreenViewModel>();
-
-        [RelayCommand(CanExecute = nameof(CanOpenSettings))] private void OpenSettings()
-            => Navigation.NavigateTo<SettingsScreenViewModel>();
+        // The way to every other screen - the menu itself decides which of them are open right now.
+        [RelayCommand(CanExecute = nameof(CanOpenMenu))] private Task OpenMenuAsync()
+            => Navigation.OpenMenuAsync(MenuDestination.Home);
 
         // Wraps around at both ends (last page -> right -> first page, first page -> left ->
         // last page), same as the clock-in picker's own Up/Down above.
@@ -442,16 +432,11 @@ namespace Stint.Cli.ViewModels
 
         private bool CanBeginReturn() => State == HomeState.ClockedIn && IsAway;
 
-        private bool CanSwitch() => State == HomeState.ClockedIn && !IsAway;
-
-        private bool CanOpenProjects() => State == HomeState.ClockedIn;
-
-        // Planning ahead has nothing to do with today's shift, so it's open whether or not clocked
-        // in - same availability as Settings: not mid-way through typing a custom time or choosing
-        // a clock-out.
-        private bool CanOpenPlan() => !IsEditingCustomTime && State is not (HomeState.ClockingOut or HomeState.Returning);
-
-        private bool CanOpenSettings() => !IsEditingCustomTime && State is not (HomeState.ClockingOut or HomeState.Returning);
+        // Nothing to navigate to before the day has started: the clock-in picker is all Home offers
+        // until then. Once clocked in (or out again) the menu is open, but not mid-way through a
+        // time picker - which sections it then allows (Switch and Projects need a live shift) is the
+        // menu's own business.
+        private bool CanOpenMenu() => State is HomeState.ClockedIn or HomeState.ClockedOut;
 
         private bool CanChangePage() => State == HomeState.ClockedOut && TotalPages > 1;
 

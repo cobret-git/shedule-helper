@@ -41,7 +41,7 @@ namespace Stint.Cli.Views
                 }
             }
 
-            var chunks = groups.Select(g => $"[{string.Concat(g.Keys.Select(Glyph))}] {g.Label}").ToList();
+            var chunks = groups.Select(g => $"[{JoinGlyphs(g.Keys)}] {g.Label}").ToList();
 
             return Wrap(chunks, width);
         }
@@ -81,6 +81,15 @@ namespace Stint.Cli.Views
 
             var rest = Wrap(chunks.Skip(consumed).ToList(), width);
             return [line, ..rest];
+        }
+
+        // Single-character glyphs sit tight ("^v", "<>"); as soon as one is a word ("tab", "esc")
+        // they're spaced out with a slash, or "tabesc" would read as one key.
+        private static string JoinGlyphs(IEnumerable<ConsoleKey> keys)
+        {
+            var glyphs = keys.Select(Glyph).ToList();
+
+            return glyphs.Any(g => g.Length > 1) ? string.Join(" / ", glyphs) : string.Concat(glyphs);
         }
 
         private static string Glyph(ConsoleKey key) => key switch

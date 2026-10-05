@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Stint.Cli.Components;
+using Stint.Cli.Components.Extensions;
 using Stint.Cli.Services;
 
 namespace Stint.Cli.ViewModels
@@ -38,6 +39,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("move", MoveSelectionDownCommand, ConsoleKey.DownArrow),
                 new KeyHint("open", OpenCommand, ConsoleKey.Enter),
                 new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
+                new KeyHint("menu", OpenMenuCommand, ConsoleKey.Tab),
                 new KeyHint("quit", QuitCommand, ConsoleKey.Q)
             ];
         }
@@ -81,6 +83,9 @@ namespace Stint.Cli.ViewModels
 
         [RelayCommand(CanExecute = nameof(CanGoBack))] private void GoBack() => Navigation.GoBack();
 
+        [RelayCommand(CanExecute = nameof(CanOpenMenu))] private Task OpenMenuAsync()
+            => Navigation.OpenMenuAsync(MenuDestination.Settings);
+
         [RelayCommand] private void Quit()
         {
             // TODO: replace with a proper shutdown hook (flush logs, dispose the DI container)
@@ -93,6 +98,8 @@ namespace Stint.Cli.ViewModels
         #region CanExecute
 
         private bool CanGoBack() => Navigation.CanGoBack;
+
+        private bool CanOpenMenu() => true;
 
         #endregion
     }

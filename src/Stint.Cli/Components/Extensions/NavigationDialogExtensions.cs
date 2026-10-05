@@ -28,6 +28,40 @@ namespace Stint.Cli.Components.Extensions
         public static Task<DayTypePickerResult> PickDayTypeAsync(this INavigationService navigation, string title, IReadOnlyList<DayType> options)
             => navigation.ShowDialogAsync<DayTypePickerScreenViewModel, DayTypePickerRequest, DayTypePickerResult>(new DayTypePickerRequest(title, options));
 
+        /// <summary>
+        /// Opens the navigation menu and, if a section is picked, jumps to it with that section as
+        /// the new root (see <see cref="INavigationService.NavigateToSection{TScreen}"/>). Closing
+        /// the menu changes nothing. <paramref name="current"/> is the caller's own entry in the menu,
+        /// or null for a sub-screen that has none.
+        /// </summary>
+        public static async Task OpenMenuAsync(this INavigationService navigation, MenuDestination? current)
+        {
+            var result = await navigation.ShowDialogAsync<MenuScreenViewModel, MenuRequest, MenuResult>(new MenuRequest(current));
+            if (!result.IsPicked)
+            {
+                return;
+            }
+
+            switch (result.Destination)
+            {
+                case MenuDestination.Home:
+                    navigation.NavigateToSection<HomeScreenViewModel>();
+                    break;
+                case MenuDestination.Switch:
+                    navigation.NavigateToSection<SwitchScreenViewModel>();
+                    break;
+                case MenuDestination.Projects:
+                    navigation.NavigateToSection<ProjectsScreenViewModel>();
+                    break;
+                case MenuDestination.Plan:
+                    navigation.NavigateToSection<PlanScreenViewModel>();
+                    break;
+                case MenuDestination.Settings:
+                    navigation.NavigateToSection<SettingsScreenViewModel>();
+                    break;
+            }
+        }
+
         #endregion
     }
 }

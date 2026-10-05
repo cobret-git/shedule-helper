@@ -69,7 +69,7 @@ namespace Stint.Cli.Views
         #region Helpers
 
         // One line for both views: the prompt, then the two views side by side with the current one
-        // inverted - the same contrast the selected row gets - so Tab's effect is visible at a glance.
+        // inverted - the same contrast the selected row gets - so V's effect is visible at a glance.
         private static void RenderHeader(SwitchScreenViewModel viewModel, ScreenBuffer buffer)
         {
             const string prompt = "Choose what to switch to:";

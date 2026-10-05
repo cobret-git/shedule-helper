@@ -53,6 +53,14 @@ namespace Stint.Cli.Services
         void NavigateTo<TScreen, TContext>(TContext context) where TScreen : IScreenViewModel<TContext>;
 
         /// <summary>
+        /// Jumps to a top-level section: unwinds the stack down to its root screen (disposing every
+        /// screen above it, including the current one) and pushes a fresh <typeparamref name="TScreen"/>
+        /// on top of the root - unless <typeparamref name="TScreen"/> is the root itself, which is
+        /// just revealed. Going back from the section then always lands on the root.
+        /// </summary>
+        void NavigateToSection<TScreen>() where TScreen : IScreenViewModel;
+
+        /// <summary>
         /// Opens a fresh <typeparamref name="TDialog"/> on top of the stack, hands it
         /// <paramref name="context"/>, and waits until the dialog closes itself: it is then popped
         /// and disposed, and its <see cref="IDialogScreenViewModel{TContext, TResult}.Result"/> is

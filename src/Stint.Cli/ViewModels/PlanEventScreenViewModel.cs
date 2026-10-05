@@ -67,7 +67,8 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("done", EndNoteEditCommand, ConsoleKey.Enter),
                 new KeyHint("save", SaveCommand, ConsoleKey.S),
                 new KeyHint("cancel", CancelNoteEditCommand, ConsoleKey.Escape),
-                new KeyHint("back", GoBackCommand, ConsoleKey.Escape)
+                new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
+                new KeyHint("menu", OpenMenuCommand, ConsoleKey.Tab)
             ];
         }
 
@@ -255,6 +256,9 @@ namespace Stint.Cli.ViewModels
         // Esc while not typing: leaves the form without saving.
         [RelayCommand(CanExecute = nameof(CanGoBack))] private void GoBack() => Navigation.GoBack();
 
+        [RelayCommand(CanExecute = nameof(CanOpenMenu))] private Task OpenMenuAsync()
+            => Navigation.OpenMenuAsync(null);
+
         #endregion
 
         #region CanExecute
@@ -266,6 +270,8 @@ namespace Stint.Cli.ViewModels
         private bool CanSave() => !IsEditingNote && WorkingDays > 0;
 
         private bool CanGoBack() => !IsEditingNote && Navigation.CanGoBack;
+
+        private bool CanOpenMenu() => !IsEditingNote;
 
         #endregion
 

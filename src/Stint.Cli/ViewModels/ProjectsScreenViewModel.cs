@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Input;
 using Stint.Cli.Models;
 using Stint.Cli.Services;
 using Stint.Cli.Components;
+using Stint.Cli.Components.Extensions;
 using Stint.Core;
 
 namespace Stint.Cli.ViewModels
@@ -69,6 +70,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("confirm", ConfirmCommand, ConsoleKey.Enter),
                 new KeyHint("cancel", CancelCommand, ConsoleKey.Escape),
                 new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
+                new KeyHint("menu", OpenMenuCommand, ConsoleKey.Tab),
                 new KeyHint("edit", BeginEditCommand, ConsoleKey.E),
                 new KeyHint("delete", BeginDeleteCommand, ConsoleKey.D),
                 new KeyHint("mark", ToggleMarkForDeleteCommand, ConsoleKey.D),
@@ -297,6 +299,9 @@ namespace Stint.Cli.ViewModels
         // dispatch takes the first hint (in KeyHints order) whose command can execute.
         [RelayCommand(CanExecute = nameof(CanGoBack))] private void GoBack() => Navigation.GoBack();
 
+        [RelayCommand(CanExecute = nameof(CanOpenMenu))] private Task OpenMenuAsync()
+            => Navigation.OpenMenuAsync(MenuDestination.Projects);
+
         [RelayCommand(CanExecute = nameof(CanBeginCreate))] private void BeginCreate()
         {
             Mode = ProjectsMode.Creating;
@@ -388,6 +393,8 @@ namespace Stint.Cli.ViewModels
         private bool CanCancel() => Mode != ProjectsMode.Idle;
 
         private bool CanGoBack() => Mode == ProjectsMode.Idle && Navigation.CanGoBack;
+
+        private bool CanOpenMenu() => Mode == ProjectsMode.Idle;
 
         private bool CanOpen() => Mode == ProjectsMode.Idle && Projects.Count > 0;
 

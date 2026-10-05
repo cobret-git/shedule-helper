@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Input;
 using Stint.Cli.Models;
 using Stint.Cli.Services;
 using Stint.Cli.Components;
+using Stint.Cli.Components.Extensions;
 using Stint.Core;
 
 namespace Stint.Cli.ViewModels
@@ -12,7 +13,7 @@ namespace Stint.Cli.ViewModels
     /// layout/labels from.
     /// </summary>
     /// <remarks>
-    /// Toggled with Tab between two lists: the project tree and the part-day absences (doctor,
+    /// Toggled with V between two lists: the project tree and the part-day absences (doctor,
     /// errand, ...) - going away is just another thing to switch to, marked and confirmed the same
     /// way, and it pauses whatever is running until the user comes back from Home.
     /// Reached from <see cref="HomeScreenViewModel.Switch"/> while clocked in. Loads today's
@@ -75,7 +76,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("move", MoveSelectionDownCommand, ConsoleKey.DownArrow),
                 new KeyHint("page", PreviousPageCommand, ConsoleKey.LeftArrow),
                 new KeyHint("page", NextPageCommand, ConsoleKey.RightArrow),
-                new KeyHint("view", ToggleViewCommand, ConsoleKey.Tab),
+                new KeyHint("view", ToggleViewCommand, ConsoleKey.V),
                 new KeyHint("switch", ToggleSwitchTargetCommand, ConsoleKey.S),
                 new KeyHint("pause", TogglePauseCommand, ConsoleKey.P),
                 new KeyHint("done", ToggleDoneCommand, ConsoleKey.D),
@@ -83,6 +84,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("new", BeginCreateProjectCommand, ConsoleKey.N),
                 new KeyHint("cancel", CancelCommand, ConsoleKey.Escape),
                 new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
+                new KeyHint("menu", OpenMenuCommand, ConsoleKey.Tab),
                 new KeyHint("quit", QuitCommand, ConsoleKey.Q)
             ];
         }
@@ -361,6 +363,9 @@ namespace Stint.Cli.ViewModels
 
         [RelayCommand(CanExecute = nameof(CanGoBack))] private void GoBack() => Navigation.GoBack();
 
+        [RelayCommand(CanExecute = nameof(CanOpenMenu))] private Task OpenMenuAsync()
+            => Navigation.OpenMenuAsync(MenuDestination.Switch);
+
         // Empty-state escape hatch, same idea as Home's own "[p] projects" when there's nothing
         // to show yet.
         [RelayCommand(CanExecute = nameof(CanBeginCreateProject))] private void BeginCreateProject()
@@ -398,6 +403,8 @@ namespace Stint.Cli.ViewModels
         private bool CanCancel() => Mode == SwitchMode.Reviewing;
 
         private bool CanGoBack() => Mode == SwitchMode.Idle && Navigation.CanGoBack;
+
+        private bool CanOpenMenu() => Mode == SwitchMode.Idle;
 
         private bool CanBeginCreateProject() => Mode == SwitchMode.Idle && View == SwitchView.Projects && Projects.Count == 0;
 

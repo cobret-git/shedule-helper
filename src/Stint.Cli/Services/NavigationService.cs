@@ -70,6 +70,34 @@ namespace Stint.Cli.Services
         }
 
         /// <inheritdoc />
+        public void NavigateToSection<TScreen>() where TScreen : IScreenViewModel
+        {
+            var leavingScreen = _stack.Peek();
+            leavingScreen.OnDeactivated();
+
+            // Everything above the root is gone for good. Screens beneath the current one were
+            // already deactivated when they were pushed over, so only the current one needed it.
+            while (_stack.Count > 1)
+            {
+                _stack.Pop().Dispose();
+            }
+
+            var rootScreen = _stack.Peek();
+            if (rootScreen is TScreen)
+            {
+                rootScreen.OnActivated();
+                Navigated?.Invoke(this, new NavigatedEventArgs(leavingScreen, rootScreen, NavigationDirection.Back));
+                return;
+            }
+
+            var screen = _services.GetRequiredService<TScreen>();
+            _stack.Push(screen);
+            screen.OnActivated();
+
+            Navigated?.Invoke(this, new NavigatedEventArgs(leavingScreen, screen, NavigationDirection.Forward));
+        }
+
+        /// <inheritdoc />
         public async Task<TResult> ShowDialogAsync<TDialog, TContext, TResult>(TContext context) where TDialog : IDialogScreenViewModel<TContext, TResult>
         {
             var dialog = _services.GetRequiredService<TDialog>();

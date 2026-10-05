@@ -64,7 +64,8 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("confirm", ConfirmDeleteCommand, ConsoleKey.Enter),
                 new KeyHint("delete", BeginDeleteCommand, ConsoleKey.D),
                 new KeyHint("cancel", CancelDeleteCommand, ConsoleKey.Escape),
-                new KeyHint("back", GoBackCommand, ConsoleKey.Escape)
+                new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
+                new KeyHint("menu", OpenMenuCommand, ConsoleKey.Tab)
             ];
         }
 
@@ -190,6 +191,9 @@ namespace Stint.Cli.ViewModels
         // dispatch takes the first hint (in KeyHints order) whose command can execute.
         [RelayCommand(CanExecute = nameof(CanGoBack))] private void GoBack() => Navigation.GoBack();
 
+        [RelayCommand(CanExecute = nameof(CanOpenMenu))] private Task OpenMenuAsync()
+            => Navigation.OpenMenuAsync(MenuDestination.Plan);
+
         #endregion
 
         #region CanExecute
@@ -205,6 +209,8 @@ namespace Stint.Cli.ViewModels
         private bool CanConfirmDelete() => Mode == PlanMode.ConfirmingDelete && SelectedRow is not null;
 
         private bool CanGoBack() => Mode == PlanMode.Idle && Navigation.CanGoBack;
+
+        private bool CanOpenMenu() => Mode == PlanMode.Idle;
 
         #endregion
 

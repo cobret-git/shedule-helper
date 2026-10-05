@@ -37,6 +37,7 @@ services.AddTransient<DatePickerScreenViewModel>();
 services.AddTransient<DayTypePickerScreenViewModel>();
 services.AddTransient<PlanScreenViewModel>();
 services.AddTransient<PlanEventScreenViewModel>();
+services.AddTransient<MenuScreenViewModel>();
 
 // One IScreenView per screen ViewModel above, plus the pipeline that resolves/drives them.
 services.AddSingleton<IScreenView, HomeScreen>();
@@ -50,6 +51,7 @@ services.AddSingleton<IScreenView, DatePickerScreen>();
 services.AddSingleton<IScreenView, DayTypePickerScreen>();
 services.AddSingleton<IScreenView, PlanScreen>();
 services.AddSingleton<IScreenView, PlanEventScreen>();
+services.AddSingleton<IScreenView, MenuScreen>();
 services.AddSingleton<ScreenViewRegistry>();
 services.AddSingleton<ConsoleHost>();
 

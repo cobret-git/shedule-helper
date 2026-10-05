@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Stint.Cli.Components;
+using Stint.Cli.Components.Extensions;
 using Stint.Cli.Services;
 using Stint.Core;
 
@@ -65,7 +66,8 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("save", SaveCommand, ConsoleKey.S),
                 new KeyHint("cancel", CancelEditCommand, ConsoleKey.Escape),
                 new KeyHint("discard", DiscardCommand, ConsoleKey.Escape),
-                new KeyHint("back", GoBackCommand, ConsoleKey.Escape)
+                new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
+                new KeyHint("menu", OpenMenuCommand, ConsoleKey.Tab)
             ];
         }
 
@@ -290,6 +292,9 @@ namespace Stint.Cli.ViewModels
 
         [RelayCommand(CanExecute = nameof(CanGoBack))] private void GoBack() => Navigation.GoBack();
 
+        [RelayCommand(CanExecute = nameof(CanOpenMenu))] private Task OpenMenuAsync()
+            => Navigation.OpenMenuAsync(null);
+
         #endregion
 
         #region CanExecute
@@ -307,6 +312,8 @@ namespace Stint.Cli.ViewModels
         private bool CanDiscard() => !IsEditing && HasChanges;
 
         private bool CanGoBack() => !IsEditing && !HasChanges && Navigation.CanGoBack;
+
+        private bool CanOpenMenu() => !IsEditing && !HasChanges;
 
         #endregion
 

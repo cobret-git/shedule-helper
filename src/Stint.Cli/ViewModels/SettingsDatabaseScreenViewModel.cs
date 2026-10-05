@@ -1,6 +1,7 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.Input;
 using Stint.Cli.Components;
+using Stint.Cli.Components.Extensions;
 using Stint.Cli.Services;
 using Stint.Core;
 
@@ -64,7 +65,8 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("select", SelectCommand, ConsoleKey.Enter),
                 new KeyHint("clear and restore", ConfirmRestoreCommand, ConsoleKey.Enter),
                 new KeyHint("cancel", CancelRestoreCommand, ConsoleKey.Escape),
-                new KeyHint("back", GoBackCommand, ConsoleKey.Escape)
+                new KeyHint("back", GoBackCommand, ConsoleKey.Escape),
+                new KeyHint("menu", OpenMenuCommand, ConsoleKey.Tab)
             ];
         }
 
@@ -149,6 +151,9 @@ namespace Stint.Cli.ViewModels
 
         [RelayCommand(CanExecute = nameof(CanGoBack))] private void GoBack() => Navigation.GoBack();
 
+        [RelayCommand(CanExecute = nameof(CanOpenMenu))] private Task OpenMenuAsync()
+            => Navigation.OpenMenuAsync(null);
+
         #endregion
 
         #region CanExecute
@@ -158,6 +163,8 @@ namespace Stint.Cli.ViewModels
         private bool CanConfirmRestore() => Mode == DatabaseMode.ConfirmingRestore && !_isBusy;
 
         private bool CanGoBack() => Mode == DatabaseMode.Idle && !_isBusy && Navigation.CanGoBack;
+
+        private bool CanOpenMenu() => Mode == DatabaseMode.Idle && !_isBusy;
 
         #endregion
 
