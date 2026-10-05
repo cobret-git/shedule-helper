@@ -229,6 +229,54 @@ namespace Stint.Core
             await context.SaveChangesAsync(ct);
         }
 
+        // Planned Events
+
+        public async Task<List<PlannedEvent>> GetPlannedEventsAsync(DateOnly rangeStart, DateOnly rangeEnd, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            return await context.PlannedEvents
+                .Where(e => e.StartDate <= rangeEnd && e.EndDate >= rangeStart)
+                .OrderBy(e => e.StartDate)
+                .ThenBy(e => e.Id)
+                .AsNoTracking()
+                .ToListAsync(ct);
+        }
+
+        public async Task<PlannedEvent> AddPlannedEventAsync(PlannedEvent plannedEvent, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            await ValidatePlannedEventAsync(context, plannedEvent, ct);
+
+            context.PlannedEvents.Add(plannedEvent);
+            await context.SaveChangesAsync(ct);
+            return plannedEvent;
+        }
+
+        public async Task UpdatePlannedEventAsync(PlannedEvent plannedEvent, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            var existing = await context.PlannedEvents.FirstOrDefaultAsync(e => e.Id == plannedEvent.Id, ct)
+                ?? throw new InvalidOperationException($"Planned event {plannedEvent.Id} was not found.");
+
+            await ValidatePlannedEventAsync(context, plannedEvent, ct);
+
+            existing.DayType = plannedEvent.DayType;
+            existing.StartDate = plannedEvent.StartDate;
+            existing.EndDate = plannedEvent.EndDate;
+            existing.Note = plannedEvent.Note;
+            await context.SaveChangesAsync(ct);
+        }
+
+        public async Task DeletePlannedEventAsync(int plannedEventId, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            var existing = await context.PlannedEvents.FirstOrDefaultAsync(e => e.Id == plannedEventId, ct)
+                ?? throw new InvalidOperationException($"Planned event {plannedEventId} was not found.");
+
+            context.PlannedEvents.Remove(existing);
+            await context.SaveChangesAsync(ct);
+        }
+
         // Project Time Logs
 
         public async Task<List<ProjectTimeLog>> GetTimeLogsForAttendanceAsync(int attendanceLogId, CancellationToken ct = default)
@@ -323,6 +371,27 @@ namespace Stint.Core
         #endregion
 
         #region Helpers
+
+        // The rules every planned event must satisfy, whether it is new or being edited: an absence
+        // (never a worked day), a real range, and no overlap with any other planned event - two
+        // vacations over the same day would double-count it. An event never overlaps itself, so
+        // editing one doesn't trip over its own stored row.
+        private static async Task ValidatePlannedEventAsync(LocalDbContext context, PlannedEvent plannedEvent, CancellationToken ct)
+        {
+            if (plannedEvent.DayType == DayType.Worked)
+                throw new InvalidOperationException("A planned event can't be a worked day.");
+
+            if (plannedEvent.EndDate < plannedEvent.StartDate)
+                throw new InvalidOperationException("A planned event can't end before it starts.");
+
+            var overlaps = await context.PlannedEvents.AnyAsync(e =>
+                e.Id != plannedEvent.Id
+                && e.StartDate <= plannedEvent.EndDate
+                && e.EndDate >= plannedEvent.StartDate, ct);
+
+            if (overlaps)
+                throw new InvalidOperationException("Another planned event already covers some of these days.");
+        }
 
         // Loads every closed segment in the range, joined to its project name, with lunch already
         // deducted per-segment. Small local dataset - simpler and safer to aggregate the three

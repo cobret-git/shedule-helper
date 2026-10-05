@@ -29,6 +29,23 @@ namespace Stint.Core.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PlannedEvents",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    DayType = table.Column<int>(type: "INTEGER", nullable: false),
+                    StartDate = table.Column<DateOnly>(type: "TEXT", nullable: false),
+                    EndDate = table.Column<DateOnly>(type: "TEXT", nullable: false),
+                    Note = table.Column<string>(type: "TEXT", maxLength: 32, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlannedEvents", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Projects",
                 columns: table => new
                 {
@@ -109,10 +126,16 @@ namespace Stint.Core.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_PlannedEvents_StartDate_EndDate",
+                table: "PlannedEvents",
+                columns: new[] { "StartDate", "EndDate" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Projects_Name",
                 table: "Projects",
                 column: "Name",
-                unique: true);
+                unique: true,
+                filter: "\"IsActive\" = 1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProjectTimeLogs_AttendanceLogId",
@@ -138,6 +161,9 @@ namespace Stint.Core.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "PlannedEvents");
+
             migrationBuilder.DropTable(
                 name: "ProjectTimeLogs");
 

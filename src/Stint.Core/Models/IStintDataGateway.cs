@@ -114,6 +114,37 @@ namespace Stint.Core
 
         #endregion
 
+        #region Planned Events
+
+        /// <summary>
+        /// Returns every planned event that touches <paramref name="rangeStart"/>..<paramref name="rangeEnd"/>
+        /// (inclusive) - including one that starts before the range or ends after it - earliest first.
+        /// </summary>
+        Task<List<PlannedEvent>> GetPlannedEventsAsync(DateOnly rangeStart, DateOnly rangeEnd, CancellationToken ct = default);
+
+        /// <summary>
+        /// Persists a new planned event and returns it with its generated <see cref="PlannedEvent.Id"/>.
+        /// Throws <see cref="InvalidOperationException"/> when it is invalid (see
+        /// <see cref="UpdatePlannedEventAsync"/>).
+        /// </summary>
+        Task<PlannedEvent> AddPlannedEventAsync(PlannedEvent plannedEvent, CancellationToken ct = default);
+
+        /// <summary>
+        /// Updates the editable fields (<see cref="PlannedEvent.DayType"/>, <see cref="PlannedEvent.StartDate"/>,
+        /// <see cref="PlannedEvent.EndDate"/>, <see cref="PlannedEvent.Note"/>) of the event matching
+        /// <see cref="PlannedEvent.Id"/>. Throws <see cref="InvalidOperationException"/> if the event
+        /// doesn't exist, is a <see cref="DayType.Worked"/> day, ends before it starts, or overlaps
+        /// another planned event.
+        /// </summary>
+        Task UpdatePlannedEventAsync(PlannedEvent plannedEvent, CancellationToken ct = default);
+
+        /// <summary>
+        /// Deletes the planned event outright - a plan has no history worth keeping.
+        /// </summary>
+        Task DeletePlannedEventAsync(int plannedEventId, CancellationToken ct = default);
+
+        #endregion
+
         #region Project Time Logs
 
         /// <summary>

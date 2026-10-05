@@ -21,6 +21,7 @@ namespace Stint.Core
         public DbSet<TaskItem> Tasks { get; set; } = null!;
         public DbSet<AttendanceLog> AttendanceLogs { get; set; } = null!;
         public DbSet<ProjectTimeLog> ProjectTimeLogs { get; set; } = null!;
+        public DbSet<PlannedEvent> PlannedEvents { get; set; } = null!;
         #endregion
 
         #region Handlers
@@ -34,6 +35,10 @@ namespace Stint.Core
             modelBuilder.Entity<AttendanceLog>()
                 .HasIndex(a => a.WorkDate)
                 .IsUnique();
+
+            // PlannedEvent: looked up by the date range it overlaps
+            modelBuilder.Entity<PlannedEvent>()
+                .HasIndex(e => new { e.StartDate, e.EndDate });
 
             // Project: unique name among active projects only - a soft-deleted project's name
             // (IsActive = 0) stays in the table forever, and must free up for reuse rather than

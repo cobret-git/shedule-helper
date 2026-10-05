@@ -53,6 +53,41 @@ namespace Stint.Core.Migrations
                     b.ToTable("AttendanceLogs");
                 });
 
+            modelBuilder.Entity("Stint.Core.PlannedEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("Id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("CreatedAt");
+
+                    b.Property<int>("DayType")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("DayType");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("EndDate");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT")
+                        .HasColumnName("Note");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("StartDate");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartDate", "EndDate");
+
+                    b.ToTable("PlannedEvents");
+                });
+
             modelBuilder.Entity("Stint.Core.Project", b =>
                 {
                     b.Property<int>("Id")

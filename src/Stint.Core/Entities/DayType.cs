@@ -19,6 +19,12 @@
         Holiday = 3,
 
         /// <summary>Unpaid leave.</summary>
-        Unpaid = 4
+        Unpaid = 4,
+
+        /// <summary>
+        /// A day taken off in lieu of time already worked: nothing is credited, so the day's
+        /// target comes out of the banked balance instead of being covered by it.
+        /// </summary>
+        DayOffInLieu = 5
     }
 }
