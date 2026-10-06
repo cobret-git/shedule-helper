@@ -5,7 +5,7 @@ namespace Stint.Cli.Components
     /// </summary>
     public enum HomeState
     {
-        /// <summary>No attendance log exists for today yet - showing the clock-in picker.</summary>
+        /// <summary>No attendance log exists for today yet - Home opens the clock-in picker dialog.</summary>
         NotClockedIn,
 
         /// <summary>Clocked in and the day isn't over - showing the live shift/project tree.</summary>

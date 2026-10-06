@@ -5,7 +5,7 @@ namespace Stint.Cli.Views
 {
     /// <summary>
     /// Draws <see cref="HomeScreenViewModel"/>'s body content and intercepts the keys its
-    /// custom clock-in/clock-out time mask needs that no fixed <see cref="KeyHint"/> could represent.
+    /// custom clock-out/"back at" time mask needs that no fixed <see cref="KeyHint"/> could represent.
     /// </summary>
     /// <remarks>
     /// Row positions/how many project rows fit are approximate for now - tune once this is
@@ -37,6 +37,12 @@ namespace Stint.Cli.Views
             if (viewModel.IsPickerOpen)
             {
                 RenderClockPicker(viewModel, buffer);
+            }
+            else if (viewModel.State == HomeState.NotClockedIn)
+            {
+                // Only visible for the moment before the clock-in dialog opens over it.
+                buffer.SetLine(2, $"Date: {DateTime.Now:dd-MMM-yyyy  HH:mm}");
+                buffer.SetLine(3, "Status: not clocked in");
             }
             else
             {
@@ -71,18 +77,17 @@ namespace Stint.Cli.Views
 
         #region Helpers
 
-        // One picker for both directions: clock-in while not clocked in, clock-out (over the live
-        // shift's own "Clock-in:" line) while clocking out.
+        // One picker for both directions: clock-out and coming back from an absence, over the live
+        // shift's own "Clock-in:" line.
         private static void RenderClockPicker(HomeScreenViewModel viewModel, ScreenBuffer buffer)
         {
-            var isClockingOut = viewModel.State == HomeState.ClockingOut;
             var isReturning = viewModel.State == HomeState.Returning;
 
             buffer.SetLine(2, $"Date: {DateTime.Now:dd-MMM-yyyy  HH:mm}");
-            buffer.SetLine(3, isClockingOut || isReturning ? $"Clock-in: {viewModel.ClockInTime:HH:mm}" : "Status: not clocked in");
+            buffer.SetLine(3, $"Clock-in: {viewModel.ClockInTime:HH:mm}");
             buffer.SetLine(5, isReturning
                 ? $"Back from {viewModel.AwayName.ToUpperInvariant()} at:"
-                : isClockingOut ? "Clock out at:" : "Clock in at:");
+                : "Clock out at:");
 
             var row = 6;
             foreach (var option in viewModel.ClockOptions)

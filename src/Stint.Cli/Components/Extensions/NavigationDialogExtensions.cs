@@ -29,6 +29,13 @@ namespace Stint.Cli.Components.Extensions
             => navigation.ShowDialogAsync<DayTypePickerScreenViewModel, DayTypePickerRequest, DayTypePickerResult>(new DayTypePickerRequest(title, options));
 
         /// <summary>
+        /// Opens the clock-in time picker and waits for the user to confirm a time. It cannot be
+        /// cancelled, so there is always a result.
+        /// </summary>
+        public static Task<ClockTimePickerResult> PickClockTimeAsync(this INavigationService navigation)
+            => navigation.ShowDialogAsync<ClockTimePickerScreenViewModel, ClockTimePickerRequest, ClockTimePickerResult>(new ClockTimePickerRequest());
+
+        /// <summary>
         /// Opens the navigation menu and, if a section is picked, jumps to it with that section as
         /// the new root (see <see cref="INavigationService.NavigateToSection{TScreen}"/>). Closing
         /// the menu changes nothing. <paramref name="current"/> is the caller's own entry in the menu,
