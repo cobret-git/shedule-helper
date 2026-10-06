@@ -97,6 +97,12 @@ namespace Stint.Core
         Task<AttendanceLog?> GetAttendanceForDateAsync(string workDate, CancellationToken ct = default);
 
         /// <summary>
+        /// Returns the earliest worked day before <paramref name="beforeWorkDate"/> that was clocked in
+        /// but never clocked out, or <see langword="null"/> if there is none.
+        /// </summary>
+        Task<AttendanceLog?> GetUnclosedAttendanceAsync(string beforeWorkDate, CancellationToken ct = default);
+
+        /// <summary>
         /// Starts a new attendance session (clock in) for the given work date.
         /// </summary>
         Task<AttendanceLog> ClockInAsync(string workDate, DateTime clockIn, CancellationToken ct = default);

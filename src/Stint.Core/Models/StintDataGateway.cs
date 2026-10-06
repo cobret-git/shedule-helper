@@ -205,6 +205,16 @@ namespace Stint.Core
                 .FirstOrDefaultAsync(a => a.WorkDate == workDate, ct);
         }
 
+        public async Task<AttendanceLog?> GetUnclosedAttendanceAsync(string beforeWorkDate, CancellationToken ct = default)
+        {
+            await using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            return await context.AttendanceLogs
+                .AsNoTracking()
+                .Where(a => a.DayType == DayType.Worked && a.ClockIn != null && a.ClockOut == null && a.WorkDate.CompareTo(beforeWorkDate) < 0)
+                .OrderBy(a => a.WorkDate)
+                .FirstOrDefaultAsync(ct);
+        }
+
         public async Task<AttendanceLog> ClockInAsync(string workDate, DateTime clockIn, CancellationToken ct = default)
         {
             await using var context = await _dbContextFactory.CreateDbContextAsync(ct);

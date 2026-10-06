@@ -8,14 +8,16 @@ namespace Stint.Cli.ViewModels
     /// <summary>
     /// A time picker dialog: Now / Default / Custom rows, opened with a
     /// <see cref="ClockTimePickerRequest"/> and closed with a <see cref="ClockTimePickerResult"/> - see
-    /// <c>NavigationDialogExtensions.PickClockTimeAsync</c>. It picks the time for either clocking in
-    /// or clocking out, as the request says.
+    /// <c>NavigationDialogExtensions.PickClockTimeAsync</c>. It picks the time for clocking in, clocking
+    /// out, or clocking out a day that was left open, as the request says.
     /// </summary>
     /// <remarks>
-    /// Clocking in cannot be cancelled: a day has to start somewhere, so the only way out is picking a
-    /// time. Clocking out can (Esc). Only "Now" is ever rounded (<see cref="AppSettings.ClockRounding"/>);
-    /// Default and Custom are returned as set or typed. As on Home, raw key handling for the custom time
-    /// is the view's job - it calls <see cref="AppendCustomTimeDigit"/>/<see cref="RemoveCustomTimeDigit"/>.
+    /// Clocking in and resolving cannot be cancelled: a day has to start somewhere, and an open day has
+    /// to be closed before the next one starts, so the only way out is picking a time. Clocking out can
+    /// (Esc). Resolving has no Now row - the day it closes is long over. Only "Now" is ever rounded
+    /// (<see cref="AppSettings.ClockRounding"/>); Default and Custom are returned as set or typed. As on
+    /// Home, raw key handling for the custom time is the view's job - it calls
+    /// <see cref="AppendCustomTimeDigit"/>/<see cref="RemoveCustomTimeDigit"/>.
     /// </remarks>
     public sealed partial class ClockTimePickerScreenViewModel : DialogScreenViewModelBase<ClockTimePickerRequest, ClockTimePickerResult>
     {
@@ -27,12 +29,18 @@ namespace Stint.Cli.ViewModels
             ClockTimeOption.Default,
             ClockTimeOption.Custom
         ];
+        private static readonly IReadOnlyList<ClockTimeOption> ResolveOptions =
+        [
+            ClockTimeOption.Default,
+            ClockTimeOption.Custom
+        ];
         private readonly ISettingsService<AppSettings> _settingsService;
         private readonly IStintDataGateway _gateway;
         private readonly TimeDigitsInput _customTime = new();
         private ClockTimePickerRequest _request = new(ClockTimePickerAction.ClockIn);
-        // A clock-out is bounded by today's clock-in and the day's latest project segment, loaded
-        // from the db when the dialog opens - see LoadClockOutBoundsAsync.
+        private IReadOnlyList<ClockTimeOption> _options = AllOptions;
+        // A clock-out is bounded by the clock-in and the day's latest project segment, loaded from
+        // the db when the dialog opens - see LoadClockOutBoundsAsync.
         private DateTime? _clockIn;
         private DateTime? _lastSegmentStart;
         private bool _areBoundsLoaded = true;
@@ -67,14 +75,14 @@ namespace Stint.Cli.ViewModels
         /// <summary>Whether this dialog is picking the clock-in or the clock-out time.</summary>
         public ClockTimePickerAction Action => _request.Action;
 
-        /// <summary>Today's clock-in time when clocking out, otherwise null.</summary>
+        /// <summary>The clock-in time of the day being clocked out (once loaded), otherwise null.</summary>
         public DateTime? ClockInTime => _clockIn;
 
         /// <summary>The picker's rows, in display order.</summary>
-        public IReadOnlyList<ClockTimeOption> Options => AllOptions;
+        public IReadOnlyList<ClockTimeOption> Options => _options;
 
         /// <summary>The currently highlighted row.</summary>
-        public ClockTimeOption SelectedOption => AllOptions[_selectedOptionIndex];
+        public ClockTimeOption SelectedOption => _options[_selectedOptionIndex];
 
         /// <summary>Whether the Custom row is currently being typed into.</summary>
         public bool IsEditingCustomTime { get => _isEditingCustomTime; private set => SetProperty(ref _isEditingCustomTime, value); }
@@ -100,9 +108,19 @@ namespace Stint.Cli.ViewModels
             ArgumentNullException.ThrowIfNull(request);
 
             _request = request;
-            Title = request.Action == ClockTimePickerAction.ClockOut ? "CLOCK OUT" : "CLOCK IN";
+            Title = request.Action switch
+            {
+                ClockTimePickerAction.ClockOut => "CLOCK OUT",
+                ClockTimePickerAction.ResolveClockOut => "RESOLVE CLOCK OUT",
+                _ => "CLOCK IN"
+            };
 
-            if (request.Action == ClockTimePickerAction.ClockOut)
+            if (request.Action == ClockTimePickerAction.ResolveClockOut)
+            {
+                _options = ResolveOptions;
+            }
+
+            if (request.Action != ClockTimePickerAction.ClockIn)
             {
                 // Initialize is synchronous (see IScreenViewModel), so the bounds load on their own;
                 // confirming waits for them. A local SQLite read is done before the first frame.
@@ -168,13 +186,13 @@ namespace Stint.Cli.ViewModels
         [RelayCommand(CanExecute = nameof(CanMoveSelection))] private void MoveSelectionUp()
         {
             ClockError = null;
-            _selectedOptionIndex = (_selectedOptionIndex - 1 + AllOptions.Count) % AllOptions.Count;
+            _selectedOptionIndex = (_selectedOptionIndex - 1 + _options.Count) % _options.Count;
         }
 
         [RelayCommand(CanExecute = nameof(CanMoveSelection))] private void MoveSelectionDown()
         {
             ClockError = null;
-            _selectedOptionIndex = (_selectedOptionIndex + 1) % AllOptions.Count;
+            _selectedOptionIndex = (_selectedOptionIndex + 1) % _options.Count;
         }
 
         // Enter: while Custom is highlighted but not yet being edited, starts editing instead of
@@ -193,8 +211,8 @@ namespace Stint.Cli.ViewModels
             // A Now clock-out is already clamped into range by RoundNow. Default/Custom are
             // the user's own explicit choice, so a time that can't work is refused with a reason
             // rather than silently moved somewhere else in their timesheet.
-            if (Action == ClockTimePickerAction.ClockOut && SelectedOption != ClockTimeOption.Now
-                && GetClockOutError(DateTime.Today + time.ToTimeSpan()) is { } error)
+            if (Action != ClockTimePickerAction.ClockIn && SelectedOption != ClockTimeOption.Now
+                && GetClockOutError(ClockOutDate + time.ToTimeSpan()) is { } error)
             {
                 ClockError = error;
                 return;
@@ -236,8 +254,11 @@ namespace Stint.Cli.ViewModels
         {
             try
             {
-                var attendance = await _gateway.GetAttendanceForDateAsync(DateTime.Today.ToString("yyyy-MM-dd"))
-                    ?? throw new InvalidOperationException("Not clocked in today.");
+                var today = DateTime.Today.ToString("yyyy-MM-dd");
+                var attendance = (Action == ClockTimePickerAction.ResolveClockOut
+                        ? await _gateway.GetUnclosedAttendanceAsync(today)
+                        : await _gateway.GetAttendanceForDateAsync(today))
+                    ?? throw new InvalidOperationException(Action == ClockTimePickerAction.ResolveClockOut ? "No unclosed day found." : "Not clocked in today.");
                 var timeLogs = await _gateway.GetTimeLogsForAttendanceAsync(attendance.Id);
 
                 _clockIn = attendance.ClockIn;
@@ -266,7 +287,10 @@ namespace Stint.Cli.ViewModels
         }
 
         private TimeOnly GetDefaultTime(AppSettings settings)
-            => Action == ClockTimePickerAction.ClockOut ? settings.DefaultClockOutTime : settings.DefaultClockInTime;
+            => Action == ClockTimePickerAction.ClockIn ? settings.DefaultClockInTime : settings.DefaultClockOutTime;
+
+        // The day a picked clock-out time belongs to: today, or the day that was left open.
+        private DateTime ClockOutDate => Action == ClockTimePickerAction.ResolveClockOut ? (_clockIn ?? DateTime.Today).Date : DateTime.Today;
 
         private string? GetClockOutError(DateTime clockOutTime)
         {
@@ -326,15 +350,18 @@ namespace Stint.Cli.ViewModels
         /// <summary>Starting the day.</summary>
         ClockIn,
 
-        /// <summary>Ending the day.</summary>
-        ClockOut
+        /// <summary>Ending today.</summary>
+        ClockOut,
+
+        /// <summary>Ending an earlier day that was clocked in but never clocked out.</summary>
+        ResolveClockOut
     }
 
     /// <summary>
-    /// What the clock time picker dialog is opened with. Everything else it needs (today's clock-in,
+    /// What the clock time picker dialog is opened with. Everything else it needs (the clock-in,
     /// the latest project segment) it reads from the db itself.
     /// </summary>
-    /// <param name="Action">Whether the clock-in or the clock-out time is being picked.</param>
+    /// <param name="Action">Which time is being picked.</param>
     public sealed record ClockTimePickerRequest(ClockTimePickerAction Action);
 
     /// <summary>
@@ -344,7 +371,8 @@ namespace Stint.Cli.ViewModels
     /// <param name="Action">What the dialog was picking, as requested.</param>
     /// <param name="Option">Which row the user confirmed: Now, Default or Custom - meaningless when not picked.</param>
     /// <param name="Time">
-    /// The time of day picked - meaningless (default) when not picked. For Now it is already rounded per
+    /// The time of day picked (on today, or for a resolve on the day that was left open) - meaningless
+    /// (default) when not picked. For Now it is already rounded per
     /// <see cref="AppSettings.ClockRounding"/>; Default and Custom are as set or typed.
     /// </param>
     public readonly record struct ClockTimePickerResult(bool IsPicked, ClockTimePickerAction Action, ClockTimeOption Option, TimeOnly Time)

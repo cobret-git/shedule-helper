@@ -351,15 +351,7 @@ namespace Stint.Cli.ViewModels
                 var result = await Navigation.PickClockTimeAsync(new ClockTimePickerRequest(ClockTimePickerAction.ClockOut));
                 if (result.IsPicked)
                 {
-                    var clockOutTime = DateTime.Today + result.Time.ToTimeSpan();
-
-                    var openLog = await _gateway.GetOpenTimeLogAsync(_attendanceLog.Id);
-                    if (openLog is not null)
-                    {
-                        await _gateway.CloseTimeLogAsync(openLog.Id, clockOutTime, TimeLogCloseReason.ClockedOut);
-                    }
-
-                    await _gateway.ClockOutAsync(_attendanceLog.Id, clockOutTime);
+                    await CloseDayAsync(_attendanceLog.Id, DateTime.Today + result.Time.ToTimeSpan());
                 }
             }
             finally
@@ -482,12 +474,32 @@ namespace Stint.Cli.ViewModels
 
         private static TimeSpan Max(TimeSpan a, TimeSpan b) => a > b ? a : b;
 
+        // Closes the running project segment, if any, and the day at the same moment.
+        private async Task CloseDayAsync(int attendanceLogId, DateTime clockOutTime)
+        {
+            var openLog = await _gateway.GetOpenTimeLogAsync(attendanceLogId);
+            if (openLog is not null)
+            {
+                await _gateway.CloseTimeLogAsync(openLog.Id, clockOutTime, TimeLogCloseReason.ClockedOut);
+            }
+
+            await _gateway.ClockOutAsync(attendanceLogId, clockOutTime);
+        }
+
         // Asks for the clock-in time in the picker dialog, saves it, and refreshes into the live shift.
+        // An earlier day that was never clocked out has to be closed first - one dialog per such day,
+        // oldest first.
         private async Task ClockInAsync()
         {
             try
             {
                 _isPickingClockTime = true;
+
+                while (await _gateway.GetUnclosedAttendanceAsync(ToWorkDate(DateTime.Today)) is { ClockIn: DateTime unclosedClockIn } unclosed)
+                {
+                    var resolved = await Navigation.PickClockTimeAsync(new ClockTimePickerRequest(ClockTimePickerAction.ResolveClockOut));
+                    await CloseDayAsync(unclosed.Id, unclosedClockIn.Date + resolved.Time.ToTimeSpan());
+                }
 
                 var result = await Navigation.PickClockTimeAsync(new ClockTimePickerRequest(ClockTimePickerAction.ClockIn));
                 _attendanceLog = await _gateway.ClockInAsync(ToWorkDate(DateTime.Today), DateTime.Today + result.Time.ToTimeSpan());
