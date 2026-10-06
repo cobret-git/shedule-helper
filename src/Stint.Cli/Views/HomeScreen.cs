@@ -77,17 +77,12 @@ namespace Stint.Cli.Views
 
         #region Helpers
 
-        // One picker for both directions: clock-out and coming back from an absence, over the live
-        // shift's own "Clock-in:" line.
+        // The "back at" picker for coming back from an absence, over the live shift's own "Clock-in:" line.
         private static void RenderClockPicker(HomeScreenViewModel viewModel, ScreenBuffer buffer)
         {
-            var isReturning = viewModel.State == HomeState.Returning;
-
             buffer.SetLine(2, $"Date: {DateTime.Now:dd-MMM-yyyy  HH:mm}");
             buffer.SetLine(3, $"Clock-in: {viewModel.ClockInTime:HH:mm}");
-            buffer.SetLine(5, isReturning
-                ? $"Back from {viewModel.AwayName.ToUpperInvariant()} at:"
-                : "Clock out at:");
+            buffer.SetLine(5, $"Back from {viewModel.AwayName.ToUpperInvariant()} at:");
 
             var row = 6;
             foreach (var option in viewModel.ClockOptions)
@@ -122,23 +117,20 @@ namespace Stint.Cli.Views
 
             if (viewModel.ClockError is { } error)
             {
-                // A refused clock-out time (see HomeScreenViewModel.ClockError) - one line under
+                // A refused back time (see HomeScreenViewModel.ClockError) - one line under
                 // the options, in red, until the next key changes anything.
                 var errorRow = row + 1;
                 buffer.SetLine(errorRow, error);
                 buffer.AddColorSpan(errorRow, 0, error.Length, ConsoleColor.Red);
             }
 
-            if (isReturning)
-            {
-                // What the answer is measured against, and what happens once it's given.
-                var infoRow = row + 3;
-                buffer.SetLine(infoRow, $"Event started {viewModel.AwayStart:HH:mm}. Can't be in the future.");
+            // What the answer is measured against, and what happens once it's given.
+            var infoRow = row + 3;
+            buffer.SetLine(infoRow, $"Event started {viewModel.AwayStart:HH:mm}. Can't be in the future.");
 
-                if (viewModel.PausedLabel is { } paused)
-                {
-                    buffer.SetLine(infoRow + 1, $"{paused} resumes then.");
-                }
+            if (viewModel.PausedLabel is { } paused)
+            {
+                buffer.SetLine(infoRow + 1, $"{paused} resumes then.");
             }
         }
 

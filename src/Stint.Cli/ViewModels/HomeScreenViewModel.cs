@@ -20,10 +20,10 @@ namespace Stint.Cli.ViewModels
     /// physical key is a digit or a backspace and calls <see cref="AppendCustomTimeDigit"/>/
     /// <see cref="RemoveCustomTimeDigit"/> accordingly - this class never sees a
     /// <see cref="ConsoleKey"/> or <see cref="ConsoleKeyInfo"/>.
-    /// Clocking in is a dialog of its own (<see cref="ClockTimePickerScreenViewModel"/>), opened as soon as
-    /// Home finds there is no attendance for today. Clocking out uses Home's own Now/Default/Custom
-    /// picker (see <see cref="HomeState.ClockingOut"/>). Only "Now" is ever rounded
-    /// (<see cref="AppSettings.ClockRounding"/>); Default and Custom are stored as typed.
+    /// Clocking in and out are a dialog of their own (<see cref="ClockTimePickerScreenViewModel"/>): clocking
+    /// in opens as soon as Home finds there is no attendance for today, clocking out on <c>[o]</c>. Only
+    /// "Now" is ever rounded (<see cref="AppSettings.ClockRounding"/>); Default and Custom are stored as typed.
+    /// Coming back from an absence still uses Home's own Now/Custom picker (see <see cref="HomeState.Returning"/>).
     /// A day is clocked in once and out once - there is no second clock-in after clocking out.
     /// </remarks>
     public sealed partial class HomeScreenViewModel : ScreenViewModelBase
@@ -36,12 +36,6 @@ namespace Stint.Cli.ViewModels
         // previous CLI's ProgressBar headroom. Not a setting yet; revisit if that ever needs to be
         // user-configurable.
         private static readonly TimeSpan BarHeadroom = TimeSpan.FromMinutes(45);
-        private static readonly IReadOnlyList<ClockTimeOption> AllClockOptions =
-        [
-            ClockTimeOption.Now,
-            ClockTimeOption.Default,
-            ClockTimeOption.Custom
-        ];
         // Coming back from an absence has no "Default" - there is no usual time to return at - so
         // its picker is just Now and Custom.
         private static readonly IReadOnlyList<ClockTimeOption> ReturnClockOptions =
@@ -56,10 +50,10 @@ namespace Stint.Cli.ViewModels
         private readonly ISettingsService<AppSettings> _settingsService;
         private readonly TimeDigitsInput _customTime = new();
         private AttendanceLog? _attendanceLog;
-        // Set from opening the clock-in dialog until the clock-in is saved. Closing the dialog
+        // Set from opening the clock-in/clock-out dialog until the time is saved. Closing the dialog
         // re-activates Home, and that refresh must not look at the db (it would still find no
-        // attendance and open the dialog again) - the clock-in's own refresh follows.
-        private bool _isClockingIn;
+        // attendance and open the clock-in dialog again) - the save's own refresh follows.
+        private bool _isPickingClockTime;
         // The part-day absence the user is away for right now, if any - loaded alongside the
         // attendance log. Its paused segment (project/task) is what coming back resumes.
         private AwayLog? _openAway;
@@ -67,9 +61,6 @@ namespace Stint.Cli.ViewModels
         private int _selectedClockOptionIndex;
         private bool _isEditingCustomTime;
         private string? _clockError;
-        // Start of the latest project segment today (if any), loaded when the clock-out picker
-        // opens - a clock-out can't land before it, or that segment would end before it began.
-        private DateTime? _lastSegmentStart;
         private IReadOnlyList<HomeProjectRow> _projectRows = [];
         private int _currentPageIndex;
         private string? _loadError;
@@ -97,7 +88,7 @@ namespace Stint.Cli.ViewModels
                 new KeyHint("select", MoveClockSelectionDownCommand, ConsoleKey.DownArrow),
                 new KeyHint("confirm", ConfirmClockCommand, ConsoleKey.Enter),
                 new KeyHint("cancel", CancelClockPickerCommand, ConsoleKey.Escape),
-                new KeyHint("out", BeginClockOutCommand, ConsoleKey.O),
+                new KeyHint("out", ClockOutCommand, ConsoleKey.O),
                 new KeyHint("back", BeginReturnCommand, ConsoleKey.R),
                 new KeyHint("menu", OpenMenuCommand, ConsoleKey.Tab),
                 new KeyHint("page", PreviousPageCommand, ConsoleKey.LeftArrow),
@@ -113,13 +104,13 @@ namespace Stint.Cli.ViewModels
         /// <summary>Which of Home's renders is current.</summary>
         public HomeState State { get => _state; private set => SetProperty(ref _state, value); }
 
-        /// <summary>The currently highlighted row index of the clock-out/"back at" time picker.</summary>
+        /// <summary>The currently highlighted row index of the "back at" time picker.</summary>
         public int SelectedClockOptionIndex { get => _selectedClockOptionIndex; private set => SetProperty(ref _selectedClockOptionIndex, value); }
 
         /// <summary>Whether the Custom row is currently being typed into.</summary>
         public bool IsEditingCustomTime { get => _isEditingCustomTime; private set => SetProperty(ref _isEditingCustomTime, value); }
 
-        /// <summary>Why the last clock-out attempt was refused (a Default/Custom time that can't be used), if it was.</summary>
+        /// <summary>Why the last "back at" attempt was refused (a Custom time that can't be used), if it was.</summary>
         public string? ClockError { get => _clockError; private set => SetProperty(ref _clockError, value); }
 
         /// <summary>Today's project/task tree, most recently active first.</summary>
@@ -131,8 +122,8 @@ namespace Stint.Cli.ViewModels
         /// <summary>The error from the last failed <see cref="RefreshAsync"/>, if any.</summary>
         public string? LoadError { get => _loadError; private set => SetProperty(ref _loadError, value); }
 
-        /// <summary>Whether the clock-out or "back at" time picker is what Home is showing.</summary>
-        public bool IsPickerOpen => State is HomeState.ClockingOut or HomeState.Returning;
+        /// <summary>Whether the "back at" time picker is what Home is showing.</summary>
+        public bool IsPickerOpen => State == HomeState.Returning;
 
         /// <summary>Whether the user is away right now (a part-day absence is open).</summary>
         public bool IsAway => _openAway is not null;
@@ -151,8 +142,8 @@ namespace Stint.Cli.ViewModels
             ? (paused.Task is { } task ? $"{paused.Project.Name} / {task.Title}" : paused.Project.Name)
             : null;
 
-        /// <summary>The rows of Home's clock-out/"back at" time picker, in display order.</summary>
-        public IReadOnlyList<ClockTimeOption> ClockOptions => State == HomeState.Returning ? ReturnClockOptions : AllClockOptions;
+        /// <summary>The rows of Home's "back at" time picker, in display order.</summary>
+        public IReadOnlyList<ClockTimeOption> ClockOptions => ReturnClockOptions;
 
         /// <summary>The currently highlighted row of the time picker.</summary>
         public ClockTimeOption SelectedClockOption => ClockOptions[SelectedClockOptionIndex];
@@ -173,7 +164,7 @@ namespace Stint.Cli.ViewModels
         /// </summary>
         public TimeSpan Elapsed => State switch
         {
-            HomeState.ClockedIn or HomeState.ClockingOut or HomeState.Returning => Max(DateTime.Now - (_attendanceLog?.ClockIn ?? DateTime.Now), TimeSpan.Zero),
+            HomeState.ClockedIn or HomeState.Returning => Max(DateTime.Now - (_attendanceLog?.ClockIn ?? DateTime.Now), TimeSpan.Zero),
             HomeState.ClockedOut => (_attendanceLog?.ClockOut ?? DateTime.Now) - (_attendanceLog?.ClockIn ?? DateTime.Now),
             _ => TimeSpan.Zero
         };
@@ -209,7 +200,7 @@ namespace Stint.Cli.ViewModels
         /// </summary>
         public TimeSpan Balance => Elapsed - Target;
 
-        /// <summary>Masked display for the custom clock-out/"back at" time being typed, e.g. "08:3-".</summary>
+        /// <summary>Masked display for the custom "back at" time being typed, e.g. "08:3-".</summary>
         public string CustomTimeDisplay => _customTime.Display;
 
         /// <summary>
@@ -244,7 +235,7 @@ namespace Stint.Cli.ViewModels
         }
 
         /// <summary>
-        /// Appends one digit to the custom clock-out/"back at" time being typed, while <see cref="IsEditingCustomTime"/>.
+        /// Appends one digit to the custom "back at" time being typed, while <see cref="IsEditingCustomTime"/>.
         /// The render pipeline is what decides which physical key counts as a digit - this
         /// method takes the digit itself, never a <see cref="ConsoleKey"/>/<see cref="ConsoleKeyInfo"/>.
         /// </summary>
@@ -261,7 +252,7 @@ namespace Stint.Cli.ViewModels
         }
 
         /// <summary>
-        /// Removes the last typed digit of the custom clock-out/"back at" time, while <see cref="IsEditingCustomTime"/>.
+        /// Removes the last typed digit of the custom "back at" time, while <see cref="IsEditingCustomTime"/>.
         /// If there's nothing left to remove, exits editing mode instead (back to the picker).
         /// </summary>
         public void RemoveCustomTimeDigit()
@@ -281,18 +272,14 @@ namespace Stint.Cli.ViewModels
         }
 
         /// <summary>
-        /// The value that would be used to clock out (or come back) via <paramref name="option"/> right now. A
-        /// "Now" that rounding would move shows both, the real time first - e.g. <c>07:38 (07:40)</c>.
+        /// The value that would be used to come back via <paramref name="option"/> right now.
         /// </summary>
         public string GetClockPreview(ClockTimeOption option)
         {
-            var settings = _settingsService.Settings;
-
             return option switch
             {
                 // Coming back isn't rounded: like a Switch, it simply happens when it happens.
-                ClockTimeOption.Now => State == HomeState.Returning ? DateTime.Now.ToString("HH:mm") : FormatNowPreview(),
-                ClockTimeOption.Default => settings.DefaultClockOutTime.ToString("HH:mm"),
+                ClockTimeOption.Now => DateTime.Now.ToString("HH:mm"),
                 ClockTimeOption.Custom => CustomTimeDisplay,
                 _ => string.Empty
             };
@@ -317,7 +304,7 @@ namespace Stint.Cli.ViewModels
         }
 
         // Enter: while Custom is highlighted but not yet being edited, starts editing instead of
-        // clocking out/returning - the second Enter (once a full, valid time is typed) actually does it.
+        // returning - the second Enter (once a full, valid time is typed) actually does it.
         [RelayCommand(CanExecute = nameof(CanConfirmClock))] private async Task ConfirmClockAsync()
         {
             if (SelectedClockOption == ClockTimeOption.Custom && !IsEditingCustomTime)
@@ -327,14 +314,7 @@ namespace Stint.Cli.ViewModels
                 return;
             }
 
-            if (State == HomeState.Returning)
-            {
-                await ReturnAsync();
-            }
-            else
-            {
-                await ClockOutAsync();
-            }
+            await ReturnAsync();
         }
 
         // Esc in the picker: first discards a half-typed custom time and drops back to the picker
@@ -355,9 +335,9 @@ namespace Stint.Cli.ViewModels
             State = HomeState.ClockedIn;
         }
 
-        // Opens the same Now/Default/Custom picker clock-in uses, rather than clocking out
-        // instantly. Loads the day's latest segment start first - see _lastSegmentStart.
-        [RelayCommand(CanExecute = nameof(CanBeginClockOut))] private async Task BeginClockOutAsync()
+        // Asks for the clock-out time in the picker dialog, then closes the open project segment and
+        // the day at that time.
+        [RelayCommand(CanExecute = nameof(CanClockOut))] private async Task ClockOutAsync()
         {
             if (_attendanceLog is null)
             {
@@ -366,20 +346,28 @@ namespace Stint.Cli.ViewModels
 
             try
             {
-                var timeLogs = await _gateway.GetTimeLogsForAttendanceAsync(_attendanceLog.Id);
-                _lastSegmentStart = timeLogs.Count == 0 ? null : timeLogs.Max(l => l.StartTime);
+                _isPickingClockTime = true;
+
+                var result = await Navigation.PickClockTimeAsync(new ClockTimePickerRequest(ClockTimePickerAction.ClockOut));
+                if (result.IsPicked)
+                {
+                    var clockOutTime = DateTime.Today + result.Time.ToTimeSpan();
+
+                    var openLog = await _gateway.GetOpenTimeLogAsync(_attendanceLog.Id);
+                    if (openLog is not null)
+                    {
+                        await _gateway.CloseTimeLogAsync(openLog.Id, clockOutTime, TimeLogCloseReason.ClockedOut);
+                    }
+
+                    await _gateway.ClockOutAsync(_attendanceLog.Id, clockOutTime);
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                LoadError = ex.Message;
-                return;
+                _isPickingClockTime = false;
             }
 
-            SelectedClockOptionIndex = 0;
-            ClockError = null;
-            IsEditingCustomTime = false;
-            _customTime.Clear();
-            State = HomeState.ClockingOut;
+            await RefreshAsync();
         }
 
         // Opens the Now/Custom picker for the time the user is back at, rather than ending the
@@ -423,11 +411,11 @@ namespace Stint.Cli.ViewModels
             => IsPickerOpen
                && (SelectedClockOption != ClockTimeOption.Custom || !IsEditingCustomTime || _customTime.IsComplete);
 
-        private bool CanCancelClockPicker() => IsEditingCustomTime || State is HomeState.ClockingOut or HomeState.Returning;
+        private bool CanCancelClockPicker() => IsEditingCustomTime || State == HomeState.Returning;
 
         // Clocking out or switching while away would leave the absence dangling - coming back
         // ([r]) is what ends it, so both wait until the user has.
-        private bool CanBeginClockOut() => State == HomeState.ClockedIn && !IsAway;
+        private bool CanClockOut() => State == HomeState.ClockedIn && !IsAway;
 
         private bool CanBeginReturn() => State == HomeState.ClockedIn && IsAway;
 
@@ -445,7 +433,7 @@ namespace Stint.Cli.ViewModels
 
         private async Task RefreshAsync()
         {
-            if (_isClockingIn)
+            if (_isPickingClockTime)
             {
                 return;
             }
@@ -499,55 +487,15 @@ namespace Stint.Cli.ViewModels
         {
             try
             {
-                _isClockingIn = true;
+                _isPickingClockTime = true;
 
-                var result = await Navigation.PickClockTimeAsync();
+                var result = await Navigation.PickClockTimeAsync(new ClockTimePickerRequest(ClockTimePickerAction.ClockIn));
                 _attendanceLog = await _gateway.ClockInAsync(ToWorkDate(DateTime.Today), DateTime.Today + result.Time.ToTimeSpan());
             }
             finally
             {
-                _isClockingIn = false;
+                _isPickingClockTime = false;
             }
-
-            await RefreshAsync();
-        }
-
-        private async Task ClockOutAsync()
-        {
-            if (_attendanceLog is null)
-            {
-                return;
-            }
-
-            var settings = _settingsService.Settings;
-            var clockOutTime = SelectedClockOption switch
-            {
-                ClockTimeOption.Now => RoundNowClockOut(DateTime.Now),
-                ClockTimeOption.Default => DateTime.Today + settings.DefaultClockOutTime.ToTimeSpan(),
-                ClockTimeOption.Custom => DateTime.Today + ParseCustomTime().ToTimeSpan(),
-                _ => DateTime.Now
-            };
-
-            // A Now clock-out is already clamped into range by RoundNowClockOut. Default/Custom
-            // are the user's own explicit choice, so a time that can't work is refused with a
-            // reason rather than silently moved somewhere else in their timesheet.
-            if (SelectedClockOption != ClockTimeOption.Now && GetClockOutError(clockOutTime) is { } error)
-            {
-                ClockError = error;
-                return;
-            }
-
-            var openLog = await _gateway.GetOpenTimeLogAsync(_attendanceLog.Id);
-            if (openLog is not null)
-            {
-                await _gateway.CloseTimeLogAsync(openLog.Id, clockOutTime, TimeLogCloseReason.ClockedOut);
-            }
-
-            await _gateway.ClockOutAsync(_attendanceLog.Id, clockOutTime);
-
-            IsEditingCustomTime = false;
-            _customTime.Clear();
-            ClockError = null;
 
             await RefreshAsync();
         }
@@ -585,52 +533,6 @@ namespace Stint.Cli.ViewModels
             ClockError = null;
 
             await RefreshAsync();
-        }
-
-        private string? GetClockOutError(DateTime clockOutTime)
-        {
-            if (clockOutTime > DateTime.Now)
-            {
-                return "Clock-out can't be in the future";
-            }
-
-            if (clockOutTime < ClockOutFloor)
-            {
-                return clockOutTime < (_attendanceLog?.ClockIn ?? DateTime.MinValue)
-                    ? "Clock-out can't be before clock-in"
-                    : $"Clock-out can't be before the last switch ({_lastSegmentStart:HH:mm})";
-            }
-
-            return null;
-        }
-
-        // The earliest a clock-out may be: not before clocking in, and not before the latest
-        // project segment began.
-        private DateTime ClockOutFloor
-        {
-            get
-            {
-                var clockIn = _attendanceLog?.ClockIn ?? DateTime.MinValue;
-                return _lastSegmentStart is DateTime lastStart && lastStart > clockIn ? lastStart : clockIn;
-            }
-        }
-
-        // Rounds "now" back to the grid for a clock-out, but never past ClockOutFloor - a short
-        // shift (or a switch a moment ago) mustn't end before it started; it just ends there.
-        private DateTime RoundNowClockOut(DateTime now)
-        {
-            var rounded = ClockRounder.RoundClockOut(now, _settingsService.Settings.ClockRounding);
-            return rounded < ClockOutFloor ? ClockOutFloor : rounded;
-        }
-
-        private string FormatNowPreview()
-        {
-            var now = DateTime.Now;
-            var stored = RoundNowClockOut(now);
-
-            return stored.ToString("HH:mm") == now.ToString("HH:mm")
-                ? now.ToString("HH:mm")
-                : $"{now:HH:mm} ({stored:HH:mm})";
         }
 
         private TimeOnly ParseCustomTime() => _customTime.TryParse(out var time)

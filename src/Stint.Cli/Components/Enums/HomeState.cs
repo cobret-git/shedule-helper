@@ -11,9 +11,6 @@ namespace Stint.Cli.Components
         /// <summary>Clocked in and the day isn't over - showing the live shift/project tree.</summary>
         ClockedIn,
 
-        /// <summary>Clocked in, and the clock-out time picker is open on top of the live shift.</summary>
-        ClockingOut,
-
         /// <summary>Clocked in and away (part-day absence open), and the "back at" time picker is open on top of the live shift.</summary>
         Returning,
 

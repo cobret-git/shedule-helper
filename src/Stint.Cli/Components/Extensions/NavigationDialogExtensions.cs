@@ -29,11 +29,11 @@ namespace Stint.Cli.Components.Extensions
             => navigation.ShowDialogAsync<DayTypePickerScreenViewModel, DayTypePickerRequest, DayTypePickerResult>(new DayTypePickerRequest(title, options));
 
         /// <summary>
-        /// Opens the clock-in time picker and waits for the user to confirm a time. It cannot be
-        /// cancelled, so there is always a result.
+        /// Opens the clock time picker as <paramref name="request"/> says and waits for the user to
+        /// confirm a time. Only a clock-out can be cancelled - a clock-in always has a picked result.
         /// </summary>
-        public static Task<ClockTimePickerResult> PickClockTimeAsync(this INavigationService navigation)
-            => navigation.ShowDialogAsync<ClockTimePickerScreenViewModel, ClockTimePickerRequest, ClockTimePickerResult>(new ClockTimePickerRequest());
+        public static Task<ClockTimePickerResult> PickClockTimeAsync(this INavigationService navigation, ClockTimePickerRequest request)
+            => navigation.ShowDialogAsync<ClockTimePickerScreenViewModel, ClockTimePickerRequest, ClockTimePickerResult>(request);
 
         /// <summary>
         /// Opens the navigation menu and, if a section is picked, jumps to it with that section as

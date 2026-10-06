@@ -15,8 +15,9 @@ namespace Stint.Cli.Views
         public override void Render(ClockTimePickerScreenViewModel viewModel, ScreenBuffer buffer)
         {
             buffer.SetLine(2, $"Date: {DateTime.Now:dd-MMM-yyyy  HH:mm}");
-            buffer.SetLine(3, "Status: not clocked in");
-            buffer.SetLine(5, "Clock in at:");
+            var isClockOut = viewModel.Action == ClockTimePickerAction.ClockOut;
+            buffer.SetLine(3, isClockOut ? $"Clock-in: {viewModel.ClockInTime:HH:mm}" : "Status: not clocked in");
+            buffer.SetLine(5, isClockOut ? "Clock out at:" : "Clock in at:");
 
             var row = 6;
             foreach (var option in viewModel.Options)
@@ -43,6 +44,13 @@ namespace Stint.Cli.Views
                 }
 
                 row++;
+            }
+
+            if ((viewModel.LoadError ?? viewModel.ClockError) is { } error)
+            {
+                var errorRow = row + 1;
+                buffer.SetLine(errorRow, error);
+                buffer.AddColorSpan(errorRow, 0, error.Length, ConsoleColor.Red);
             }
         }
 
